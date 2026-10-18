@@ -1,7 +1,7 @@
 WidgetMetadata = {
   "id": "rex.home.unified",
   "title": "Rex首页",
-  "version": "2026.10.18.2",
+  "version": "2026.10.18.3",
   "requiredVersion": "0.0.1",
   "description": "四主目录、七个内容分支重写版。首页只声明电影、剧集、综艺、动漫；已移除纪录电影和纪录剧集分类。追剧日历是独立工具。TMDB数据，需实机验证。",
   "site": "https://developer.themoviedb.org/",
@@ -1162,7 +1162,7 @@ function rexHomeIds(item) {
     (Array.isArray(item.genres)?item.genres.map(function(g){return Number(g.id);}):[]);
 }
 function rexHomeAccept(rule,item) {
-  if (!item || !Number.isInteger(Number(item.id)) || Number(item.id)<=0 ||
+  if (!item || !Number.isSafeInteger(Number(item.id)) || Number(item.id)<=0 ||
       (item.media_type && item.media_type!==rule.media)) return false;
   var genres=rexHomeIds(item);
   if (!genres.length) return false;
@@ -1222,6 +1222,7 @@ async function rexHomeQuery(rule,params) {
     if (range!=='all') q['primary_release_date.gte']=rexHomeBefore(Number(range));
   } else {
     q.include_null_first_air_dates=false;
+    q['first_air_date.lte']=today;
     if (range!=='all') {q['air_date.gte']=rexHomeBefore(Number(range));q['air_date.lte']=today;}
   }
   var sort=params.sort || 'recent';
@@ -1260,6 +1261,8 @@ async function rexHomeLoad(rule,params) {
   var raw=response.results.filter(function(item){
     if (!rexHomeAccept(rule,item) || seen.has(String(item.id))) return false;
     if (params.genre && rexHomeIds(item).indexOf(Number(params.genre))<0) return false;
+    var firstDate=rexHomeDate(rule.media==='movie'?item.release_date:item.first_air_date);
+    if (!firstDate || firstDate>rexHomeToday()) return false;
     if ((!item.poster_path && !item.backdrop_path) || (!item.title && !item.name)) return false;
     seen.add(String(item.id)); return true;
   });
