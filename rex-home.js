@@ -1,9 +1,9 @@
 WidgetMetadata = {
   "id": "rex.home.unified",
   "title": "Rex首页",
-  "version": "2026.10.18.4",
+  "version": "2026.10.18.5",
   "requiredVersion": "0.0.1",
-  "description": "四主目录、七个内容分支重写版。首页只声明电影、剧集、综艺、动漫；已移除纪录电影和纪录剧集分类。追剧日历是独立工具。TMDB数据，需实机验证。",
+  "description": "四大追新分类、七个内容分支，另设豆瓣一周口碑榜。已移除纪录分类。分类片单来自TMDB，周榜来自豆瓣。",
   "site": "https://developer.themoviedb.org/",
   "modules": [
     {
@@ -970,6 +970,22 @@ WidgetMetadata = {
           "value": "1"
         }
       ]
+    },
+    {
+      "id": "weeklyRank",
+      "title": "豆瓣一周口碑榜",
+      "functionName": "loadWeeklyRank",
+      "requiresWebView": false,
+      "cacheDuration": 3600,
+      "description": "原榜排名与评分，过滤纪录片；直接返回豆瓣ID，不进行片名猜测。实机资源关联待验证。",
+      "params": [
+        {
+          "name": "page",
+          "title": "页码",
+          "type": "page",
+          "value": "1"
+        }
+      ]
     }
   ],
   "author": ""
@@ -1339,3 +1355,40 @@ async function loadMovieHome(params){return rexHomeMain('movieHome',params);}
 async function loadSeriesHome(params){return rexHomeMain('seriesHome',params);}
 async function loadVarietyHome(params){return rexHomeMain('varietyHome',params);}
 async function loadAnimeHome(params){return rexHomeMain('animeHome',params);}
+
+// Independent movie ranking, not a fifth content category.
+async function loadWeeklyRank(params) {
+  params=params || {};
+  var page=Number(params.page == null || params.page === ''?1:params.page);
+  if (!Number.isInteger(page) || page<1) throw new Error('页码必须为正整数');
+  if (page>1) return [];
+  return rexHomeCached('douban.weekly.movie.v1',3600000,async function(){
+    if (!Widget.http || !Widget.http.get) throw new Error('当前Rex环境未提供榜单请求接口');
+    var response=await Widget.http.get('https://m.douban.com/rexxar/api/v2/subject_collection/movie_weekly_best/items?start=0&count=10',{
+      headers:{Referer:'https://m.douban.com/subject_collection/movie_weekly_best/','User-Agent':'Mozilla/5.0'},
+    });
+    var data=response && response.data;
+    if (typeof data==='string') {try {data=JSON.parse(data);} catch (_) {throw new Error('豆瓣榜单返回了非JSON页面，请稍后重试');}}
+    if (!data || !Array.isArray(data.subject_collection_items)) throw new Error('豆瓣榜单暂不可用，未替换成其他来源');
+    var ids=new Set(),posters=new Set();
+    return data.subject_collection_items.slice().sort(function(a,b){return Number(a.rank)-Number(b.rank);}).map(function(item){
+      var rank=Number(item.rank),id=String(item.id || '');
+      var poster=item.cover_url || (item.pic && (item.pic.large || item.pic.normal));
+      var type=item.subtype || item.type;
+      var tags=(item.tags || []).map(function(t){return t.name || '';}).join(' ');
+      var subtitle=String(item.card_subtitle || '');
+      if (type!=='movie' || !/^\d+$/.test(id) || !item.title || !poster ||
+          !/^https:\/\//.test(poster) || !Number.isInteger(rank) || rank<1 || rank>10 || item.is_released===false ||
+          /纪录片|纪录电影|纪录短片/.test(subtitle+' '+tags)) return null;
+      if (ids.has(id) || posters.has(poster)) return null;
+      ids.add(id);posters.add(poster);
+      var rating=item.rating && item.rating.value!=null?Number(item.rating.value):NaN;
+      if (rating<0 || rating>10) rating=NaN;
+      var label='豆瓣原榜第'+rank+'名'+(Number.isFinite(rating)?' · 豆瓣 '+rating.toFixed(1):'');
+      var out={id:id,type:'douban',mediaType:'movie',title:item.title,posterPath:poster,
+        genreTitle:label,description:label+'\n'+subtitle+'\n'+(item.description || '')};
+      if (Number.isFinite(rating)) out.rating=rating;
+      return {rank:rank,item:out};
+    }).filter(Boolean).sort(function(a,b){return a.rank-b.rank;}).map(function(x){return x.item;});
+  });
+}
