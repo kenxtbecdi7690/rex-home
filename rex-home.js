@@ -1,9 +1,9 @@
 WidgetMetadata = {
   "id": "rex.home.unified",
   "title": "Rex首页",
-  "version": "2026.10.18.12",
+  "version": "2026.10.18.13",
   "requiredVersion": "0.0.1",
-  "description": "四大分类七个分支，TMDB精选与豆瓣精选独立展示。TMDB片单使用TMDB ID和评分，豆瓣Top250使用原始豆瓣ID、排名与评分。",
+  "description": "四大分类七个分支，TMDB精选与豆瓣热门电影独立展示；保留各来源原始ID与评分。",
   "site": "https://developer.themoviedb.org/",
   "modules": [
     {
@@ -1498,37 +1498,21 @@ WidgetMetadata = {
     },
     {
       "id": "doubanTop250",
-      "title": "豆瓣精选",
+      "title": "豆瓣热门电影",
       "functionName": "loadDoubanTop250",
       "requiresWebView": false,
       "cacheDuration": 3600,
-      "description": "Top250和四种热门片单，使用原始豆瓣ID与评分；Top250保留原榜排名，不伪造热门片单排名。过滤纪录片，支持分页。",
+      "description": "豆瓣热门电影，保留原始豆瓣ID与评分，过滤纪录片，支持分页。",
       "params": [
         {
           "name": "feed",
           "title": "豆瓣片单",
           "type": "enumeration",
-          "value": "top250",
+          "value": "movies",
           "enumOptions": [
-            {
-              "title": "电影 Top 250",
-              "value": "top250"
-            },
             {
               "title": "热门电影",
               "value": "movies"
-            },
-            {
-              "title": "热播剧集",
-              "value": "series"
-            },
-            {
-              "title": "热门综艺",
-              "value": "variety"
-            },
-            {
-              "title": "热门动漫",
-              "value": "anime"
             }
           ]
         },
@@ -2114,7 +2098,7 @@ var RexHomeDoubanPicks = {
 };
 async function loadDoubanTop250(params) {
   params=params || {};
-  var feed=String(params.feed || 'top250');
+  var feed=String(params.feed || 'movies');
   if (!Object.prototype.hasOwnProperty.call(RexHomeDoubanPicks,feed)) throw new Error('请选择有效的豆瓣片单');
   var source=RexHomeDoubanPicks[feed];
   var page=Number(params.page == null || params.page === ''?1:params.page);
