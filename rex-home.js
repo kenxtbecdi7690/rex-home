@@ -1,7 +1,7 @@
 WidgetMetadata = {
   "id": "rex.home.unified",
   "title": "Rex首页",
-  "version": "2026.10.18.3",
+  "version": "2026.10.18.4",
   "requiredVersion": "0.0.1",
   "description": "四主目录、七个内容分支重写版。首页只声明电影、剧集、综艺、动漫；已移除纪录电影和纪录剧集分类。追剧日历是独立工具。TMDB数据，需实机验证。",
   "site": "https://developer.themoviedb.org/",
@@ -535,14 +535,6 @@ WidgetMetadata = {
             {
               "title": "指定海外国家合并",
               "value": ""
-            },
-            {
-              "title": "中国香港",
-              "value": "HK"
-            },
-            {
-              "title": "中国台湾",
-              "value": "TW"
             },
             {
               "title": "美国",
@@ -1091,7 +1083,8 @@ var RexHomeCountries = [
   ['泰国','TH'],['印度','IN'],['巴西','BR'],['阿根廷','AR'],['墨西哥','MX'],
   ['法国','FR'],['德国','DE'],['西班牙','ES'],['意大利','IT']
 ];
-var RexHomeForeignCountries = RexHomeCountries.filter(function(x){return x[1] !== 'CN';}).map(function(x){return x[1];});
+var RexHomeDomesticCountries = ['CN','HK','TW','MO'];
+var RexHomeForeignCountries = RexHomeCountries.filter(function(x){return RexHomeDomesticCountries.indexOf(x[1])<0;}).map(function(x){return x[1];});
 var rexHomeMemory = Object.create(null);
 var rexHomePending = Object.create(null);
 function rexHomeStable(value) {
@@ -1169,8 +1162,8 @@ function rexHomeAccept(rule,item) {
   if (rule.genres && !rule.genres.some(function(g){return genres.indexOf(g)>=0;})) return false;
   if ((rule.exclude || []).some(function(g){return genres.indexOf(g)>=0;})) return false;
   var countries=Array.isArray(item.origin_country)?item.origin_country:[];
-  if (rule.domestic && countries.indexOf('CN')<0) return false;
-  if (rule.foreign && (countries.indexOf('CN')>=0 || !countries.some(function(c){return RexHomeForeignCountries.indexOf(c)>=0;}))) return false;
+  if (rule.domestic && !countries.some(function(c){return RexHomeDomesticCountries.indexOf(c)>=0;})) return false;
+  if (rule.foreign && (countries.some(function(c){return RexHomeDomesticCountries.indexOf(c)>=0;}) || !countries.some(function(c){return RexHomeForeignCountries.indexOf(c)>=0;}))) return false;
   return true;
 }
 async function rexHomeKeywords(text) {
@@ -1201,7 +1194,7 @@ async function rexHomeQuery(rule,params) {
     q.with_genres=rule.domestic || rule.foreign?genre:(rule.genres?rule.genres.join(',')+',':'')+genre;
   }
   var region=String(params.region || '');
-  if (rule.domestic) q.with_origin_country='CN';
+  if (rule.domestic) q.with_origin_country=RexHomeDomesticCountries.join('|');
   else if (rule.foreign) {
     if (region && RexHomeForeignCountries.indexOf(region)<0) throw new Error('国外综艺只能选择列出的海外国家');
     q.with_origin_country=region || RexHomeForeignCountries.join('|');
