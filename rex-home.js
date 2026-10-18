@@ -1,7 +1,7 @@
 WidgetMetadata = {
   "id": "rex.home.unified",
   "title": "Rex首页",
-  "version": "2026.10.18.10",
+  "version": "2026.10.18.11",
   "requiredVersion": "0.0.1",
   "description": "四大分类七个分支，TMDB精选与豆瓣精选独立展示。TMDB片单使用TMDB ID和评分，豆瓣Top250使用原始豆瓣ID、排名与评分。",
   "site": "https://developer.themoviedb.org/",
@@ -1498,12 +1498,40 @@ WidgetMetadata = {
     },
     {
       "id": "doubanTop250",
-      "title": "豆瓣电影 Top 250",
+      "title": "豆瓣精选",
       "functionName": "loadDoubanTop250",
       "requiresWebView": false,
       "cacheDuration": 3600,
-      "description": "原榜排名与评分；每页最多30条，支持翻页，过滤纪录片。直接使用豆瓣ID，不进行片名猜测；实机资源关联待验证。",
+      "description": "Top250和四种热门片单，使用原始豆瓣ID与评分；Top250保留原榜排名，不伪造热门片单排名。过滤纪录片，支持分页。",
       "params": [
+        {
+          "name": "feed",
+          "title": "豆瓣片单",
+          "type": "enumeration",
+          "value": "top250",
+          "enumOptions": [
+            {
+              "title": "电影 Top 250",
+              "value": "top250"
+            },
+            {
+              "title": "热门电影",
+              "value": "movies"
+            },
+            {
+              "title": "热播剧集",
+              "value": "series"
+            },
+            {
+              "title": "热门综艺",
+              "value": "variety"
+            },
+            {
+              "title": "热门动漫",
+              "value": "anime"
+            }
+          ]
+        },
         {
           "name": "page",
           "title": "页码",
@@ -2036,40 +2064,71 @@ async function loadVarietyHome(params){return rexHomeMain('varietyHome',params);
 async function loadAnimeHome(params){return rexHomeMain('animeHome',params);}
 
 // Independent movie ranking, not a fifth content category.
+var RexHomeDoubanPicks = {
+  "top250": {
+    "title": "电影 Top 250",
+    "collection": "movie_top250",
+    "media": "movie",
+    "limit": 250
+  },
+  "movies": {
+    "title": "热门电影",
+    "collection": "movie_hot_gaia",
+    "media": "movie"
+  },
+  "series": {
+    "title": "热播剧集",
+    "collection": "tv_hot",
+    "media": "tv"
+  },
+  "variety": {
+    "title": "热门综艺",
+    "collection": "show_hot",
+    "media": "tv"
+  },
+  "anime": {
+    "title": "热门动漫",
+    "collection": "tv_animation",
+    "media": "tv"
+  }
+};
 async function loadDoubanTop250(params) {
   params=params || {};
+  var feed=String(params.feed || 'top250');
+  if (!Object.prototype.hasOwnProperty.call(RexHomeDoubanPicks,feed)) throw new Error('请选择有效的豆瓣片单');
+  var source=RexHomeDoubanPicks[feed];
   var page=Number(params.page == null || params.page === ''?1:params.page);
-  if (!Number.isInteger(page) || page<1) throw new Error('页码必须为正整数');
+  if (!Number.isInteger(page) || page<1 || page>500) throw new Error('页码必须为正整数');
   var start=(page-1)*30;
-  if (start>=250) return [];
-  var count=Math.min(30,250-start);
-  return rexHomeCached('douban.top250.movie.v1.'+page,3600000,async function(){
+  if (source.limit && start>=source.limit) return [];
+  var count=source.limit?Math.min(30,source.limit-start):30;
+  return rexHomeCached('douban.picks.v1.'+source.collection+'.'+page,3600000,async function(){
     if (!Widget.http || !Widget.http.get) throw new Error('当前Rex环境未提供榜单请求接口');
-    var response=await Widget.http.get('https://m.douban.com/rexxar/api/v2/subject_collection/movie_top250/items?start='+start+'&count='+count,{
-      headers:{Referer:'https://m.douban.com/subject_collection/movie_top250/','User-Agent':'Mozilla/5.0'},
+    var response=await Widget.http.get('https://m.douban.com/rexxar/api/v2/subject_collection/'+source.collection+'/items?start='+start+'&count='+count,{
+      headers:{Referer:'https://m.douban.com/subject_collection/'+source.collection+'/','User-Agent':'Mozilla/5.0'},
     });
     var data=response && response.data;
     if (typeof data==='string') {try {data=JSON.parse(data);} catch (_) {throw new Error('豆瓣榜单返回了非JSON页面，请稍后重试');}}
     if (!data || !Array.isArray(data.subject_collection_items)) throw new Error('豆瓣榜单暂不可用，未替换成其他来源');
     var ids=new Set(),posters=new Set();
-    return data.subject_collection_items.slice().sort(function(a,b){return Number(a.rank)-Number(b.rank);}).map(function(item){
+    return data.subject_collection_items.slice().sort(function(a,b){return source.limit?Number(a.rank)-Number(b.rank):0;}).map(function(item){
       var rank=Number(item.rank),id=String(item.id || '');
-      var poster=item.cover_url || (item.pic && (item.pic.large || item.pic.normal));
+      var poster=item.cover_url || (item.pic && (item.pic.large || item.pic.normal)) || (item.cover && item.cover.url);
       var type=item.subtype || item.type;
       var tags=(item.tags || []).map(function(t){return t.name || '';}).join(' ');
       var subtitle=String(item.card_subtitle || '');
-      if (type!=='movie' || !/^\d+$/.test(id) || !item.title || !poster ||
-          !/^https:\/\//.test(poster) || !Number.isInteger(rank) || rank<1 || rank>250 || rank<=start || rank>start+count || item.is_released===false ||
+      if (type!==source.media || !/^\d+$/.test(id) || !item.title || !poster ||
+          !/^https:\/\//.test(poster) || (source.limit && (!Number.isInteger(rank) || rank<1 || rank>source.limit || rank<=start || rank>start+count)) || item.is_released===false ||
           /纪录片|纪录电影|纪录短片/.test(subtitle+' '+tags)) return null;
       if (ids.has(id) || posters.has(poster)) return null;
       ids.add(id);posters.add(poster);
       var rating=item.rating && item.rating.value!=null?Number(item.rating.value):NaN;
-      if (rating<0 || rating>10) rating=NaN;
-      var label='豆瓣Top250第'+rank+'名'+(Number.isFinite(rating)?' · 豆瓣 '+rating.toFixed(1):'');
-      var out={id:id,type:'douban',mediaType:'movie',title:item.title,posterPath:poster,
+      if (rating<0 || rating>10 || (item.rating && item.rating.count!=null && Number(item.rating.count)===0)) rating=NaN;
+      var label=(source.limit?'豆瓣Top250第'+rank+'名':'豆瓣 · '+source.title)+(Number.isFinite(rating)?' · 豆瓣 '+rating.toFixed(1):'');
+      var out={id:id,type:'douban',mediaType:source.media,title:item.title,posterPath:poster,
         genreTitle:label,description:label+'\n'+subtitle+'\n'+(item.description || '')};
       if (Number.isFinite(rating)) out.rating=rating;
-      return {rank:rank,item:out};
+      return {rank:source.limit?rank:0,item:out};
     }).filter(Boolean).sort(function(a,b){return a.rank-b.rank;}).map(function(x){return x.item;});
   });
 }
