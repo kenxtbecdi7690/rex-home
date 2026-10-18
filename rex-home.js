@@ -1,9 +1,9 @@
 WidgetMetadata = {
   "id": "rex.home.unified",
   "title": "Rex首页",
-  "version": "2026.10.18.9",
+  "version": "2026.10.18.10",
   "requiredVersion": "0.0.1",
-  "description": "四大追新分类、七个内容分支，另设豆瓣电影Top250。已移除纪录分类。分类片单来自TMDB，Top250来自豆瓣。",
+  "description": "四大分类七个分支，TMDB精选与豆瓣精选独立展示。TMDB片单使用TMDB ID和评分，豆瓣Top250使用原始豆瓣ID、排名与评分。",
   "site": "https://developer.themoviedb.org/",
   "modules": [
     {
@@ -1424,6 +1424,79 @@ WidgetMetadata = {
       ]
     },
     {
+      "id": "tmdbPicks",
+      "title": "TMDB精选",
+      "functionName": "loadTmdbPicks",
+      "requiresWebView": false,
+      "cacheDuration": 900,
+      "description": "TMDB趋势、热门、高分和上映片单；趋势统计热度周期，不限定影片上映在最近一周。使用TMDB原始数字ID与评分，过滤纪录片。",
+      "params": [
+        {
+          "name": "feed",
+          "title": "TMDB片单",
+          "type": "enumeration",
+          "value": "weekMovies",
+          "enumOptions": [
+            {
+              "title": "本周电影趋势",
+              "value": "weekMovies"
+            },
+            {
+              "title": "本周剧集趋势",
+              "value": "weekSeries"
+            },
+            {
+              "title": "热门电影",
+              "value": "popularMovies"
+            },
+            {
+              "title": "热门剧集",
+              "value": "popularSeries"
+            },
+            {
+              "title": "高分电影",
+              "value": "ratedMovies"
+            },
+            {
+              "title": "高分剧集",
+              "value": "ratedSeries"
+            },
+            {
+              "title": "正在上映",
+              "value": "nowMovies"
+            }
+          ]
+        },
+        {
+          "name": "pageSize",
+          "title": "每页片量",
+          "type": "enumeration",
+          "value": "60",
+          "description": "读取上限；过滤后实际条数可能较少。20条请求更少，40/60条并行读取多页。更改片量后请回到第一页。",
+          "enumOptions": [
+            {
+              "title": "20条 · 轻量",
+              "value": "20"
+            },
+            {
+              "title": "40条",
+              "value": "40"
+            },
+            {
+              "title": "60条 · 默认",
+              "value": "60"
+            }
+          ]
+        },
+        {
+          "name": "page",
+          "title": "页码",
+          "type": "page",
+          "value": "1"
+        }
+      ]
+    },
+    {
       "id": "doubanTop250",
       "title": "豆瓣电影 Top 250",
       "functionName": "loadDoubanTop250",
@@ -1848,23 +1921,30 @@ async function rexHomeMapLimited(items,worker) {
   await Promise.all(Array.from({length:Math.min(4,items.length)},run));
   return output;
 }
-async function rexHomeLoad(rule,params) {
-  params=params || {};
-  if (!rule || !rule.media) throw new Error('未知分类');
-  var query=await rexHomeQuery(rule,params);
-  var pageSize=Number(params.pageSize == null || params.pageSize === ''?60:params.pageSize);
+async function rexHomeFetchPages(path,queryParams,pageSize) {
+  pageSize=Number(pageSize == null || pageSize === ''?60:pageSize);
   if ([20,40,60].indexOf(pageSize)<0) throw new Error('请选择20、40或60条每页片量');
-  var batch=pageSize/20,first=(query.params.page-1)*batch+1;
+  var batch=pageSize/20,first=(queryParams.page-1)*batch+1;
   if (first>500) return [];
   var pages=Array.from({length:Math.min(batch,501-first)},function(_,index){return first+index;});
   var responses=await Promise.all(pages.map(function(page){
-    return rexHomeApi('/discover/'+rule.media,Object.assign({},query.params,{page:page}),900000);
+    return rexHomeApi(path,Object.assign({},queryParams,{page:page}),900000);
   }));
   var combined=[];
   responses.forEach(function(response){
     if (!response || !Array.isArray(response.results)) throw new Error('TMDB片单格式异常');
     combined=combined.concat(response.results);
   });
+  return combined;
+}
+async function rexHomeLoad(rule,params) {
+  params=params || {};
+  if (!rule || !rule.media) throw new Error('未知分类');
+  var query=await rexHomeQuery(rule,params);
+  var combined=await rexHomeFetchPages('/discover/'+rule.media,query.params,params.pageSize);
+  return rexHomeBuildItems(rule,params,query,combined);
+}
+async function rexHomeBuildItems(rule,params,query,combined) {
   var seen=new Set();
   var raw=combined.filter(function(item){
     if (!rexHomeAccept(rule,item) || seen.has(String(item.id))) return false;
@@ -1991,5 +2071,59 @@ async function loadDoubanTop250(params) {
       if (Number.isFinite(rating)) out.rating=rating;
       return {rank:rank,item:out};
     }).filter(Boolean).sort(function(a,b){return a.rank-b.rank;}).map(function(x){return x.item;});
+  });
+}
+
+var RexHomeTmdbPicks = {
+  "weekMovies": {
+    "title": "本周电影趋势",
+    "path": "/trending/movie/week",
+    "media": "movie"
+  },
+  "weekSeries": {
+    "title": "本周剧集趋势",
+    "path": "/trending/tv/week",
+    "media": "tv"
+  },
+  "popularMovies": {
+    "title": "热门电影",
+    "path": "/movie/popular",
+    "media": "movie"
+  },
+  "popularSeries": {
+    "title": "热门剧集",
+    "path": "/tv/popular",
+    "media": "tv"
+  },
+  "ratedMovies": {
+    "title": "高分电影",
+    "path": "/movie/top_rated",
+    "media": "movie"
+  },
+  "ratedSeries": {
+    "title": "高分剧集",
+    "path": "/tv/top_rated",
+    "media": "tv"
+  },
+  "nowMovies": {
+    "title": "正在上映",
+    "path": "/movie/now_playing",
+    "media": "movie"
+  }
+};
+async function loadTmdbPicks(params) {
+  params=params || {};
+  var feed=String(params.feed || 'weekMovies');
+  if (!Object.prototype.hasOwnProperty.call(RexHomeTmdbPicks,feed)) throw new Error('请选择有效的TMDB片单');
+  var source=RexHomeTmdbPicks[feed];
+  var page=Number(params.page == null || params.page === ''?1:params.page);
+  if (!Number.isInteger(page) || page<1 || page>500) throw new Error('页码必须为1至500的整数');
+  var data=await rexHomeFetchPages(source.path,{language:'zh-CN',page:page},params.pageSize);
+  var items=await rexHomeBuildItems({media:source.media,exclude:source.media==='tv'?[99,10763]:[99]},
+    {dateMode:'premiere',loadMode:'fast'},{sort:'source'},data);
+  return items.map(function(item){
+    item.genreTitle='TMDB · '+source.title+' · '+item.genreTitle;
+    item.description='TMDB · '+source.title+'\n'+item.description;
+    return item;
   });
 }
