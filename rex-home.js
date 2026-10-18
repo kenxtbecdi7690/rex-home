@@ -1,7 +1,7 @@
 WidgetMetadata = {
   "id": "rex.home.unified",
   "title": "Rex首页",
-  "version": "2026.10.18.5",
+  "version": "2026.10.18.7",
   "requiredVersion": "0.0.1",
   "description": "四大追新分类、七个内容分支，另设豆瓣一周口碑榜。已移除纪录分类。分类片单来自TMDB，周榜来自豆瓣。",
   "site": "https://developer.themoviedb.org/",
@@ -171,6 +171,124 @@ WidgetMetadata = {
           ]
         },
         {
+          "name": "platform",
+          "title": "平台",
+          "type": "enumeration",
+          "value": "",
+          "description": "剧集按播出平台；电影按观看地区的平台片库。未收录的片库会提示，平台筛选不提供播放资源。",
+          "enumOptions": [
+            {
+              "title": "全部平台",
+              "value": ""
+            },
+            {
+              "title": "国内 · 腾讯视频",
+              "value": "tencent"
+            },
+            {
+              "title": "国内 · 爱奇艺",
+              "value": "iqiyi"
+            },
+            {
+              "title": "国内 · 优酷",
+              "value": "youku"
+            },
+            {
+              "title": "国内 · 芒果TV",
+              "value": "mango"
+            },
+            {
+              "title": "国内 · 哔哩哔哩",
+              "value": "bilibili"
+            },
+            {
+              "title": "国外 · Netflix",
+              "value": "netflix"
+            },
+            {
+              "title": "国外 · Disney+",
+              "value": "disney"
+            },
+            {
+              "title": "国外 · Apple TV+",
+              "value": "apple"
+            },
+            {
+              "title": "国外 · Prime Video",
+              "value": "prime"
+            },
+            {
+              "title": "国外 · HBO",
+              "value": "hbo"
+            },
+            {
+              "title": "国外 · HBO Max / Max",
+              "value": "max"
+            },
+            {
+              "title": "国外 · Hulu",
+              "value": "hulu"
+            }
+          ]
+        },
+        {
+          "name": "watchRegion",
+          "title": "电影观看地区",
+          "type": "enumeration",
+          "value": "auto",
+          "description": "选择平台片库所在地区，与作品出品地区分别筛选。自动：国内平台使用中国内地，国外平台使用美国。",
+          "enumOptions": [
+            {
+              "title": "自动选择",
+              "value": "auto"
+            },
+            {
+              "title": "中国内地",
+              "value": "CN"
+            },
+            {
+              "title": "中国香港",
+              "value": "HK"
+            },
+            {
+              "title": "中国台湾",
+              "value": "TW"
+            },
+            {
+              "title": "美国",
+              "value": "US"
+            },
+            {
+              "title": "英国",
+              "value": "GB"
+            },
+            {
+              "title": "日本",
+              "value": "JP"
+            },
+            {
+              "title": "韩国",
+              "value": "KR"
+            },
+            {
+              "title": "泰国",
+              "value": "TH"
+            },
+            {
+              "title": "印度",
+              "value": "IN"
+            },
+            {
+              "title": "巴西",
+              "value": "BR"
+            },
+            {
+              "title": "阿根廷",
+              "value": "AR"
+            }
+          ]
+        },
+        {
           "name": "year",
           "title": "上映年份",
           "type": "input",
@@ -238,6 +356,27 @@ WidgetMetadata = {
           "type": "input",
           "value": "",
           "description": "使用可检索的TMDB关键词名称，多个用英文逗号连接（同时满足）；也可输入数字关键词ID。不是豆瓣标签。"
+        },
+        {
+          "name": "pageSize",
+          "title": "每页片量",
+          "type": "enumeration",
+          "value": "40",
+          "description": "读取上限；过滤后实际条数可能较少。20条请求更少，40/60条并行读取多页。更改片量后请回到第一页。",
+          "enumOptions": [
+            {
+              "title": "20条 · 轻量",
+              "value": "20"
+            },
+            {
+              "title": "40条 · 默认",
+              "value": "40"
+            },
+            {
+              "title": "60条 · 更多",
+              "value": "60"
+            }
+          ]
         },
         {
           "name": "page",
@@ -389,6 +528,67 @@ WidgetMetadata = {
           ]
         },
         {
+          "name": "platform",
+          "title": "平台",
+          "type": "enumeration",
+          "value": "",
+          "description": "剧集按播出平台；电影按观看地区的平台片库。未收录的片库会提示，平台筛选不提供播放资源。",
+          "enumOptions": [
+            {
+              "title": "全部平台",
+              "value": ""
+            },
+            {
+              "title": "国内 · 腾讯视频",
+              "value": "tencent"
+            },
+            {
+              "title": "国内 · 爱奇艺",
+              "value": "iqiyi"
+            },
+            {
+              "title": "国内 · 优酷",
+              "value": "youku"
+            },
+            {
+              "title": "国内 · 芒果TV",
+              "value": "mango"
+            },
+            {
+              "title": "国内 · 哔哩哔哩",
+              "value": "bilibili"
+            },
+            {
+              "title": "国外 · Netflix",
+              "value": "netflix"
+            },
+            {
+              "title": "国外 · Disney+",
+              "value": "disney"
+            },
+            {
+              "title": "国外 · Apple TV+",
+              "value": "apple"
+            },
+            {
+              "title": "国外 · Prime Video",
+              "value": "prime"
+            },
+            {
+              "title": "国外 · HBO",
+              "value": "hbo"
+            },
+            {
+              "title": "国外 · HBO Max / Max",
+              "value": "max"
+            },
+            {
+              "title": "国外 · Hulu",
+              "value": "hulu"
+            }
+          ]
+        },
+        {
           "name": "year",
           "title": "首播年份",
           "type": "input",
@@ -474,6 +674,27 @@ WidgetMetadata = {
             {
               "title": "首播日期（更快）",
               "value": "premiere"
+            }
+          ]
+        },
+        {
+          "name": "pageSize",
+          "title": "每页片量",
+          "type": "enumeration",
+          "value": "40",
+          "description": "读取上限；过滤后实际条数可能较少。20条请求更少，40/60条并行读取多页。更改片量后请回到第一页。",
+          "enumOptions": [
+            {
+              "title": "20条 · 轻量",
+              "value": "20"
+            },
+            {
+              "title": "40条 · 默认",
+              "value": "40"
+            },
+            {
+              "title": "60条 · 更多",
+              "value": "60"
             }
           ]
         },
@@ -617,6 +838,67 @@ WidgetMetadata = {
           ]
         },
         {
+          "name": "platform",
+          "title": "平台",
+          "type": "enumeration",
+          "value": "",
+          "description": "剧集按播出平台；电影按观看地区的平台片库。未收录的片库会提示，平台筛选不提供播放资源。",
+          "enumOptions": [
+            {
+              "title": "全部平台",
+              "value": ""
+            },
+            {
+              "title": "国内 · 腾讯视频",
+              "value": "tencent"
+            },
+            {
+              "title": "国内 · 爱奇艺",
+              "value": "iqiyi"
+            },
+            {
+              "title": "国内 · 优酷",
+              "value": "youku"
+            },
+            {
+              "title": "国内 · 芒果TV",
+              "value": "mango"
+            },
+            {
+              "title": "国内 · 哔哩哔哩",
+              "value": "bilibili"
+            },
+            {
+              "title": "国外 · Netflix",
+              "value": "netflix"
+            },
+            {
+              "title": "国外 · Disney+",
+              "value": "disney"
+            },
+            {
+              "title": "国外 · Apple TV+",
+              "value": "apple"
+            },
+            {
+              "title": "国外 · Prime Video",
+              "value": "prime"
+            },
+            {
+              "title": "国外 · HBO",
+              "value": "hbo"
+            },
+            {
+              "title": "国外 · HBO Max / Max",
+              "value": "max"
+            },
+            {
+              "title": "国外 · Hulu",
+              "value": "hulu"
+            }
+          ]
+        },
+        {
           "name": "year",
           "title": "首播年份",
           "type": "input",
@@ -702,6 +984,27 @@ WidgetMetadata = {
             {
               "title": "首播日期（更快）",
               "value": "premiere"
+            }
+          ]
+        },
+        {
+          "name": "pageSize",
+          "title": "每页片量",
+          "type": "enumeration",
+          "value": "40",
+          "description": "读取上限；过滤后实际条数可能较少。20条请求更少，40/60条并行读取多页。更改片量后请回到第一页。",
+          "enumOptions": [
+            {
+              "title": "20条 · 轻量",
+              "value": "20"
+            },
+            {
+              "title": "40条 · 默认",
+              "value": "40"
+            },
+            {
+              "title": "60条 · 更多",
+              "value": "60"
             }
           ]
         },
@@ -869,6 +1172,130 @@ WidgetMetadata = {
           ]
         },
         {
+          "name": "platform",
+          "title": "平台",
+          "type": "enumeration",
+          "value": "",
+          "description": "剧集按播出平台；电影按观看地区的平台片库。未收录的片库会提示，平台筛选不提供播放资源。",
+          "enumOptions": [
+            {
+              "title": "全部平台",
+              "value": ""
+            },
+            {
+              "title": "国内 · 腾讯视频",
+              "value": "tencent"
+            },
+            {
+              "title": "国内 · 爱奇艺",
+              "value": "iqiyi"
+            },
+            {
+              "title": "国内 · 优酷",
+              "value": "youku"
+            },
+            {
+              "title": "国内 · 芒果TV",
+              "value": "mango"
+            },
+            {
+              "title": "国内 · 哔哩哔哩",
+              "value": "bilibili"
+            },
+            {
+              "title": "国外 · Netflix",
+              "value": "netflix"
+            },
+            {
+              "title": "国外 · Disney+",
+              "value": "disney"
+            },
+            {
+              "title": "国外 · Apple TV+",
+              "value": "apple"
+            },
+            {
+              "title": "国外 · Prime Video",
+              "value": "prime"
+            },
+            {
+              "title": "国外 · HBO",
+              "value": "hbo"
+            },
+            {
+              "title": "国外 · HBO Max / Max",
+              "value": "max"
+            },
+            {
+              "title": "国外 · Hulu",
+              "value": "hulu"
+            }
+          ]
+        },
+        {
+          "name": "watchRegion",
+          "title": "电影观看地区",
+          "type": "enumeration",
+          "value": "auto",
+          "description": "选择平台片库所在地区，与作品出品地区分别筛选。自动：国内平台使用中国内地，国外平台使用美国。",
+          "enumOptions": [
+            {
+              "title": "自动选择",
+              "value": "auto"
+            },
+            {
+              "title": "中国内地",
+              "value": "CN"
+            },
+            {
+              "title": "中国香港",
+              "value": "HK"
+            },
+            {
+              "title": "中国台湾",
+              "value": "TW"
+            },
+            {
+              "title": "美国",
+              "value": "US"
+            },
+            {
+              "title": "英国",
+              "value": "GB"
+            },
+            {
+              "title": "日本",
+              "value": "JP"
+            },
+            {
+              "title": "韩国",
+              "value": "KR"
+            },
+            {
+              "title": "泰国",
+              "value": "TH"
+            },
+            {
+              "title": "印度",
+              "value": "IN"
+            },
+            {
+              "title": "巴西",
+              "value": "BR"
+            },
+            {
+              "title": "阿根廷",
+              "value": "AR"
+            }
+          ],
+          "belongTo": {
+            "paramName": "category",
+            "value": [
+              "animeMovies"
+            ]
+          }
+        },
+        {
           "name": "year",
           "title": "上映／首播年份",
           "type": "input",
@@ -962,6 +1389,27 @@ WidgetMetadata = {
               "animeSeries"
             ]
           }
+        },
+        {
+          "name": "pageSize",
+          "title": "每页片量",
+          "type": "enumeration",
+          "value": "40",
+          "description": "读取上限；过滤后实际条数可能较少。20条请求更少，40/60条并行读取多页。更改片量后请回到第一页。",
+          "enumOptions": [
+            {
+              "title": "20条 · 轻量",
+              "value": "20"
+            },
+            {
+              "title": "40条 · 默认",
+              "value": "40"
+            },
+            {
+              "title": "60条 · 更多",
+              "value": "60"
+            }
+          ]
         },
         {
           "name": "page",
@@ -1195,6 +1643,141 @@ async function rexHomeKeywords(text) {
   }
   return Array.from(new Set(ids)).join(',');
 }
+
+// Platform IDs for TV are checked against the network name before use.
+// Movie provider IDs are resolved by exact brand name in the selected region.
+var RexHomePlatforms = {
+  "tencent": {
+    "title": "腾讯视频",
+    "domestic": true,
+    "network": 2007,
+    "aliases": [
+      "Tencent Video",
+      "腾讯视频"
+    ]
+  },
+  "iqiyi": {
+    "title": "爱奇艺",
+    "domestic": true,
+    "network": 1330,
+    "aliases": [
+      "iQIYI",
+      "爱奇艺"
+    ]
+  },
+  "youku": {
+    "title": "优酷",
+    "domestic": true,
+    "network": 1419,
+    "aliases": [
+      "Youku",
+      "优酷"
+    ]
+  },
+  "mango": {
+    "title": "芒果TV",
+    "domestic": true,
+    "network": 1631,
+    "aliases": [
+      "Mango TV",
+      "芒果TV"
+    ]
+  },
+  "bilibili": {
+    "title": "哔哩哔哩",
+    "domestic": true,
+    "network": 1605,
+    "aliases": [
+      "bilibili",
+      "bilibili.com",
+      "哔哩哔哩"
+    ]
+  },
+  "netflix": {
+    "title": "Netflix",
+    "network": 213,
+    "aliases": [
+      "Netflix"
+    ]
+  },
+  "disney": {
+    "title": "Disney+",
+    "network": 2739,
+    "aliases": [
+      "Disney+",
+      "Disney Plus"
+    ]
+  },
+  "apple": {
+    "title": "Apple TV+",
+    "network": 2552,
+    "aliases": [
+      "Apple TV+",
+      "Apple TV Plus",
+      "Apple TV"
+    ]
+  },
+  "prime": {
+    "title": "Prime Video",
+    "network": 1024,
+    "aliases": [
+      "Amazon Prime Video",
+      "Prime Video",
+      "Amazon"
+    ]
+  },
+  "hbo": {
+    "title": "HBO",
+    "network": 49,
+    "aliases": [
+      "HBO"
+    ]
+  },
+  "max": {
+    "title": "HBO Max / Max",
+    "network": 3186,
+    "aliases": [
+      "HBO Max",
+      "Max"
+    ]
+  },
+  "hulu": {
+    "title": "Hulu",
+    "network": 453,
+    "aliases": [
+      "Hulu"
+    ]
+  }
+};
+function rexHomeBrand(value) {return String(value || '').toLowerCase().replace(/[\s+._-]/g,'');}
+function rexHomePlatformMatch(platform,name) {
+  var key=rexHomeBrand(name);
+  return platform.aliases.some(function(alias){return rexHomeBrand(alias)===key;});
+}
+async function rexHomeApplyPlatform(rule,params,q) {
+  var key=String(params.platform || '');
+  if (!key) return;
+  if (!Object.prototype.hasOwnProperty.call(RexHomePlatforms,key)) throw new Error('请选择有效的平台');
+  var platform=RexHomePlatforms[key];
+  if (rule.media==='tv') {
+    var network=await rexHomeApi('/network/'+platform.network,{},86400000);
+    if (!network || Number(network.id)!==platform.network || !rexHomePlatformMatch(platform,network.name))
+      throw new Error('平台信息不一致，请刷新后重试');
+    q.with_networks=platform.network;
+  } else {
+    var region=String(params.watchRegion || 'auto');
+    if (region==='auto') region=platform.domestic?'CN':'US';
+    if (['CN','HK','TW','US','GB','JP','KR','TH','IN','BR','AR'].indexOf(region)<0) throw new Error('请选择有效的电影观看地区');
+    var providers=await rexHomeApi('/watch/providers/movie',{language:'en-US',watch_region:region},86400000);
+    if (!providers || !Array.isArray(providers.results)) throw new Error('平台片库信息暂不可用，请稍后重试');
+    var ids=providers.results.filter(function(p){return rexHomePlatformMatch(platform,p.provider_name) && Number.isSafeInteger(Number(p.provider_id)) && Number(p.provider_id)>0;}).map(function(p){return Number(p.provider_id);});
+    ids=Array.from(new Set(ids));
+    if (!ids.length) throw new Error('暂无该观看地区的'+platform.title+'电影片库，请切换平台或观看地区');
+    if (ids.length!==1) throw new Error('平台名称对应多个片库，暂未执行筛选，请切换平台');
+    q.watch_region=region;q.with_watch_providers=String(ids[0]);
+  }
+}
+
 async function rexHomeQuery(rule,params) {
   var page=Number(params.page == null || params.page === '' ? 1 : params.page), rating=Number(params.rating || 0);
   if (!Number.isInteger(page) || page<1 || page>500) throw new Error('页码必须为1至500的整数');
@@ -1250,6 +1833,7 @@ async function rexHomeQuery(rule,params) {
     }
   }
   if (keywordIds.length) q.with_keywords=Array.from(new Set(keywordIds)).join(',');
+  await rexHomeApplyPlatform(rule,params,q);
   return {params:q,sort:sort};
 }
 async function rexHomeMapLimited(items,worker) {
@@ -1264,10 +1848,21 @@ async function rexHomeLoad(rule,params) {
   params=params || {};
   if (!rule || !rule.media) throw new Error('未知分类');
   var query=await rexHomeQuery(rule,params);
-  var response=await rexHomeApi('/discover/'+rule.media,query.params,900000);
-  if (!Array.isArray(response.results)) throw new Error('TMDB片单格式异常');
+  var pageSize=Number(params.pageSize == null || params.pageSize === ''?40:params.pageSize);
+  if ([20,40,60].indexOf(pageSize)<0) throw new Error('请选择20、40或60条每页片量');
+  var batch=pageSize/20,first=(query.params.page-1)*batch+1;
+  if (first>500) return [];
+  var pages=Array.from({length:Math.min(batch,501-first)},function(_,index){return first+index;});
+  var responses=await Promise.all(pages.map(function(page){
+    return rexHomeApi('/discover/'+rule.media,Object.assign({},query.params,{page:page}),900000);
+  }));
+  var combined=[];
+  responses.forEach(function(response){
+    if (!response || !Array.isArray(response.results)) throw new Error('TMDB片单格式异常');
+    combined=combined.concat(response.results);
+  });
   var seen=new Set();
-  var raw=response.results.filter(function(item){
+  var raw=combined.filter(function(item){
     if (!rexHomeAccept(rule,item) || seen.has(String(item.id))) return false;
     if (params.genre && rexHomeIds(item).indexOf(Number(params.genre))<0) return false;
     var firstDate=rexHomeDate(rule.media==='movie'?item.release_date:item.first_air_date);
@@ -1337,7 +1932,7 @@ function rexHomeSelect(parentId, params) {
   var clean={};
   // Accept only supported common filters. Hidden media/genre values imported
   // from another module cannot enter any query.
-  ['genre','region','year','rating','range','sort','tags','dateMode','loadMode','page'].forEach(function(key){
+  ['pageSize','platform','watchRegion','genre','region','year','rating','range','sort','tags','dateMode','loadMode','page'].forEach(function(key){
     if (params[key] != null) clean[key]=params[key];
   });
   if (rule.media==='movie') {
