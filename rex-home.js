@@ -1,7 +1,7 @@
 WidgetMetadata = {
   "id": "rex.home.unified",
   "title": "Rex首页",
-  "version": "2026.10.18.11",
+  "version": "2026.10.18.12",
   "requiredVersion": "0.0.1",
   "description": "四大分类七个分支，TMDB精选与豆瓣精选独立展示。TMDB片单使用TMDB ID和评分，豆瓣Top250使用原始豆瓣ID、排名与评分。",
   "site": "https://developer.themoviedb.org/",
@@ -1723,8 +1723,22 @@ function rexHomeIds(item) {
   return Array.isArray(item.genre_ids)?item.genre_ids.map(Number):
     (Array.isArray(item.genres)?item.genres.map(function(g){return Number(g.id);}):[]);
 }
+function rexHomeValidId(value) {
+  return (typeof value==='number' || (typeof value==='string' && /^\d+$/.test(value))) &&
+    Number.isSafeInteger(Number(value)) && Number(value)>0;
+}
+function rexHomeImage(value, absoluteOnly) {
+  if (typeof value!=='string') return '';
+  value=value.trim();
+  if (/^https:\/\/[^\s/]+\/[^\s]*$/.test(value)) return value;
+  return !absoluteOnly && /^\/[^\s/][^\s]*$/.test(value)?value:'';
+}
+function rexHomeTitle(item, media) {
+  var value=media==='movie'?item.title:item.name;
+  return typeof value==='string'?value.trim():'';
+}
 function rexHomeAccept(rule,item) {
-  if (!item || !Number.isSafeInteger(Number(item.id)) || Number(item.id)<=0 ||
+  if (!item || !rexHomeValidId(item.id) ||
       (item.media_type && item.media_type!==rule.media)) return false;
   var genres=rexHomeIds(item);
   if (!genres.length) return false;
@@ -1979,7 +1993,10 @@ async function rexHomeBuildItems(rule,params,query,combined) {
     if (params.genre && rexHomeIds(item).indexOf(Number(params.genre))<0) return false;
     var firstDate=rexHomeDate(rule.media==='movie'?item.release_date:item.first_air_date);
     if (!firstDate || firstDate>rexHomeToday()) return false;
-    if ((!item.poster_path && !item.backdrop_path) || (!item.title && !item.name)) return false;
+    if (params.year && firstDate.slice(0,4)!==String(params.year).trim()) return false;
+    var rating=Number(item.vote_average);
+    if (Number(params.rating || 0)>0 && (!Number.isFinite(rating) || rating<Number(params.rating) || (item.vote_count!=null && Number(item.vote_count)===0))) return false;
+    if (!rexHomeImage(item.poster_path,false) || !rexHomeTitle(item,rule.media)) return false;
     seen.add(String(item.id)); return true;
   });
   var dateMode=rule.media==='tv'?(params.dateMode || 'updated'):'premiere';
@@ -1998,11 +2015,11 @@ async function rexHomeBuildItems(rule,params,query,combined) {
         catch (_) {}
       }
     }
-    if (detail && Number(detail.id)!==Number(item.id)) return null;
-    var title=item.title || item.name || (detail && detail.name);
-    var poster=item.poster_path || (detail && detail.poster_path) || '';
-    var backdrop=item.backdrop_path || (detail && detail.backdrop_path) || '';
-    if (!title || (!poster && !backdrop)) return null;
+    if (detail && (!rexHomeValidId(detail.id) || Number(detail.id)!==Number(item.id))) return null;
+    var title=rexHomeTitle(item,rule.media);
+    var poster=rexHomeImage(item.poster_path,false);
+    var backdrop=rexHomeImage(item.backdrop_path,false) || (detail && rexHomeImage(detail.backdrop_path,false)) || '';
+    if (!title || !poster) return null;
     var premiere=rexHomeDate(rule.media==='movie'?item.release_date:item.first_air_date);
     var last=detail && detail.last_episode_to_air;
     var updated=last && rexHomeDate(last.air_date);
@@ -2015,10 +2032,13 @@ async function rexHomeBuildItems(rule,params,query,combined) {
     var canonicalId=rule.media+'.'+Number(item.id);
     sortDates[canonicalId]=updated || premiere;
     // Rex uses a numeric TMDB ID plus mediaType for native resource matching.
-    return {id:Number(item.id),type:'tmdb',mediaType:rule.media,
+    var output={id:Number(item.id),type:'tmdb',mediaType:rule.media,
       title:title,posterPath:poster,backdropPath:backdrop,releaseDate:displayDate,
-      rating:item.vote_average || 0,genreTitle:dateText,
+      genreTitle:dateText,
       description:dateText+'\n'+(rule.media==='tv'?'剧集首播：'+(premiere || '未公布')+'\n':'')+(item.overview || (detail && detail.overview) || '')};
+    var score=item.vote_average==null?NaN:Number(item.vote_average);
+    if (Number.isFinite(score) && score>=0 && score<=10 && (item.vote_count==null || Number(item.vote_count)!==0)) output.rating=score;
+    return output;
   });
   var posterSeen=new Set();
   items=items.filter(function(item){
@@ -2031,7 +2051,7 @@ async function rexHomeBuildItems(rule,params,query,combined) {
   return items;
 }
 
-// Four category loaders and one independent ranking are declared in WidgetMetadata.
+// Four category loaders and two independent selections are declared in WidgetMetadata.
 // All children are internal routes, never additional homepage modules.
 function rexHomeSelect(parentId, params) {
   var parent=RexHomeCatalog[parentId];
@@ -2111,13 +2131,15 @@ async function loadDoubanTop250(params) {
     if (typeof data==='string') {try {data=JSON.parse(data);} catch (_) {throw new Error('豆瓣榜单返回了非JSON页面，请稍后重试');}}
     if (!data || !Array.isArray(data.subject_collection_items)) throw new Error('豆瓣榜单暂不可用，未替换成其他来源');
     var ids=new Set(),posters=new Set();
-    return data.subject_collection_items.slice().sort(function(a,b){return source.limit?Number(a.rank)-Number(b.rank):0;}).map(function(item){
+    return data.subject_collection_items.filter(function(item){return item && typeof item==='object' && !Array.isArray(item);}).sort(function(a,b){return source.limit?Number(a.rank)-Number(b.rank):0;}).map(function(item){
       var rank=Number(item.rank),id=String(item.id || '');
-      var poster=item.cover_url || (item.pic && (item.pic.large || item.pic.normal)) || (item.cover && item.cover.url);
+      var poster=rexHomeImage(item.pic && item.pic.normal,true) || rexHomeImage(item.cover_url,true) ||
+        rexHomeImage(item.pic && item.pic.large,true) || rexHomeImage(item.cover && item.cover.url,true);
       var type=item.subtype || item.type;
-      var tags=(item.tags || []).map(function(t){return t.name || '';}).join(' ');
+      var tags=(Array.isArray(item.tags)?item.tags:[]).map(function(t){return t && t.name || '';}).join(' ');
       var subtitle=String(item.card_subtitle || '');
-      if (type!==source.media || !/^\d+$/.test(id) || !item.title || !poster ||
+      var title=typeof item.title==='string'?item.title.trim():'';
+      if (type!==source.media || !rexHomeValidId(item.id) || !title || !poster ||
           !/^https:\/\//.test(poster) || (source.limit && (!Number.isInteger(rank) || rank<1 || rank>source.limit || rank<=start || rank>start+count)) || item.is_released===false ||
           /纪录片|纪录电影|纪录短片/.test(subtitle+' '+tags)) return null;
       if (ids.has(id) || posters.has(poster)) return null;
@@ -2125,7 +2147,7 @@ async function loadDoubanTop250(params) {
       var rating=item.rating && item.rating.value!=null?Number(item.rating.value):NaN;
       if (rating<0 || rating>10 || (item.rating && item.rating.count!=null && Number(item.rating.count)===0)) rating=NaN;
       var label=(source.limit?'豆瓣Top250第'+rank+'名':'豆瓣 · '+source.title)+(Number.isFinite(rating)?' · 豆瓣 '+rating.toFixed(1):'');
-      var out={id:id,type:'douban',mediaType:source.media,title:item.title,posterPath:poster,
+      var out={id:id,type:'douban',mediaType:source.media,title:title,posterPath:poster,
         genreTitle:label,description:label+'\n'+subtitle+'\n'+(item.description || '')};
       if (Number.isFinite(rating)) out.rating=rating;
       return {rank:source.limit?rank:0,item:out};
