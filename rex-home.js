@@ -1,7 +1,7 @@
 WidgetMetadata = {
   "id": "rex.home.unified",
   "title": "Rex首页",
-  "version": "2026.10.18",
+  "version": "2026.10.18.2",
   "requiredVersion": "0.0.1",
   "description": "四主目录、七个内容分支重写版。首页只声明电影、剧集、综艺、动漫；已移除纪录电影和纪录剧集分类。追剧日历是独立工具。TMDB数据，需实机验证。",
   "site": "https://developer.themoviedb.org/",
@@ -21,7 +21,7 @@ WidgetMetadata = {
           "value": "movies",
           "enumOptions": [
             {
-              "title": "电影综合",
+              "title": "长片",
               "value": "movies"
             },
             {
@@ -43,6 +43,14 @@ WidgetMetadata = {
             {
               "title": "国产（中国）",
               "value": "CN"
+            },
+            {
+              "title": "中国香港",
+              "value": "HK"
+            },
+            {
+              "title": "中国台湾",
+              "value": "TW"
             },
             {
               "title": "美国",
@@ -95,6 +103,70 @@ WidgetMetadata = {
             {
               "title": "意大利",
               "value": "IT"
+            }
+          ]
+        },
+        {
+          "name": "genre",
+          "title": "题材",
+          "type": "enumeration",
+          "value": "",
+          "enumOptions": [
+            {
+              "title": "全部",
+              "value": ""
+            },
+            {
+              "title": "剧情",
+              "value": "18"
+            },
+            {
+              "title": "喜剧",
+              "value": "35"
+            },
+            {
+              "title": "动作",
+              "value": "28"
+            },
+            {
+              "title": "爱情",
+              "value": "10749"
+            },
+            {
+              "title": "悬疑",
+              "value": "9648"
+            },
+            {
+              "title": "科幻",
+              "value": "878"
+            },
+            {
+              "title": "惊悚",
+              "value": "53"
+            },
+            {
+              "title": "恐怖",
+              "value": "27"
+            },
+            {
+              "title": "奇幻",
+              "value": "14"
+            },
+            {
+              "title": "犯罪",
+              "value": "80"
+            },
+            {
+              "title": "音乐",
+              "value": "10402"
+            },
+            {
+              "title": "冒险",
+              "value": "12"
+            },
+            {
+              "title": "家庭",
+              "value": "10751"
             }
           ]
         },
@@ -215,6 +287,14 @@ WidgetMetadata = {
               "value": "CN"
             },
             {
+              "title": "中国香港",
+              "value": "HK"
+            },
+            {
+              "title": "中国台湾",
+              "value": "TW"
+            },
+            {
               "title": "美国",
               "value": "US"
             },
@@ -265,6 +345,46 @@ WidgetMetadata = {
             {
               "title": "意大利",
               "value": "IT"
+            }
+          ]
+        },
+        {
+          "name": "genre",
+          "title": "题材",
+          "type": "enumeration",
+          "value": "",
+          "enumOptions": [
+            {
+              "title": "全部",
+              "value": ""
+            },
+            {
+              "title": "剧情",
+              "value": "18"
+            },
+            {
+              "title": "喜剧",
+              "value": "35"
+            },
+            {
+              "title": "动作冒险",
+              "value": "10759"
+            },
+            {
+              "title": "悬疑",
+              "value": "9648"
+            },
+            {
+              "title": "科幻奇幻",
+              "value": "10765"
+            },
+            {
+              "title": "犯罪",
+              "value": "80"
+            },
+            {
+              "title": "家庭",
+              "value": "10751"
             }
           ]
         },
@@ -417,6 +537,14 @@ WidgetMetadata = {
               "value": ""
             },
             {
+              "title": "中国香港",
+              "value": "HK"
+            },
+            {
+              "title": "中国台湾",
+              "value": "TW"
+            },
+            {
               "title": "美国",
               "value": "US"
             },
@@ -475,6 +603,26 @@ WidgetMetadata = {
               "varietyGlobal"
             ]
           }
+        },
+        {
+          "name": "genre",
+          "title": "节目类型",
+          "type": "enumeration",
+          "value": "",
+          "enumOptions": [
+            {
+              "title": "全部",
+              "value": ""
+            },
+            {
+              "title": "真人秀",
+              "value": "10764"
+            },
+            {
+              "title": "脱口秀",
+              "value": "10767"
+            }
+          ]
         },
         {
           "name": "year",
@@ -635,6 +783,14 @@ WidgetMetadata = {
               "value": "CN"
             },
             {
+              "title": "中国香港",
+              "value": "HK"
+            },
+            {
+              "title": "中国台湾",
+              "value": "TW"
+            },
+            {
               "title": "美国",
               "value": "US"
             },
@@ -685,6 +841,38 @@ WidgetMetadata = {
             {
               "title": "意大利",
               "value": "IT"
+            }
+          ]
+        },
+        {
+          "name": "genre",
+          "title": "题材",
+          "type": "enumeration",
+          "value": "",
+          "enumOptions": [
+            {
+              "title": "全部",
+              "value": ""
+            },
+            {
+              "title": "剧情",
+              "value": "18"
+            },
+            {
+              "title": "喜剧",
+              "value": "35"
+            },
+            {
+              "title": "悬疑",
+              "value": "9648"
+            },
+            {
+              "title": "犯罪",
+              "value": "80"
+            },
+            {
+              "title": "家庭",
+              "value": "10751"
             }
           ]
         },
@@ -802,7 +990,7 @@ var RexHomeCatalog = {
     "defaultCategory": "movies",
     "categories": {
       "movies": {
-        "title": "电影综合",
+        "title": "长片",
         "media": "movie",
         "exclude": [
           16,
@@ -826,7 +1014,7 @@ var RexHomeCatalog = {
     "defaultCategory": "series",
     "categories": {
       "series": {
-        "title": "电视剧综合",
+        "title": "真人剧集",
         "media": "tv",
         "exclude": [
           16,
@@ -879,6 +1067,9 @@ var RexHomeCatalog = {
         "media": "tv",
         "genres": [
           16
+        ],
+        "exclude": [
+          99
         ]
       },
       "animeMovies": {
@@ -886,6 +1077,9 @@ var RexHomeCatalog = {
         "media": "movie",
         "genres": [
           16
+        ],
+        "exclude": [
+          99
         ]
       }
     }
@@ -893,7 +1087,7 @@ var RexHomeCatalog = {
 };
 
 var RexHomeCountries = [
-  ['国产（中国）','CN'],['美国','US'],['英国','GB'],['日本','JP'],['韩国','KR'],
+  ['国产（中国）','CN'],['中国香港','HK'],['中国台湾','TW'],['美国','US'],['英国','GB'],['日本','JP'],['韩国','KR'],
   ['泰国','TH'],['印度','IN'],['巴西','BR'],['阿根廷','AR'],['墨西哥','MX'],
   ['法国','FR'],['德国','DE'],['西班牙','ES'],['意大利','IT']
 ];
@@ -999,6 +1193,13 @@ async function rexHomeQuery(rule,params) {
   var q={language:'zh-CN',page:page,include_adult:false,'vote_average.gte':rating,'vote_count.gte':1};
   if (rule.genres) q.with_genres=rule.genres.join('|');
   if (rule.exclude) q.without_genres=rule.exclude.join(',');
+  var genre=String(params.genre || '');
+  if (genre) {
+    var allowed=rule.domestic || rule.foreign?[10764,10767]:
+      rule.media==='movie'?[18,35,28,10749,9648,878,53,27,14,80,10402,12,10751]:[18,35,10759,9648,10765,80,10751];
+    if (allowed.indexOf(Number(genre))<0) throw new Error('请选择当前内容类型支持的题材');
+    q.with_genres=rule.domestic || rule.foreign?genre:(rule.genres?rule.genres.join(',')+',':'')+genre;
+  }
   var region=String(params.region || '');
   if (rule.domestic) q.with_origin_country='CN';
   else if (rule.foreign) {
@@ -1058,6 +1259,7 @@ async function rexHomeLoad(rule,params) {
   var seen=new Set();
   var raw=response.results.filter(function(item){
     if (!rexHomeAccept(rule,item) || seen.has(String(item.id))) return false;
+    if (params.genre && rexHomeIds(item).indexOf(Number(params.genre))<0) return false;
     if ((!item.poster_path && !item.backdrop_path) || (!item.title && !item.name)) return false;
     seen.add(String(item.id)); return true;
   });
@@ -1093,7 +1295,8 @@ async function rexHomeLoad(rule,params) {
     if (updated && last.season_number!=null && last.episode_number!=null) dateText+=' · S'+last.season_number+'E'+last.episode_number;
     var canonicalId=rule.media+'.'+Number(item.id);
     sortDates[canonicalId]=updated || premiere;
-    return {id:canonicalId,type:'tmdb',mediaType:rule.media,
+    // Rex uses a numeric TMDB ID plus mediaType for native resource matching.
+    return {id:Number(item.id),type:'tmdb',mediaType:rule.media,
       title:title,posterPath:poster,backdropPath:backdrop,releaseDate:displayDate,
       rating:item.vote_average || 0,genreTitle:dateText,
       description:dateText+'\n'+(rule.media==='tv'?'剧集首播：'+(premiere || '未公布')+'\n':'')+(item.overview || (detail && detail.overview) || '')};
@@ -1105,7 +1308,7 @@ async function rexHomeLoad(rule,params) {
     if (posterSeen.has(key)) return false;
     posterSeen.add(key);return true;
   });
-  if (query.sort==='updated') items.sort(function(a,b){return (sortDates[b.id] || '').localeCompare(sortDates[a.id] || '');});
+  if (query.sort==='updated') items.sort(function(a,b){return (sortDates[b.mediaType+'.'+b.id] || '').localeCompare(sortDates[a.mediaType+'.'+a.id] || '');});
   return items;
 }
 
@@ -1122,7 +1325,7 @@ function rexHomeSelect(parentId, params) {
   var clean={};
   // Accept only supported common filters. Hidden media/genre values imported
   // from another module cannot enter any query.
-  ['region','year','rating','range','sort','tags','dateMode','loadMode','page'].forEach(function(key){
+  ['genre','region','year','rating','range','sort','tags','dateMode','loadMode','page'].forEach(function(key){
     if (params[key] != null) clean[key]=params[key];
   });
   if (rule.media==='movie') {
