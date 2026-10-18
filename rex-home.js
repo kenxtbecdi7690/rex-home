@@ -1,9 +1,9 @@
 WidgetMetadata = {
   "id": "rex.home.unified",
   "title": "Rex首页",
-  "version": "2026.10.18.13",
+  "version": "2026.10.18.14",
   "requiredVersion": "0.0.1",
-  "description": "四大分类七个分支，TMDB精选与豆瓣热门电影独立展示；保留各来源原始ID与评分。",
+  "description": "四大分类、TMDB精选与Netflix周榜；不含豆瓣入口。",
   "site": "https://developer.themoviedb.org/",
   "modules": [
     {
@@ -1497,22 +1497,34 @@ WidgetMetadata = {
       ]
     },
     {
-      "id": "doubanTop250",
-      "title": "豆瓣热门电影",
-      "functionName": "loadDoubanTop250",
+      "id": "netflixWeekly",
+      "title": "Netflix周榜",
+      "functionName": "loadNetflixWeekly",
       "requiresWebView": false,
       "cacheDuration": 3600,
-      "description": "豆瓣热门电影，保留原始豆瓣ID与评分，过滤纪录片，支持分页。",
+      "description": "Netflix官方四类全球周榜，每类最多10部。严格匹配TMDB同名同年条目；未唯一匹配的跳过，显示实际榜单周截止日期。",
       "params": [
         {
           "name": "feed",
-          "title": "豆瓣片单",
+          "title": "榜单",
           "type": "enumeration",
-          "value": "movies",
+          "value": "englishMovies",
           "enumOptions": [
             {
-              "title": "热门电影",
-              "value": "movies"
+              "title": "英语电影",
+              "value": "englishMovies"
+            },
+            {
+              "title": "非英语电影",
+              "value": "otherMovies"
+            },
+            {
+              "title": "英语剧集",
+              "value": "englishSeries"
+            },
+            {
+              "title": "非英语剧集",
+              "value": "otherSeries"
             }
           ]
         },
@@ -2067,76 +2079,78 @@ async function loadSeriesHome(params){return rexHomeMain('seriesHome',params);}
 async function loadVarietyHome(params){return rexHomeMain('varietyHome',params);}
 async function loadAnimeHome(params){return rexHomeMain('animeHome',params);}
 
-// Independent movie ranking, not a fifth content category.
-var RexHomeDoubanPicks = {
-  "top250": {
-    "title": "电影 Top 250",
-    "collection": "movie_top250",
-    "media": "movie",
-    "limit": 250
-  },
-  "movies": {
-    "title": "热门电影",
-    "collection": "movie_hot_gaia",
-    "media": "movie"
-  },
-  "series": {
-    "title": "热播剧集",
-    "collection": "tv_hot",
-    "media": "tv"
-  },
-  "variety": {
-    "title": "热门综艺",
-    "collection": "show_hot",
-    "media": "tv"
-  },
-  "anime": {
-    "title": "热门动漫",
-    "collection": "tv_animation",
-    "media": "tv"
-  }
+var RexHomeNetflixFeeds={
+ englishMovies:{path:'',category:'ENGLISH_MOVIES',title:'英语电影',media:'movie'},
+ otherMovies:{path:'films-non-english',category:'NONENGLISH_MOVIES',title:'非英语电影',media:'movie'},
+ englishSeries:{path:'tv',category:'ENGLISH_SERIES',title:'英语剧集',media:'tv'},
+ otherSeries:{path:'tv-non-english',category:'NONENGLISH_SERIES',title:'非英语剧集',media:'tv'}
 };
-async function loadDoubanTop250(params) {
-  params=params || {};
-  var feed=String(params.feed || 'movies');
-  if (!Object.prototype.hasOwnProperty.call(RexHomeDoubanPicks,feed)) throw new Error('请选择有效的豆瓣片单');
-  var source=RexHomeDoubanPicks[feed];
-  var page=Number(params.page == null || params.page === ''?1:params.page);
-  if (!Number.isInteger(page) || page<1 || page>500) throw new Error('页码必须为正整数');
-  var start=(page-1)*30;
-  if (source.limit && start>=source.limit) return [];
-  var count=source.limit?Math.min(30,source.limit-start):30;
-  return rexHomeCached('douban.picks.v1.'+source.collection+'.'+page,3600000,async function(){
-    if (!Widget.http || !Widget.http.get) throw new Error('当前Rex环境未提供榜单请求接口');
-    var response=await Widget.http.get('https://m.douban.com/rexxar/api/v2/subject_collection/'+source.collection+'/items?start='+start+'&count='+count,{
-      headers:{Referer:'https://m.douban.com/subject_collection/'+source.collection+'/','User-Agent':'Mozilla/5.0'},
-    });
-    var data=response && response.data;
-    if (typeof data==='string') {try {data=JSON.parse(data);} catch (_) {throw new Error('豆瓣榜单返回了非JSON页面，请稍后重试');}}
-    if (!data || !Array.isArray(data.subject_collection_items)) throw new Error('豆瓣榜单暂不可用，未替换成其他来源');
-    var ids=new Set(),posters=new Set();
-    return data.subject_collection_items.filter(function(item){return item && typeof item==='object' && !Array.isArray(item);}).sort(function(a,b){return source.limit?Number(a.rank)-Number(b.rank):0;}).map(function(item){
-      var rank=Number(item.rank),id=String(item.id || '');
-      var poster=rexHomeImage(item.pic && item.pic.normal,true) || rexHomeImage(item.cover_url,true) ||
-        rexHomeImage(item.pic && item.pic.large,true) || rexHomeImage(item.cover && item.cover.url,true);
-      var type=item.subtype || item.type;
-      var tags=(Array.isArray(item.tags)?item.tags:[]).map(function(t){return t && t.name || '';}).join(' ');
-      var subtitle=String(item.card_subtitle || '');
-      var title=typeof item.title==='string'?item.title.trim():'';
-      if (type!==source.media || !rexHomeValidId(item.id) || !title || !poster ||
-          !/^https:\/\//.test(poster) || (source.limit && (!Number.isInteger(rank) || rank<1 || rank>source.limit || rank<=start || rank>start+count)) || item.is_released===false ||
-          /纪录片|纪录电影|纪录短片/.test(subtitle+' '+tags)) return null;
-      if (ids.has(id) || posters.has(poster)) return null;
-      ids.add(id);posters.add(poster);
-      var rating=item.rating && item.rating.value!=null?Number(item.rating.value):NaN;
-      if (rating<0 || rating>10 || (item.rating && item.rating.count!=null && Number(item.rating.count)===0)) rating=NaN;
-      var label=(source.limit?'豆瓣Top250第'+rank+'名':'豆瓣 · '+source.title)+(Number.isFinite(rating)?' · 豆瓣 '+rating.toFixed(1):'');
-      var out={id:id,type:'douban',mediaType:source.media,title:title,posterPath:poster,
-        genreTitle:label,description:label+'\n'+subtitle+'\n'+(item.description || '')};
-      if (Number.isFinite(rating)) out.rating=rating;
-      return {rank:source.limit?rank:0,item:out};
-    }).filter(Boolean).sort(function(a,b){return a.rank-b.rank;}).map(function(x){return x.item;});
-  });
+function rexHomeNetflixParse(html,category){
+ // Decode the JSON string literal as data; never execute page scripts.
+ var match=String(html).match(/netflix\.reactContext\.models\.graphql\s*=\s*JSON\.parse\('((?:\\.|[^'\\])*)'\)/);
+ if(!match)throw new Error('Netflix榜单结构已变化，暂未加载');
+ var decoded=match[1].replace(/\\(x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|.)/g,function(_,c){
+  if(c[0]==='x'||c[0]==='u')return String.fromCharCode(parseInt(c.slice(1),16));
+  var escapes={n:'\n',r:'\r',t:'\t',b:'\b',f:'\f',v:'\v','0':'\0'};
+  return Object.prototype.hasOwnProperty.call(escapes,c)?escapes[c]:c;
+ });
+ var data;try{data=JSON.parse(decoded).data;}catch(_){throw new Error('Netflix榜单数据格式异常');}
+ if(!data||typeof data!=='object')throw new Error('Netflix榜单为空');
+ var rows=Object.keys(data).map(function(k){return data[k];}).filter(function(x){
+  return x&&x.__typename==='PulseTop10ItemEntity'&&x.top10&&x.top10.category===category&&x.top10Video;
+ });
+ var week=rows.map(function(x){return x.top10.weekEndDate;}).filter(function(x){return /^\d{4}-\d{2}-\d{2}$/.test(x);}).sort().pop();
+ var seen=new Set();
+ return rows.filter(function(x){
+  var t=x.top10,id=t.videoId,rank=Number(t.weeklyRank);
+  if(t.weekEndDate!==week||!rexHomeValidId(id)||!Number.isInteger(rank)||rank<1||rank>10||seen.has(id))return false;
+  seen.add(id);return true;
+ }).sort(function(a,b){return a.top10.weeklyRank-b.top10.weeklyRank;});
+}
+function rexHomeNetflixTitle(value){return String(value||'').trim().toLowerCase().replace(/\s+/g,' ');}
+async function rexHomeNetflixMatch(row,source){
+ var video=row.top10Video,parent=video.parentShow;
+ var title=source.media==='tv'&&parent&&parent.title?parent.title:video.title;
+ var year=Number(source.media==='tv'&&parent&&parent.releaseYear?parent.releaseYear:video.releaseYear);
+ if(!title||!Number.isInteger(year)||year<1888)return null;
+ var result=await rexHomeApi('/search/'+source.media,{query:title,language:'zh-CN',include_adult:false,page:1},86400000);
+ // Incomplete first-page searches cannot establish uniqueness.
+ if(Number(result.total_pages)>1)return null;
+ var expected=rexHomeNetflixTitle(title);
+ var candidates=(result.results||[]).filter(function(x){
+  var date=source.media==='movie'?x.release_date:x.first_air_date;
+  var names=source.media==='movie'?[x.title,x.original_title]:[x.name,x.original_name];
+  return rexHomeValidId(x.id)&&String(date||'').slice(0,4)===String(year)&&
+   names.some(function(n){return rexHomeNetflixTitle(n)===expected;})&&
+   Array.isArray(x.genre_ids)&&x.genre_ids.indexOf(99)<0&&rexHomeImage(x.poster_path);
+ });
+ var unique=new Map();candidates.forEach(function(x){unique.set(String(x.id),x);});
+ if(unique.size!==1)return null;
+ var x=Array.from(unique.values())[0],rank=row.top10.weeklyRank,week=row.top10.weekEndDate;
+ var label='Netflix · '+source.title+' · 第'+rank+'名 · 周截止 '+week;
+ var out={id:Number(x.id),type:'tmdb',mediaType:source.media,title:rexHomeTitle(x,source.media),
+  posterPath:rexHomeImage(x.poster_path),backdropPath:rexHomeImage(x.backdrop_path)||undefined,
+  releaseDate:source.media==='movie'?x.release_date:x.first_air_date,
+  genreTitle:label,description:label+'\n'+(x.overview||video.shortSynopsis||'')};
+ if(Number(x.vote_count)>0&&Number.isFinite(Number(x.vote_average)))out.rating=Number(x.vote_average);
+ return out;
+}
+async function loadNetflixWeekly(params){
+ params=params||{};var feed=String(params.feed||'englishMovies');
+ if(!Object.prototype.hasOwnProperty.call(RexHomeNetflixFeeds,feed))throw new Error('请选择有效的Netflix榜单');
+ var page=Number(params.page==null||params.page===''?1:params.page);
+ if(!Number.isInteger(page)||page<1)throw new Error('页码必须为正整数');
+ if(page>1)return [];
+ var source=RexHomeNetflixFeeds[feed];
+ return rexHomeCached('netflix.weekly.v1.'+feed,3600000,async function(){
+  var response=await Widget.http.get('https://www.netflix.com/tudum/top10/'+source.path,{headers:{'User-Agent':'Mozilla/5.0'}});
+  var rows=rexHomeNetflixParse(response&&response.data,source.category);
+  if(!rows.length)throw new Error('Netflix暂未返回该周榜单');
+  var items=await rexHomeMapLimited(rows,function(row){return rexHomeNetflixMatch(row,source);});
+  var seen=new Set();items=items.filter(function(x){if(!x||seen.has(x.id))return false;seen.add(x.id);return true;});
+  if(!items.length)throw new Error('本周影片未找到唯一的同名同年匹配，未替换成其他影片');
+  return items;
+ });
 }
 
 var RexHomeTmdbPicks = {
