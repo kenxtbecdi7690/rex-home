@@ -16,6 +16,62 @@ Rex 的影视首页模块，共 **11 个模块：7 大影片分类 + 豆瓣榜�
 
 `RexHome-v96.rex` 是旧版布局，仅留作备份。
 
+## 代理规则（大陆使用）
+
+在大陆使用时，以下网址需要走代理，否则会出现模块装不上、整行空白或没有海报：
+
+| 网址 | 用途 | 大陆 |
+|---|---|---|
+| `raw.githubusercontent.com` | 模块脚本、订阅、首页布局；猫眼与剧场片单数据 | 代理 |
+| `api.themoviedb.org` | TMDB 片库，所有分类都靠它 | 代理 |
+| `image.tmdb.org` | 海报与横图 | 代理 |
+| `module-host.xtbecdi7690.workers.dev` | 平台与片单的标志图 | 代理 |
+| `douban-bridge.baran.wang` | 豆瓣完整模式（填了豆瓣密钥才会用到） | 代理 |
+| `m.douban.com`、`doubanio.com` | 豆瓣榜单与豆瓣海报 | 直连 |
+
+规则集文件：[`proxy/rex-home.list`](proxy/rex-home.list)，可在 Shadowrocket、Surge、Loon、Stash 里添加为远程规则集，策略选「代理」。
+
+也可以直接把下面几行加到配置里：
+
+**Shadowrocket／Surge／Loon**
+```
+DOMAIN-SUFFIX,githubusercontent.com,PROXY
+DOMAIN-SUFFIX,github.com,PROXY
+DOMAIN-SUFFIX,themoviedb.org,PROXY
+DOMAIN-SUFFIX,tmdb.org,PROXY
+DOMAIN,module-host.xtbecdi7690.workers.dev,PROXY
+DOMAIN,douban-bridge.baran.wang,PROXY
+DOMAIN-SUFFIX,douban.com,DIRECT
+DOMAIN-SUFFIX,doubanio.com,DIRECT
+```
+
+**Clash／Mihomo**
+```yaml
+rules:
+  - DOMAIN-SUFFIX,githubusercontent.com,PROXY
+  - DOMAIN-SUFFIX,github.com,PROXY
+  - DOMAIN-SUFFIX,themoviedb.org,PROXY
+  - DOMAIN-SUFFIX,tmdb.org,PROXY
+  - DOMAIN,module-host.xtbecdi7690.workers.dev,PROXY
+  - DOMAIN,douban-bridge.baran.wang,PROXY
+  - DOMAIN-SUFFIX,douban.com,DIRECT
+  - DOMAIN-SUFFIX,doubanio.com,DIRECT
+```
+
+**Quantumult X**
+```
+host-suffix, githubusercontent.com, proxy
+host-suffix, github.com, proxy
+host-suffix, themoviedb.org, proxy
+host-suffix, tmdb.org, proxy
+host, module-host.xtbecdi7690.workers.dev, proxy
+host, douban-bridge.baran.wang, proxy
+host-suffix, douban.com, direct
+host-suffix, doubanio.com, direct
+```
+
+`PROXY` 改成你配置里代理策略组的名字（例如「节点选择」）。这几行要放在 `GEOIP,CN,DIRECT` 和 `FINAL`／`MATCH` 之前。
+
 ## 分类总览
 
 **7 大影片分类**
@@ -61,11 +117,12 @@ Rex 的影视首页模块，共 **11 个模块：7 大影片分类 + 豆瓣榜�
 | v136 | 保留 10 个模块；各分类默认全部年份、最新在前，每页 200 部可翻页；年份选单从新到旧 |
 | v134 | 首页精简为 6 行；豆瓣榜单新增奥斯卡、IMDb 电影／剧集 Top 250、意外结局电影 |
 
-## 代理规则
+## 维护规则
 
 给接手维护的人与 AI 代理（Claude 等）。改动前先读完这一节。
 
 **分支与文件**
+- 脚本新增或更换网址时，同步更新上面的「代理规则」和 `proxy/rex-home.list`。
 - 明文只放草稿分支 `rex-home-v130`，每版一个目录：`vN-draft/rex-home-vN.js`（明文脚本）与 `vN-draft/RexHome-vN.rex`（首页布局，内含明文脚本，仅供测试）。两个文件都要有。
 - `main` 只放发布文件：加密的 `rex-home.js`、`iphone.rex`、`RexHome.rex`，以及本说明与工作流。**不要把明文提交到 `main`。**
 - `main` 上的这三个发布文件只由工作流更新，不要手动修改，也不要自己调用加密服务。

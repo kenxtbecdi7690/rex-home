@@ -1,6 +1,6 @@
 # 给 AI 代理
 
-维护这个仓库前，先读 `README.md` 的「代理规则」一节并照做。要点：
+维护这个仓库前，先读 `README.md` 的「维护规则」一节并照做。（README 里的「代理规则」是给大陆用户的网络代理设置，网址有变时要同步更新它和 `proxy/rex-home.list`。）要点：
 
 - 明文只放草稿分支 `rex-home-v130` 的 `vN-draft/`；`main` 只放加密的发布文件，不要提交明文。
 - `main` 上的 `rex-home.js`、`iphone.rex`、`RexHome.rex` 只由「加密并发布 Rex 首页」工作流更新，不要手动改，也不要自己调用加密服务。
