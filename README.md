@@ -10,7 +10,6 @@ Rex 影视首页：**7 大分类＋豆瓣榜单**，共 11 个模块。最新的
 
 | 文件 | 用途 |
 |---|---|
-| [`iphone.rex`](https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/iphone.rex) | 模块订阅，发布新版后 Rex 会提示更新 |
 | [`rex-home.js`](rex-home.js) | 加密后的模块脚本（`REXENC` 格式） |
 | [`RexHome.rex`](RexHome.rex) | 首页布局包，导入后直接得到上图的首页；不含明文，读取上面的加密脚本 |
 
