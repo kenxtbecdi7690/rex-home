@@ -1,0 +1,113 @@
+# 从草稿分支取明文脚本 → 调用 Rex 加密服务 → 校验 → 更新 main 的 rex-home.js 与 iphone.rex
+name: 加密并发布 Rex 首页
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '要发布的草稿版本号（如 134），留空则取草稿分支上最新的一版'
+        required: false
+        default: ''
+      message:
+        description: '更新说明（提交信息里 "vN: " 后面的部分），留空则沿用草稿提交说明'
+        required: false
+        default: ''
+  # 草稿分支推送时自动触发；需要草稿分支上也有这份工作流文件才会生效
+  push:
+    branches: [rex-home-v130]
+    paths: ['v*-draft/rex-home-v*.js']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: encrypt-release
+  cancel-in-progress: false
+
+env:
+  DRAFT_BRANCH: rex-home-v130
+  ENCRYPT_URL: https://api.rexnow.tv/api/widgets/encrypt
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 选出草稿版本
+        id: draft
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_MESSAGE: ${{ inputs.message }}
+        run: |
+          git fetch origin "$DRAFT_BRANCH"
+          ref="origin/$DRAFT_BRANCH"
+          if [ -n "$INPUT_VERSION" ]; then
+            n="$INPUT_VERSION"
+          else
+            n=$(git ls-tree -r --name-only "$ref" \
+              | sed -n 's#^v\([0-9]\+\)-draft/rex-home-v\1\.js$#\1#p' | sort -n | tail -1)
+          fi
+          path="v${n}-draft/rex-home-v${n}.js"
+          git cat-file -e "$ref:$path" || { echo "::error::草稿分支上没有 $path"; exit 1; }
+          git show "$ref:$path" > /tmp/plain.js
+
+          first=$(head -1 /tmp/plain.js)
+          case "$first" in
+            "// Rex首页 v${n} "*) ;;
+            *) echo "::error::第一行与版本 v${n} 不符：$first"; exit 1 ;;
+          esac
+          node --check /tmp/plain.js
+
+          msg="$INPUT_MESSAGE"
+          if [ -z "$msg" ]; then
+            msg=$(git log -1 --format=%s "$ref" -- "$path" | sed 's/^.*草稿[：:]\s*//')
+          fi
+          echo "n=$n" >> "$GITHUB_OUTPUT"
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+          echo "msg=$msg" >> "$GITHUB_OUTPUT"
+          echo "草稿：$path（$(wc -c < /tmp/plain.js) 字节）"
+
+      - name: 调用加密服务
+        run: |
+          code=$(curl -sS -m 160 -X POST \
+            -H "Content-Type: text/plain; charset=utf-8" \
+            --data-binary @/tmp/plain.js "$ENCRYPT_URL" \
+            -o /tmp/rex-home.enc.js -w "%{http_code}")
+          echo "HTTP $code"
+          [ "$code" = "200" ] || { echo "::error::加密服务返回 HTTP $code"; exit 1; }
+
+      - name: 校验加密结果
+        run: node .github/scripts/validate-envelope.js /tmp/rex-home.enc.js
+
+      - name: 更新并推送 main
+        env:
+          N: ${{ steps.draft.outputs.n }}
+          MSG: ${{ steps.draft.outputs.msg }}
+        run: |
+          cp /tmp/rex-home.enc.js rex-home.js
+          version="$(TZ=Asia/Shanghai date +%Y.%m.%d).${N}"
+          node -e '
+            const fs = require("fs");
+            const s = fs.readFileSync("iphone.rex", "utf8");
+            const out = s.replace(/("version"\s*:\s*")[^"]*(")/, `$1${process.argv[1]}$2`);
+            if (out === s) { console.error("::error::iphone.rex 里没找到 version"); process.exit(1); }
+            fs.writeFileSync("iphone.rex", out);
+          ' "$version"
+
+          if git diff --quiet; then
+            echo "内容没有变化，跳过提交"; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add rex-home.js iphone.rex
+          git commit -m "v${N}: ${MSG}（加密模块）"
+          git push origin HEAD:main
+          echo "已发布 v${N}，版本 ${version}，commit $(git rev-parse --short HEAD)"
