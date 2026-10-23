@@ -1,5 +1,5 @@
 # Rex首页 代理规则集（Shadowrocket / Surge / Loon / Stash）
-# 添加为远程规则集，策略选「代理」。豆瓣（douban.com、doubanio.com）在大陆直连即可，不在此列。
+# 添加为远程规则集，策略选「代理」。豆瓣（douban.com、doubanio.com）直连即可，不在此列。
 # 说明见仓库里的「代理规则.md」。
 
 # 模块脚本、订阅、首页布局，以及猫眼／剧场片单数据
