@@ -4,12 +4,12 @@
 
 ## 分支与文件
 - 明文只放草稿分支 `rex-home-v130`，每版一个目录：`vN-draft/rex-home-vN.js`（明文脚本）与 `vN-draft/RexHome-vN.rex`（首页布局，内含明文脚本，仅供测试）。两个文件都要有。
-- `main` 只放发布文件：加密的 `rex-home.js`、`iphone.rex`、`RexHome.rex`，以及说明文件与工作流。**不要把明文提交到 `main`。**
-- `main` 上的这三个发布文件只由「加密并发布 Rex 首页」工作流更新，不要手动修改，也不要自己调用加密服务。
+- `main` 只放发布文件：加密的 `rex-home.js`、`RexHome.rex`，以及说明文件与工作流。**不要把明文提交到 `main`。**
+- `main` 上的这两个发布文件（以及记录已发布版本的 `.github/release-version`）只由「加密并发布 Rex 首页」工作流更新，不要手动修改，也不要自己调用加密服务。
 
 ## 新版本
 - 从上一版复制，版本号 N 加 1，以下几处一起改：第一行 `// Rex首页 vN · 作者：Bolinxxlin`；`WidgetMetadata` 的 `version`（`YYYY.MM.DD.N`，北京时间日期）；`RexHomeVer='vN'`。
-- 模块编号固定为 `rex.home.unified`（`WidgetMetadata.id`、`iphone.rex` 与布局里的 `widgetId`／`widgetBundleId` 都是它），**不要改**；改了 Rex 会当成新模块，用户就得重新导入首页。
+- 模块编号固定为 `rex.home.unified`（`WidgetMetadata.id` 与布局里的 `widgetId`／`widgetBundleId` 都是它），**不要改**；改了 Rex 会当成新模块，用户就得重新导入首页。
 - 草稿提交信息写成 `新增 Rex 首页 vN 草稿：要点`，冒号后的要点会成为发布提交信息。
 - 标题与选项用简体中文。
 
@@ -30,4 +30,4 @@
 
 ## 发布
 1. 把草稿推到 `rex-home-v130`。
-2. 在 GitHub 的 Actions 运行「加密并发布 Rex 首页」，两格留空即取最新草稿。工作流会加密、校验、更新 `rex-home.js`、`iphone.rex`、`RexHome.rex` 并提交到 `main`；同一版重复运行只会跳过，不会报错。
+2. 在 GitHub 的 Actions 运行「加密并发布 Rex 首页」，两格留空即取最新草稿。工作流会加密、校验、更新 `rex-home.js`、`RexHome.rex` 并提交到 `main`；同一版重复运行只会跳过，不会报错。
