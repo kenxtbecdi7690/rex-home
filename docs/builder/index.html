@@ -1,0 +1,342 @@
+<!doctype html><html lang="zh-Hans"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Rex首页编辑器</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* 布局：单栏行列表，像在手机上排首页；底部固定一条导出栏 */
+:root{
+  --bg:#f6f4f8; --panel:#ffffff; --ink:#1f1a26; --muted:#6c6475; --line:#e3dde9;
+  --accent:#7b3fe4; --accent-ink:#ffffff; --gold:#c98a12; --off:#b9b1c2; --danger:#c2334b;
+  --font:-apple-system,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141019; --panel:#1f1928; --ink:#f1ecf6; --muted:#a69db1; --line:#342b40;
+  --accent:#a77bff; --accent-ink:#140d22; --gold:#e8b04b; --off:#5d5468; --danger:#ff6b81; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141019; --panel:#1f1928; --ink:#f1ecf6; --muted:#a69db1; --line:#342b40;
+  --accent:#a77bff; --accent-ink:#140d22; --gold:#e8b04b; --off:#5d5468; --danger:#ff6b81; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 140px}
+h1{font-size:24px;margin:0;letter-spacing:.02em;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;margin:4px 0 0}
+.badge{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--gold);border:1px solid var(--gold);border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:3px}
+.field{display:grid;gap:4px}
+.field label{font-size:12px;color:var(--muted);letter-spacing:.04em}
+input[type=text],select{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;min-width:0}
+input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.home{display:grid;gap:12px;margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.summary{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.chip{font-size:12px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted)}
+.chip b{color:var(--ink);font-variant-numeric:tabular-nums}
+.rows{display:grid;gap:8px;margin-top:14px;padding:0;list-style:none}
+.row{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.row.off .rt,.row.off .rs{color:var(--off)}
+.rhead{display:flex;align-items:center;gap:10px;padding:10px 10px 10px 12px}
+.num{font-family:var(--mono);font-size:12px;color:var(--muted);width:20px;text-align:right;font-variant-numeric:tabular-nums}
+.rtext{flex:1;min-width:0}
+.rt{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rs{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:9px;min-width:36px;height:34px;padding:0 9px;cursor:pointer}
+.btn:disabled{opacity:.35;cursor:default}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--danger)}
+.sw{position:relative;width:44px;height:26px;flex:none}
+.sw input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.sw span{position:absolute;inset:0;border-radius:999px;background:var(--off);transition:background .15s}
+.sw span::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--panel);transition:transform .15s}
+.sw input:checked+span{background:var(--accent)}
+.sw input:checked+span::after{transform:translateX(18px)}
+.sw input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.tools{display:flex;gap:6px;flex:none}
+.body{border-top:1px solid var(--line);padding:12px;display:grid;gap:10px;grid-template-columns:1fr 1fr}
+.body .full{grid-column:1/-1}
+.desc{font-size:12px;color:var(--muted)}
+.add{display:flex;gap:8px;margin-top:12px}
+.open{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.openbtn{display:inline-flex;align-items:center;height:38px;font-weight:600}
+.vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.note{font-size:13px;border-radius:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--line)}
+.note b{color:var(--gold)}
+.note ul{margin:4px 0 0;padding-left:18px}
+.tag{font-size:11px;color:var(--gold);border:1px solid var(--gold);border-radius:6px;padding:0 5px;margin-left:6px;vertical-align:1px}
+.add select{flex:1}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar-in{max-width:640px;margin:0 auto;display:grid;gap:6px}
+.bar-actions{display:flex;gap:8px}
+.bar-actions .primary{flex:1;height:44px;font-size:16px}
+.bar-actions .ghost{height:44px}
+.msg{font-size:12px;color:var(--muted);min-height:18px}
+.msg.err{color:var(--danger)}
+.how{margin-top:18px;font-size:13px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:var(--r);padding:12px 14px}
+.how ol{margin:6px 0 0;padding-left:20px}
+.how code{font-family:var(--mono);font-size:12px;color:var(--ink)}
+@media (max-width:420px){.body{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.sw span,.sw span::after{transition:none}}
+</style>
+
+<div class="wrap">
+  <h1>Rex首页编辑器<span class="badge" id="ver"></span></h1>
+  <p class="sub">打开自己或别人的首页文件，或从默认首页开始，勾选行、调整顺序和设置，再导出分享。导出的首页读取 GitHub 上的加密脚本，不含明文。</p>
+
+  <div class="home">
+    <div class="field"><label for="homeTitle">首页名称</label><input type="text" id="homeTitle" maxlength="30"></div>
+    <div class="open">
+      <label class="btn openbtn" for="fileIn">打开 .rex 文件</label>
+      <input type="file" id="fileIn" class="vh">
+      <span class="desc">Mac 导出或别人分享的首页都可以打开，照着改成自己的。</span>
+    </div>
+    <div class="note" id="importNote" hidden></div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+  <ol class="rows" id="rows"></ol>
+
+  <div class="add">
+    <select id="addSel" aria-label="要添加的行"></select>
+    <button class="btn" id="addBtn" type="button">＋ 添加一行</button>
+  </div>
+
+  <div class="how">
+    <b>导入方法（iPhone）</b>
+    <ol>
+      <li>点下方「导出首页」，得到 <code>RexHome.rex</code>。</li>
+      <li>在下载或「文件」App 里点开 <code>RexHome.rex</code>，选择用 Rex 打开导入。</li>
+      <li class="cl" hidden>在 claude.ai 打开时只能存成 <code>RexHome.zip</code>：先在「文件」长按改名为 <code>RexHome.rex</code>，Rex 不支持直接导入 .zip。</li>
+    </ol>
+    同一个模块可以加好几行，例如地区剧一行韩国、一行日本。<br>
+    分享自己的首页：Mac 版 Rex 可以直接导出；iPhone 用这个页面做好再导出。别人的文件也可以先在这里打开检查一次再转发。
+  </div>
+</div>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="bar-actions">
+      <button class="btn ghost" id="resetBtn" type="button">恢复默认</button>
+      <button class="btn primary" id="saveBtn" type="button">导出首页</button>
+    </div>
+    <div class="msg" id="msg" role="status"></div>
+  </div>
+</div>
+
+<script id="data-modules" type="application/json">{"version":"2026.10.24.142","id":"rex.home.unified","modules":[{"id":"rowBanner","title":"🎞 精选轮播","fn":"rowBanner","desc":"近一年热门剧集与电影，国产优先，最多20张。","params":[{"n":"priority","t":"展示偏好","type":"enumeration","v":"domestic","o":[["domestic","国产优先，不足时全地区补充"],["off","全地区"]]},{"n":"catalog","t":"片单来源","type":"enumeration","v":"library","o":[["library","TMDB分类片库"],["auto","豆瓣标准模式"]]},{"n":"cat","t":"来源","type":"enumeration","v":"all","o":[["all","电影＋剧集"],["tv","剧集"],["movie","电影"]]},{"n":"sort","t":"排序","type":"enumeration","v":"U","o":[["T","原排序"],["U","近期热度"],["R","首映／首播时间"],["S","高分优先"]]},{"n":"size","t":"张数","type":"enumeration","v":"20","o":[["10","10"],["15","15"],["20","20"]]},{"n":"year","t":"年份","type":"enumeration","v":"recent","o":[["all","全部年份"],["recent","近一年（追新）"]]},{"n":"dedupe","t":"首页去重","type":"enumeration","v":"on","o":[["on","开启：其他行已出现的影片不再重复"],["off","关闭"]]}]},{"id":"rowSeries","title":"📺 剧集","fn":"rowSeries","desc":"大陆剧集，默认全部年份、最新在前；每页200部，可翻页。","params":[{"n":"priority","t":"展示偏好","type":"enumeration","v":"domestic","o":[["domestic","国产优先，来源读完后同类补充"],["off","来源原排序"]]},{"n":"catalog","t":"片单模式","type":"enumeration","v":"library","o":[["library","TMDB分类片库（无需豆瓣密钥）"],["auto","豆瓣标准模式"],["tmdb","豆瓣片单＋严格TMDB匹配"],["douban","原始条目（直连海报）"]]},{"n":"genre","t":"类型","type":"enumeration","v":"","o":[["","全部"],["喜剧","喜剧"],["爱情","爱情"],["悬疑","悬疑"],["动画","动画"],["武侠","武侠"],["古装","古装"],["家庭","家庭"],["犯罪","犯罪"],["科幻","科幻"],["恐怖","恐怖"],["历史","历史"],["战争","战争"],["动作","动作"],["冒险","冒险"],["传记","传记"],["剧情","剧情"],["奇幻","奇幻"],["惊悚","惊悚"],["灾难","灾难"],["歌舞","歌舞"],["音乐","音乐"],["都市","都市"],["青春","青春"],["谍战","谍战"],["刑侦","刑侦"],["宫斗","宫斗"],["职场","职场"]]},{"n":"region","t":"地区","type":"enumeration","v":"","o":[["","全部"],["华语","华语"],["大陆","大陆"],["香港","香港"],["台湾","台湾"],["欧美","欧美"],["国外","国外"],["日本","日本"],["韩国","韩国"],["美国","美国"],["英国","英国"],["泰国","泰国"],["印度","印度"],["法国","法国"],["德国","德国"],["加拿大","加拿大"],["澳大利亚","澳大利亚"]]},{"n":"sort","t":"排序","type":"enumeration","v":"R","o":[["T","原排序"],["U","近期热度"],["R","首映／首播时间"],["S","高分优先"]]},{"n":"year","t":"年份","type":"enumeration","v":"all","o":[["all","全部年份"],["recent","近一年（追新）"],["2026","2026"],["2025","2025"],["2024","2024"],["2023","2023"],["2022","2022"],["2021","2021"],["2020","2020"],["2019","2019"],["2018","2018"],["2017","2017"],["2016","2016"],["2015","2015"],["2014","2014"],["2013","2013"],["2012","2012"],["2011","2011"],["2010","2010"],["2009","2009"],["2008","2008"],["2007","2007"],["2020s","2020年代"],["2010s","2010年代"],["2000s","2000年代"],["1990s","90年代"],["1980s","80年代"],["1970s","70年代"],["1960s","60年代"],["older","更早（1959年以前）"]]},{"n":"dedupe","t":"首页去重","type":"enumeration","v":"on","o":[["on","开启：其他行已出现的影片不再重复"],["off","关闭"]]},{"n":"pageSize","t":"每页有效影片","type":"enumeration","v":"200","o":[["20","20"],["40","40"],["60","60"],["100","100"],["200","200"]]},{"n":"page","t":"页码","type":"page","v":"1"}]},{"id":"rowDramaRegion","title":"🌏 地区剧","fn":"rowDramaRegion","desc":"港台、韩、日、美、英、泰、新马、西班牙、土耳其、印度剧集；每页200部，可翻页。","params":[{"n":"region","t":"地区","type":"enumeration","v":"港台","o":[["港台","港台（香港、台湾、澳门）"],["韩国","韩国"],["日本","日本"],["美国","美国"],["英国","英国"],["泰国","泰国"],["新马","新加坡、马来西亚"],["西班牙","西班牙"],["土耳其","土耳其"],["印度","印度"]]},{"n":"genre","t":"类型","type":"enumeration","v":"","o":[["","全部"],["喜剧","喜剧"],["爱情","爱情"],["悬疑","悬疑"],["动画","动画"],["武侠","武侠"],["古装","古装"],["家庭","家庭"],["犯罪","犯罪"],["科幻","科幻"],["恐怖","恐怖"],["历史","历史"],["战争","战争"],["动作","动作"],["冒险","冒险"],["传记","传记"],["剧情","剧情"],["奇幻","奇幻"],["惊悚","惊悚"],["灾难","灾难"],["歌舞","歌舞"],["音乐","音乐"],["都市","都市"],["青春","青春"],["谍战","谍战"],["刑侦","刑侦"],["宫斗","宫斗"],["职场","职场"]]},{"n":"sort","t":"排序","type":"enumeration","v":"R","o":[["T","原排序"],["U","近期热度"],["R","首映／首播时间"],["S","高分优先"]]},{"n":"year","t":"年份","type":"enumeration","v":"all","o":[["all","全部年份"],["recent","近一年（追新）"],["2026","2026"],["2025","2025"],["2024","2024"],["2023","2023"],["2022","2022"],["2021","2021"],["2020","2020"],["2019","2019"],["2018","2018"],["2017","2017"],["2016","2016"],["2015","2015"],["2014","2014"],["2013","2013"],["2012","2012"],["2011","2011"],["2010","2010"],["2009","2009"],["2008","2008"],["2007","2007"],["2020s","2020年代"],["2010s","2010年代"],["2000s","2000年代"],["1990s","90年代"],["1980s","80年代"],["1970s","70年代"],["1960s","60年代"],["older","更早（1959年以前）"]]},{"n":"dedupe","t":"首页去重","type":"enumeration","v":"on","o":[["on","开启：其他行已出现的影片不再重复"],["off","关闭"]]},{"n":"pageSize","t":"每页有效影片","type":"enumeration","v":"200","o":[["20","20"],["40","40"],["60","60"],["100","100"],["200","200"]]},{"n":"page","t":"页码","type":"page","v":"1"}]},{"id":"rowMovie","title":"🎬 电影","fn":"rowMovie","desc":"电影，国产优先、最新在前；每页200部，可翻页。","params":[{"n":"priority","t":"展示偏好","type":"enumeration","v":"domestic","o":[["domestic","国产优先，来源读完后同类补充"],["off","来源原排序"]]},{"n":"catalog","t":"片单模式","type":"enumeration","v":"library","o":[["library","TMDB分类片库（无需豆瓣密钥）"],["auto","豆瓣标准模式"],["tmdb","豆瓣片单＋严格TMDB匹配"],["douban","原始条目（直连海报）"]]},{"n":"genre","t":"类型","type":"enumeration","v":"","o":[["","全部"],["喜剧","喜剧"],["爱情","爱情"],["动作","动作"],["科幻","科幻"],["动画","动画"],["悬疑","悬疑"],["犯罪","犯罪"],["惊悚","惊悚"],["冒险","冒险"],["音乐","音乐"],["历史","历史"],["奇幻","奇幻"],["恐怖","恐怖"],["战争","战争"],["传记","传记"],["歌舞","歌舞"],["武侠","武侠"],["灾难","灾难"],["西部","西部"],["纪录片","纪录片"],["短片","短片"]]},{"n":"region","t":"地区","type":"enumeration","v":"","o":[["","全部"],["华语","华语"],["大陆","大陆"],["香港","香港"],["台湾","台湾"],["欧美","欧美"],["国外","国外"],["日本","日本"],["韩国","韩国"],["美国","美国"],["英国","英国"],["泰国","泰国"],["印度","印度"],["法国","法国"],["德国","德国"],["加拿大","加拿大"],["澳大利亚","澳大利亚"]]},{"n":"sort","t":"排序","type":"enumeration","v":"R","o":[["T","原排序"],["U","近期热度"],["R","首映／首播时间"],["S","高分优先"]]},{"n":"year","t":"年份","type":"enumeration","v":"all","o":[["all","全部年份"],["recent","近一年（追新）"],["2026","2026"],["2025","2025"],["2024","2024"],["2023","2023"],["2022","2022"],["2021","2021"],["2020","2020"],["2019","2019"],["2018","2018"],["2017","2017"],["2016","2016"],["2015","2015"],["2014","2014"],["2013","2013"],["2012","2012"],["2011","2011"],["2010","2010"],["2009","2009"],["2008","2008"],["2007","2007"],["2020s","2020年代"],["2010s","2010年代"],["2000s","2000年代"],["1990s","90年代"],["1980s","80年代"],["1970s","70年代"],["1960s","60年代"],["older","更早（1959年以前）"]]},{"n":"dedupe","t":"首页去重","type":"enumeration","v":"on","o":[["on","开启：其他行已出现的影片不再重复"],["off","关闭"]]},{"n":"pageSize","t":"每页有效影片","type":"enumeration","v":"200","o":[["20","20"],["40","40"],["60","60"],["100","100"],["200","200"]]},{"n":"page","t":"页码","type":"page","v":"1"}]},{"id":"rowAnime","title":"🌸 动漫","fn":"rowAnime","desc":"动画剧集与剧场版，国产优先、最新在前；每页200部，可翻页。","params":[{"n":"priority","t":"展示偏好","type":"enumeration","v":"domestic","o":[["domestic","国产优先，来源读完后同类补充"],["off","来源原排序"]]},{"n":"media","t":"形式","type":"enumeration","v":"all","o":[["all","剧集＋电影（分批混合）"],["tv","剧集"],["movie","电影"]]},{"n":"catalog","t":"片单模式","type":"enumeration","v":"library","o":[["library","TMDB分类片库（无需豆瓣密钥）"],["auto","豆瓣标准模式"],["tmdb","豆瓣片单＋严格TMDB匹配"],["douban","原始条目（直连海报）"]]},{"n":"region","t":"地区","type":"enumeration","v":"","o":[["","全部"],["华语","华语"],["大陆","大陆"],["香港","香港"],["台湾","台湾"],["欧美","欧美"],["国外","国外"],["日本","日本"],["韩国","韩国"],["美国","美国"],["英国","英国"],["泰国","泰国"],["印度","印度"],["法国","法国"],["德国","德国"],["加拿大","加拿大"],["澳大利亚","澳大利亚"]]},{"n":"sort","t":"排序","type":"enumeration","v":"R","o":[["T","原排序"],["U","近期热度"],["R","首映／首播时间"],["S","高分优先"]]},{"n":"year","t":"年份","type":"enumeration","v":"all","o":[["all","全部年份"],["recent","近一年（追新）"],["2026","2026"],["2025","2025"],["2024","2024"],["2023","2023"],["2022","2022"],["2021","2021"],["2020","2020"],["2019","2019"],["2018","2018"],["2017","2017"],["2016","2016"],["2015","2015"],["2014","2014"],["2013","2013"],["2012","2012"],["2011","2011"],["2010","2010"],["2009","2009"],["2008","2008"],["2007","2007"],["2020s","2020年代"],["2010s","2010年代"],["2000s","2000年代"],["1990s","90年代"],["1980s","80年代"],["1970s","70年代"],["1960s","60年代"],["older","更早（1959年以前）"]]},{"n":"dedupe","t":"首页去重","type":"enumeration","v":"on","o":[["on","开启：其他行已出现的影片不再重复"],["off","关闭"]]},{"n":"pageSize","t":"每页有效影片","type":"enumeration","v":"200","o":[["20","20"],["40","40"],["60","60"],["100","100"],["200","200"]]},{"n":"page","t":"页码","type":"page","v":"1"}]},{"id":"rowVariety","title":"🎤 综艺","fn":"rowVariety","desc":"真人秀、脱口秀等综艺，国产优先、最新在前；每页200部，可翻页。","params":[{"n":"priority","t":"展示偏好","type":"enumeration","v":"domestic","o":[["domestic","国产优先，来源读完后同类补充"],["off","来源原排序"]]},{"n":"catalog","t":"片单模式","type":"enumeration","v":"library","o":[["library","TMDB分类片库（无需豆瓣密钥）"],["auto","豆瓣标准模式"],["tmdb","豆瓣片单＋严格TMDB匹配"],["douban","原始条目（直连海报）"]]},{"n":"genre","t":"类型","type":"enumeration","v":"","o":[["","全部"],["真人秀","真人秀"],["脱口秀","脱口秀"],["音乐","音乐"],["歌舞","歌舞"]]},{"n":"region","t":"地区","type":"enumeration","v":"","o":[["","全部"],["华语","华语"],["大陆","大陆"],["香港","香港"],["台湾","台湾"],["欧美","欧美"],["国外","国外"],["日本","日本"],["韩国","韩国"],["美国","美国"],["英国","英国"],["泰国","泰国"],["印度","印度"],["法国","法国"],["德国","德国"],["加拿大","加拿大"],["澳大利亚","澳大利亚"]]},{"n":"sort","t":"排序","type":"enumeration","v":"R","o":[["T","原排序"],["U","近期热度"],["R","首映／首播时间"],["S","高分优先"]]},{"n":"year","t":"年份","type":"enumeration","v":"all","o":[["all","全部年份"],["recent","近一年（追新）"],["2026","2026"],["2025","2025"],["2024","2024"],["2023","2023"],["2022","2022"],["2021","2021"],["2020","2020"],["2019","2019"],["2018","2018"],["2017","2017"],["2016","2016"],["2015","2015"],["2014","2014"],["2013","2013"],["2012","2012"],["2011","2011"],["2010","2010"],["2009","2009"],["2008","2008"],["2007","2007"],["2020s","2020年代"],["2010s","2010年代"],["2000s","2000年代"],["1990s","90年代"],["1980s","80年代"],["1970s","70年代"],["1960s","60年代"],["older","更早（1959年以前）"]]},{"n":"dedupe","t":"首页去重","type":"enumeration","v":"on","o":[["on","开启：其他行已出现的影片不再重复"],["off","关闭"]]},{"n":"pageSize","t":"每页有效影片","type":"enumeration","v":"200","o":[["20","20"],["40","40"],["60","60"],["100","100"],["200","200"]]},{"n":"page","t":"页码","type":"page","v":"1"}]},{"id":"rowDocumentary","title":"🌿 纪录片","fn":"rowDocumentary","desc":"纪录片剧集与电影，国产优先、最新在前；每页200部，可翻页。","params":[{"n":"priority","t":"展示偏好","type":"enumeration","v":"domestic","o":[["domestic","国产优先，来源读完后同类补充"],["off","来源原排序"]]},{"n":"media","t":"形式","type":"enumeration","v":"all","o":[["all","剧集＋电影（分批混合）"],["tv","剧集"],["movie","电影"]]},{"n":"catalog","t":"片单模式","type":"enumeration","v":"library","o":[["library","TMDB分类片库（无需豆瓣密钥）"],["auto","豆瓣标准模式"],["tmdb","豆瓣片单＋严格TMDB匹配"],["douban","原始条目（直连海报）"]]},{"n":"genre","t":"类型","type":"enumeration","v":"","o":[["","全部"],["自然","自然"],["历史","历史"],["美食","美食"],["科技","科技"],["太空","太空"]]},{"n":"region","t":"地区","type":"enumeration","v":"","o":[["","全部"],["华语","华语"],["大陆","大陆"],["香港","香港"],["台湾","台湾"],["欧美","欧美"],["国外","国外"],["日本","日本"],["韩国","韩国"],["美国","美国"],["英国","英国"],["泰国","泰国"],["印度","印度"],["法国","法国"],["德国","德国"],["加拿大","加拿大"],["澳大利亚","澳大利亚"]]},{"n":"sort","t":"排序","type":"enumeration","v":"R","o":[["T","原排序"],["U","近期热度"],["R","首映／首播时间"],["S","高分优先"]]},{"n":"year","t":"年份","type":"enumeration","v":"all","o":[["all","全部年份"],["recent","近一年（追新）"],["2026","2026"],["2025","2025"],["2024","2024"],["2023","2023"],["2022","2022"],["2021","2021"],["2020","2020"],["2019","2019"],["2018","2018"],["2017","2017"],["2016","2016"],["2015","2015"],["2014","2014"],["2013","2013"],["2012","2012"],["2011","2011"],["2010","2010"],["2009","2009"],["2008","2008"],["2007","2007"],["2020s","2020年代"],["2010s","2010年代"],["2000s","2000年代"],["1990s","90年代"],["1980s","80年代"],["1970s","70年代"],["1960s","60年代"],["older","更早（1959年以前）"]]},{"n":"dedupe","t":"首页去重","type":"enumeration","v":"on","o":[["on","开启：其他行已出现的影片不再重复"],["off","关闭"]]},{"n":"pageSize","t":"每页有效影片","type":"enumeration","v":"200","o":[["20","20"],["40","40"],["60","60"],["100","100"],["200","200"]]},{"n":"page","t":"页码","type":"page","v":"1"}]},{"id":"rowConcert","title":"🎵 演唱会／音乐现场","fn":"rowConcert","desc":"演唱会与音乐现场，国产优先、最新在前；每页200部，可翻页。","params":[{"n":"priority","t":"展示偏好","type":"enumeration","v":"domestic","o":[["domestic","国产优先，来源读完后同类补充"],["off","来源原排序"]]},{"n":"region","t":"地区","type":"enumeration","v":"","o":[["","全部"],["华语","华语"],["大陆","大陆"],["香港","香港"],["台湾","台湾"],["欧美","欧美"],["国外","国外"],["日本","日本"],["韩国","韩国"],["美国","美国"],["英国","英国"],["泰国","泰国"],["印度","印度"],["法国","法国"],["德国","德国"],["加拿大","加拿大"],["澳大利亚","澳大利亚"]]},{"n":"sort","t":"排序","type":"enumeration","v":"R","o":[["T","原排序"],["U","近期热度"],["R","首映／首播时间"],["S","高分优先"]]},{"n":"year","t":"年份","type":"enumeration","v":"all","o":[["all","全部年份"],["recent","近一年（追新）"],["2026","2026"],["2025","2025"],["2024","2024"],["2023","2023"],["2022","2022"],["2021","2021"],["2020","2020"],["2019","2019"],["2018","2018"],["2017","2017"],["2016","2016"],["2015","2015"],["2014","2014"],["2013","2013"],["2012","2012"],["2011","2011"],["2010","2010"],["2009","2009"],["2008","2008"],["2007","2007"],["2020s","2020年代"],["2010s","2010年代"],["2000s","2000年代"],["1990s","90年代"],["1980s","80年代"],["1970s","70年代"],["1960s","60年代"],["older","更早（1959年以前）"]]},{"n":"dedupe","t":"首页去重","type":"enumeration","v":"on","o":[["on","开启：其他行已出现的影片不再重复"],["off","关闭"]]},{"n":"pageSize","t":"每页有效影片","type":"enumeration","v":"200","o":[["20","20"],["40","40"],["60","60"],["100","100"],["200","200"]]},{"n":"page","t":"页码","type":"page","v":"1"}]},{"id":"rowPlatform","title":"📡 国内平台","fn":"rowPlatform","desc":"腾讯视频、爱奇艺、优酷、芒果TV 片单；每页200部，可翻页。","params":[{"n":"platform","t":"平台","type":"enumeration","v":"tencent","o":[["tencent","腾讯视频"],["iqiyi","爱奇艺"],["youku","优酷"],["mango","芒果TV"]]},{"n":"source","t":"片单来源","type":"enumeration","v":"tmdb","o":[["tmdb","TMDB平台片库"],["douban","豆瓣平台热度"],["maoyan","猫眼平台热度"]]},{"n":"cat","t":"片库排序","type":"enumeration","v":"hot","o":[["hot","热门"],["new","最新"],["top","高分"]],"b":["source",["tmdb"]]},{"n":"year","t":"年份","type":"enumeration","v":"all","o":[["all","全部年份"],["recent","近一年（追新）"]],"b":["source",["tmdb"]]},{"n":"kind","t":"形式","type":"enumeration","v":"tv","o":[["tv","剧集"],["show","综艺"]],"b":["source",["douban","maoyan"]]},{"n":"sort","t":"豆瓣排序","type":"enumeration","v":"U","o":[["U","近期热度"],["T","原排序"],["R","首映／首播时间"],["S","高分优先"]],"b":["source",["douban"]]},{"n":"dedupe","t":"首页去重","type":"enumeration","v":"on","o":[["on","开启：其他行已出现的影片不再重复"],["off","关闭"]]},{"n":"pageSize","t":"每页有效影片","type":"enumeration","v":"200","o":[["20","20"],["40","40"],["60","60"],["100","100"],["200","200"]]},{"n":"page","t":"页码","type":"page","v":"1"}]},{"id":"rowBrowse","title":"🔎 片库筛选","fn":"rowBrowse","desc":"自选频道、类型、地区、年份与播出平台；每页200部，可翻页。","params":[{"n":"channel","t":"频道","type":"enumeration","v":"tv","o":[["tv","电视剧"],["movie","电影"],["variety","综艺"],["anime","动漫"],["doc","纪录片"]]},{"n":"tvGenre","t":"类型","type":"enumeration","v":"","o":[["","全部"],["喜剧","喜剧"],["爱情","爱情"],["悬疑","悬疑"],["动画","动画"],["武侠","武侠"],["古装","古装"],["家庭","家庭"],["犯罪","犯罪"],["科幻","科幻"],["恐怖","恐怖"],["历史","历史"],["战争","战争"],["动作","动作"],["冒险","冒险"],["传记","传记"],["剧情","剧情"],["奇幻","奇幻"],["惊悚","惊悚"],["灾难","灾难"],["歌舞","歌舞"],["音乐","音乐"],["都市","都市"],["青春","青春"],["谍战","谍战"],["刑侦","刑侦"],["宫斗","宫斗"],["职场","职场"]],"b":["channel",["tv"]]},{"n":"movieGenre","t":"类型","type":"enumeration","v":"","o":[["","全部"],["喜剧","喜剧"],["爱情","爱情"],["动作","动作"],["科幻","科幻"],["动画","动画"],["悬疑","悬疑"],["犯罪","犯罪"],["惊悚","惊悚"],["冒险","冒险"],["音乐","音乐"],["历史","历史"],["奇幻","奇幻"],["恐怖","恐怖"],["战争","战争"],["传记","传记"],["歌舞","歌舞"],["武侠","武侠"],["灾难","灾难"],["西部","西部"],["纪录片","纪录片"],["短片","短片"]],"b":["channel",["movie"]]},{"n":"varietyGenre","t":"类型","type":"enumeration","v":"","o":[["","全部"],["真人秀","真人秀"],["脱口秀","脱口秀"],["音乐","音乐"],["歌舞","歌舞"]],"b":["channel",["variety"]]},{"n":"docGenre","t":"类型","type":"enumeration","v":"","o":[["","全部"],["自然","自然"],["历史","历史"],["美食","美食"],["科技","科技"],["太空","太空"]],"b":["channel",["doc"]]},{"n":"form","t":"形式","type":"enumeration","v":"all","o":[["all","剧集＋电影"],["tv","剧集"],["movie","电影"]],"b":["channel",["anime","doc"]]},{"n":"region","t":"地区","type":"enumeration","v":"大陆","o":[["","全部"],["华语","华语"],["大陆","大陆"],["香港","香港"],["台湾","台湾"],["欧美","欧美"],["国外","国外"],["日本","日本"],["韩国","韩国"],["美国","美国"],["英国","英国"],["泰国","泰国"],["印度","印度"],["法国","法国"],["德国","德国"],["加拿大","加拿大"],["澳大利亚","澳大利亚"]]},{"n":"platform","t":"平台","type":"enumeration","v":"","o":[["","全部平台"],["2007","腾讯视频"],["1330","爱奇艺"],["1419","优酷"],["1631","芒果TV"],["1605","哔哩哔哩"],["213","Netflix"],["2739","Disney+"],["49|3186","HBO"],["2552","Apple TV+"],["1024","Prime Video"]],"b":["channel",["tv","variety","anime","doc"]]},{"n":"year","t":"年份","type":"enumeration","v":"all","o":[["all","全部年份"],["recent","近一年（追新）"],["2026","2026"],["2025","2025"],["2024","2024"],["2023","2023"],["2022","2022"],["2021","2021"],["2020","2020"],["2019","2019"],["2018","2018"],["2017","2017"],["2016","2016"],["2015","2015"],["2014","2014"],["2013","2013"],["2012","2012"],["2011","2011"],["2010","2010"],["2009","2009"],["2008","2008"],["2007","2007"],["2020s","2020年代"],["2010s","2010年代"],["2000s","2000年代"],["1990s","90年代"],["1980s","80年代"],["1970s","70年代"],["1960s","60年代"],["older","更早（1959年以前）"]]},{"n":"sort","t":"排序","type":"enumeration","v":"R","o":[["U","最热"],["R","最新"],["S","高分"],["V","评价最多"]]},{"n":"pageSize","t":"每页有效影片","type":"enumeration","v":"200","o":[["20","20"],["40","40"],["60","60"],["100","100"],["200","200"]]},{"n":"page","t":"页码","type":"page","v":"1"}]},{"id":"rowCharts","title":"🔥 豆瓣榜单","fn":"rowCharts","desc":"21个豆瓣与IMDb榜单，原榜排名、完整显示，不参与首页去重。","params":[{"n":"priority","t":"展示偏好","type":"enumeration","v":"off","o":[["domestic","国产优先，来源读完后同类补充"],["off","来源原排序"]]},{"n":"sub","t":"榜单","type":"enumeration","v":"db_hot_tv","o":[["db_hot_tv","近期热门剧集"],["db_hot_movie","热门电影"],["db_weekly","华语口碑剧集榜"],["db_global_weekly","全球口碑剧集榜"],["db_show_domestic","国内口碑综艺榜"],["db_show_foreign","国外口碑综艺榜"],["db_classics","豆瓣 Top 250"],["db_tv_realtime","实时热门剧集"],["db_tv_domestic","热门国产剧"],["db_tv_american","热门美剧"],["db_tv_korean","热门韩剧"],["db_tv_japanese","热门日剧"],["db_tv_animation","热门动画"],["db_show_hot","热门综艺"],["db_movie_realtime","实时热门电影"],["db_movie_showing","院线热映"],["db_movie_weekly","一周口碑电影榜"],["db_oscar","第97届奥斯卡"],["db_imdb_movie","IMDb 电影 Top 250"],["db_imdb_tv","IMDb 剧集 Top 250"],["db_twist","意外结局电影"]]},{"n":"catalog","t":"榜单模式","type":"enumeration","v":"auto","o":[["auto","豆瓣原榜（有密钥用完整服务）"],["douban","原始豆瓣身份"],["tmdb","严格匹配TMDB身份"]]},{"n":"dedupe","t":"首页去重","type":"enumeration","v":"off","o":[["on","开启：其他行已出现的影片不再重复"],["off","关闭"]]},{"n":"pageSize","t":"每页有效影片","type":"enumeration","v":"200","o":[["20","20"],["40","40"],["60","60"],["100","100"],["200","200"]]},{"n":"page","t":"页码","type":"page","v":"1"}]}]}</script>
+<script id="data-layout" type="application/json">[{"id": "3379FFBA-238E-59F9-8BD1-F48A04AD910C", "title": "🎞 精选轮播", "isActive": true, "items": [{"style": "banner", "count": 0, "gridSize": [-1, 3], "id": "87CB9B4A-2F90-5D08-A53F-0ED292DD90C0", "title": "🎞 精选轮播", "subtitle": "近一年热门 · 国产优先", "iconUrl": "", "functionId": "rowBanner", "params": [{"key": "catalog", "value": "library"}, {"key": "cat", "value": "all"}, {"key": "sort", "value": "U"}, {"key": "size", "value": "20"}, {"key": "priority", "value": "domestic"}, {"key": "year", "value": "recent"}, {"key": "dedupe", "value": "on"}], "widgetBundleId": "rex.home.unified", "widgetId": "rex.home.unified", "widgetURL": "https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/rex-home.js", "name": "Rex首页"}]}, {"id": "C161E18A-6033-582E-B556-1930E00A34A4", "title": "▶️ 继续观看", "isActive": true, "items": [{"style": "fullWidthWatchProgress", "count": 12, "gridSize": [-1, 2], "id": "971F4F5C-8878-58A3-BB60-F72F46EB6FF8", "title": "▶️ 继续观看", "subtitle": "", "iconUrl": "", "functionId": "", "params": [{"key": "type", "value": "history"}], "widgetBundleId": "", "widgetId": "", "widgetURL": "", "name": "观看进度 - 全宽"}]}, {"id": "77F36910-C85E-5874-8FA4-C130AC759F82", "title": "📺 剧集", "isActive": true, "items": [{"style": "fullWidthPoster", "count": 0, "gridSize": [-1, 2.3], "id": "9F6B2BC1-6B92-550E-B874-08E6B1394820", "title": "📺 剧集", "subtitle": "大陆 · 最新上线", "iconUrl": "", "functionId": "rowSeries", "params": [{"key": "priority", "value": "domestic"}, {"key": "catalog", "value": "library"}, {"key": "genre", "value": ""}, {"key": "region", "value": ""}, {"key": "sort", "value": "R"}, {"key": "year", "value": "all"}, {"key": "pageSize", "value": "200"}, {"key": "page", "value": "1"}, {"key": "dedupe", "value": "on"}], "widgetBundleId": "rex.home.unified", "widgetId": "rex.home.unified", "widgetURL": "https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/rex-home.js", "name": "Rex首页"}]}, {"id": "EAD11966-0542-5200-93B0-9B4170F55462", "title": "🌏 地区剧", "isActive": true, "items": [{"style": "fullWidthPoster", "count": 0, "gridSize": [-1, 2.3], "id": "5588CFCE-96B4-5582-80E0-E648D1AAECE3", "title": "🌏 地区剧", "subtitle": "港台 · 设置里可切换韩日美英泰等10个地区", "iconUrl": "", "functionId": "rowDramaRegion", "params": [{"key": "region", "value": "港台"}, {"key": "genre", "value": ""}, {"key": "sort", "value": "R"}, {"key": "year", "value": "all"}, {"key": "dedupe", "value": "on"}, {"key": "pageSize", "value": "200"}, {"key": "page", "value": "1"}], "widgetBundleId": "rex.home.unified", "widgetId": "rex.home.unified", "widgetURL": "https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/rex-home.js", "name": "Rex首页"}]}, {"id": "F04EDA06-811D-596F-8252-EFF57E1B755E", "title": "🎬 电影", "isActive": true, "items": [{"style": "fullWidthPoster", "count": 0, "gridSize": [-1, 2.3], "id": "1DE57BE6-E6E6-5AC0-9F92-5F702399E01B", "title": "🎬 电影", "subtitle": "国产优先 · 最新上映", "iconUrl": "", "functionId": "rowMovie", "params": [{"key": "priority", "value": "domestic"}, {"key": "catalog", "value": "library"}, {"key": "genre", "value": ""}, {"key": "region", "value": ""}, {"key": "sort", "value": "R"}, {"key": "year", "value": "all"}, {"key": "pageSize", "value": "200"}, {"key": "page", "value": "1"}, {"key": "dedupe", "value": "on"}], "widgetBundleId": "rex.home.unified", "widgetId": "rex.home.unified", "widgetURL": "https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/rex-home.js", "name": "Rex首页"}]}, {"id": "9D7E9F5D-D053-5879-BB76-13EAC2304187", "title": "🌸 动漫", "isActive": true, "items": [{"style": "fullWidthPoster", "count": 0, "gridSize": [-1, 2.3], "id": "AA1F6D88-059F-5871-81B7-ADA9E4A65A7B", "title": "🌸 动漫", "subtitle": "国产优先 · 最新", "iconUrl": "", "functionId": "rowAnime", "params": [{"key": "priority", "value": "domestic"}, {"key": "media", "value": "all"}, {"key": "catalog", "value": "library"}, {"key": "region", "value": ""}, {"key": "sort", "value": "R"}, {"key": "year", "value": "all"}, {"key": "pageSize", "value": "200"}, {"key": "page", "value": "1"}, {"key": "dedupe", "value": "on"}], "widgetBundleId": "rex.home.unified", "widgetId": "rex.home.unified", "widgetURL": "https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/rex-home.js", "name": "Rex首页"}]}, {"id": "9E7B2131-A7CF-5437-937D-3C4B480347A5", "title": "🎤 综艺", "isActive": true, "items": [{"style": "fullWidthPoster", "count": 0, "gridSize": [-1, 2.3], "id": "F1F510E4-37D0-5899-A300-58E3DF82A9B9", "title": "🎤 综艺", "subtitle": "国产优先 · 最新", "iconUrl": "", "functionId": "rowVariety", "params": [{"key": "priority", "value": "domestic"}, {"key": "catalog", "value": "library"}, {"key": "genre", "value": ""}, {"key": "region", "value": ""}, {"key": "sort", "value": "R"}, {"key": "year", "value": "all"}, {"key": "pageSize", "value": "200"}, {"key": "page", "value": "1"}, {"key": "dedupe", "value": "on"}], "widgetBundleId": "rex.home.unified", "widgetId": "rex.home.unified", "widgetURL": "https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/rex-home.js", "name": "Rex首页"}]}, {"id": "0F5E1F4C-1CB9-5CBD-ABA8-7F3FB1482BEE", "title": "🌿 纪录片", "isActive": true, "items": [{"style": "fullWidthPoster", "count": 0, "gridSize": [-1, 2.3], "id": "B719ABD5-1704-5C66-A0EA-E6EC5B80CA21", "title": "🌿 纪录片", "subtitle": "国产优先 · 最新", "iconUrl": "", "functionId": "rowDocumentary", "params": [{"key": "priority", "value": "domestic"}, {"key": "media", "value": "all"}, {"key": "catalog", "value": "library"}, {"key": "genre", "value": ""}, {"key": "region", "value": ""}, {"key": "sort", "value": "R"}, {"key": "year", "value": "all"}, {"key": "dedupe", "value": "on"}, {"key": "pageSize", "value": "200"}, {"key": "page", "value": "1"}], "widgetBundleId": "rex.home.unified", "widgetId": "rex.home.unified", "widgetURL": "https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/rex-home.js", "name": "Rex首页"}]}, {"id": "392C6AA1-FA2A-5B93-9BF8-617CBB5E0FB1", "title": "🎵 演唱会／音乐现场", "isActive": true, "items": [{"style": "fullWidthPoster", "count": 0, "gridSize": [-1, 2.3], "id": "C8C78DAE-89D0-5EE1-A2D1-AC3586E3B17D", "title": "🎵 演唱会／音乐现场", "subtitle": "演唱会与音乐现场 · 最新", "iconUrl": "", "functionId": "rowConcert", "params": [{"key": "priority", "value": "domestic"}, {"key": "region", "value": ""}, {"key": "sort", "value": "R"}, {"key": "year", "value": "all"}, {"key": "dedupe", "value": "on"}, {"key": "pageSize", "value": "200"}, {"key": "page", "value": "1"}], "widgetBundleId": "rex.home.unified", "widgetId": "rex.home.unified", "widgetURL": "https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/rex-home.js", "name": "Rex首页"}]}, {"id": "72110B7F-E5D0-5515-A02A-DE93B3213C22", "title": "🔥 豆瓣榜单", "isActive": true, "items": [{"style": "fullWidthPoster", "count": 0, "gridSize": [-1, 2.3], "id": "DFA2D2F8-A14B-540F-9E7A-19AFF204F68D", "title": "🔥 豆瓣榜单", "subtitle": "豆瓣原榜 · 完整排名", "iconUrl": "", "functionId": "rowCharts", "params": [{"key": "priority", "value": "off"}, {"key": "sub", "value": "db_hot_tv"}, {"key": "catalog", "value": "auto"}, {"key": "pageSize", "value": "200"}, {"key": "page", "value": "1"}, {"key": "dedupe", "value": "off"}], "widgetBundleId": "rex.home.unified", "widgetId": "rex.home.unified", "widgetURL": "https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/rex-home.js", "name": "Rex首页"}]}, {"id": "E6CAB648-57E7-5812-B1E8-8D966488C4AE", "title": "📡 国内平台", "isActive": false, "items": [{"style": "fullWidthPoster", "count": 0, "gridSize": [-1, 2.3], "id": "9D7B9E0F-5B14-5887-9F98-5F89D7D8193F", "title": "📡 国内平台", "subtitle": "腾讯视频 · 热门", "iconUrl": "", "functionId": "rowPlatform", "params": [{"key": "platform", "value": "tencent"}, {"key": "source", "value": "tmdb"}, {"key": "cat", "value": "hot"}, {"key": "year", "value": "all"}, {"key": "kind", "value": "tv"}, {"key": "sort", "value": "U"}, {"key": "dedupe", "value": "on"}, {"key": "pageSize", "value": "200"}, {"key": "page", "value": "1"}], "widgetBundleId": "rex.home.unified", "widgetId": "rex.home.unified", "widgetURL": "https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/rex-home.js", "name": "Rex首页"}]}, {"id": "DD98EF90-0271-5AAD-95BC-3D4AC6D0F97D", "title": "🔎 片库筛选", "isActive": false, "items": [{"style": "fullWidthPoster", "count": 0, "gridSize": [-1, 2.3], "id": "B259CAD8-B382-5867-89A0-640CA4DA35AD", "title": "🔎 片库筛选", "subtitle": "自选频道、地区、年份", "iconUrl": "", "functionId": "rowBrowse", "params": [{"key": "channel", "value": "tv"}, {"key": "tvGenre", "value": ""}, {"key": "movieGenre", "value": ""}, {"key": "varietyGenre", "value": ""}, {"key": "docGenre", "value": ""}, {"key": "form", "value": "all"}, {"key": "region", "value": "大陆"}, {"key": "platform", "value": ""}, {"key": "year", "value": "all"}, {"key": "sort", "value": "R"}, {"key": "pageSize", "value": "200"}, {"key": "page", "value": "1"}], "widgetBundleId": "rex.home.unified", "widgetId": "rex.home.unified", "widgetURL": "https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/rex-home.js", "name": "Rex首页"}]}]</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(function(){
+var META=JSON.parse(document.getElementById('data-modules').textContent);
+var DEFAULT_LAYOUT=JSON.parse(document.getElementById('data-layout').textContent);
+var IN_CLAUDE=!!(window.claude&&typeof window.claude.use==='function');
+var WIDGET_ID='rex.home.unified',WIDGET_URL='https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/rex-home.js';
+var MODS={};META.modules.forEach(function(m){MODS[m.fn]=m;});
+var WATCH='__watch',RAW='__raw';var extraFiles={};var homeMeta={avatar:'avatar-22',isIndependent:false,avatarData:''};
+var $=function(id){return document.getElementById(id);};
+document.getElementById('ver').textContent='v'+META.version.split('.').pop();
+
+function uuid(){
+  if(window.crypto&&crypto.randomUUID)return crypto.randomUUID().toUpperCase();
+  var b=new Uint8Array(16);crypto.getRandomValues(b);b[6]=b[6]&15|64;b[8]=b[8]&63|128;
+  var h=Array.from(b,function(x){return(x+256).toString(16).slice(1);}).join('');
+  return(h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20)).toUpperCase();
+}
+function defaultsFor(fn){var o={};(MODS[fn].params||[]).forEach(function(p){o[p.n]=p.v;});return o;}
+function fromLayout(layout){
+  return layout.map(function(r){var it=r.items[0];
+    if(it.style==='fullWidthWatchProgress')return{uid:uuid(),fn:WATCH,title:r.title,subtitle:it.subtitle||'',active:!!r.isActive,params:{}};
+    var p=defaultsFor(it.functionId);(it.params||[]).forEach(function(kv){p[kv.key]=String(kv.value);});
+    return{uid:uuid(),fn:it.functionId,title:r.title,subtitle:it.subtitle||'',active:!!r.isActive,params:p};
+  }).filter(function(r){return r.fn===WATCH||MODS[r.fn];});
+}
+function known(r){return r.fn===WATCH||r.fn===RAW||!!MODS[r.fn];}
+
+var state={title:'Rex首页',rows:fromLayout(DEFAULT_LAYOUT),open:null};
+try{var saved=JSON.parse(localStorage.getItem('rexhome.builder.v1')||'null');
+  if(saved&&Array.isArray(saved.rows)&&saved.rows.every(known)){state={title:saved.title||'Rex首页',rows:saved.rows,open:null};if(saved.home)homeMeta=saved.home;if(saved.extra)extraFiles=saved.extra;}}catch(e){}
+function persist(){try{localStorage.setItem('rexhome.builder.v1',JSON.stringify({title:state.title,rows:state.rows,home:homeMeta,extra:extraFiles}));}catch(e){try{localStorage.setItem('rexhome.builder.v1',JSON.stringify({title:state.title,rows:state.rows.filter(function(r){return r.fn!==RAW;}),home:homeMeta}));}catch(e2){}}}
+
+function visible(p,params){return !p.b||p.b[1].indexOf(params[p.b[0]])>=0;}
+function optTitle(p,v){var f=(p.o||[]).find(function(o){return o[0]===v;});return f?f[1]:v;}
+function rowSummary(r){
+  if(r.fn===WATCH)return'观看进度（Rex 自带）';
+  if(r.fn===RAW)return'其他模块：'+(r.label||'原样保留');
+  var m=MODS[r.fn],bits=[];
+  ['region','platform','channel','sub','genre','year','sort'].forEach(function(k){
+    var p=m.params.find(function(x){return x.n===k;});if(!p||!visible(p,r.params))return;
+    var v=r.params[k];if(v===''||v==null)return;if(k==='year'&&v==='all')return;bits.push(optTitle(p,v));});
+  var ps=r.params.pageSize||r.params.size;if(ps)bits.push((r.fn==='rowBanner'?ps+'张':'每页'+ps));
+  return bits.join(' · ');
+}
+
+function render(){
+  $('homeTitle').value=state.title;
+  var on=state.rows.filter(function(r){return r.active;}).length;
+  $('summary').innerHTML='';
+  [['开启',on+' 行'],['关闭',(state.rows.length-on)+' 行'],['模块','rex.home.unified']].forEach(function(c){
+    var s=document.createElement('span');s.className='chip';s.append(c[0]+' ');var b=document.createElement('b');b.textContent=c[1];s.append(b);$('summary').append(s);});
+  var ol=$('rows');ol.innerHTML='';
+  var n=0;
+  state.rows.forEach(function(r,i){
+    var li=document.createElement('li');li.className='row'+(r.active?'':' off');
+    var head=document.createElement('div');head.className='rhead';
+    var num=document.createElement('span');num.className='num';num.textContent=r.active?String(++n):'–';
+    var sw=document.createElement('label');sw.className='sw';sw.title=r.active?'在首页显示':'不显示';
+    var cb=document.createElement('input');cb.type='checkbox';cb.id='on-'+r.uid;cb.checked=r.active;cb.setAttribute('aria-label','显示「'+r.title+'」');
+    cb.onchange=function(){r.active=cb.checked;persist();render();};
+    sw.append(cb,document.createElement('span'));
+    var tx=document.createElement('div');tx.className='rtext';
+    var t=document.createElement('div');t.className='rt';t.textContent=r.title;
+    if(r.fn===RAW){var tg=document.createElement('span');tg.className='tag';tg.textContent='其他模块';t.append(tg);}
+    var s=document.createElement('div');s.className='rs';s.textContent=r.subtitle||rowSummary(r);
+    tx.append(t,s);
+    var tools=document.createElement('div');tools.className='tools';
+    var up=btn('↑','上移',i===0,function(){move(i,-1);});
+    var dn=btn('↓','下移',i===state.rows.length-1,function(){move(i,1);});
+    var ed=btn(state.open===r.uid?'收起':'设置','设置这一行',false,function(){state.open=state.open===r.uid?null:r.uid;render();});
+    tools.append(up,dn,ed);
+    head.append(num,sw,tx,tools);li.append(head);
+    if(state.open===r.uid)li.append(editor(r,i));
+    ol.append(li);
+  });
+  var sel=$('addSel');sel.innerHTML='';
+  META.modules.forEach(function(m){var o=document.createElement('option');o.value=m.fn;o.textContent=m.title;sel.append(o);});
+  if(!state.rows.some(function(r){return r.fn===WATCH;})){var o=document.createElement('option');o.value=WATCH;o.textContent='▶️ 继续观看';sel.append(o);}
+}
+function btn(label,aria,dis,fn){var b=document.createElement('button');b.type='button';b.className='btn';b.textContent=label;b.setAttribute('aria-label',aria);b.disabled=dis;b.onclick=fn;return b;}
+function move(i,d){var j=i+d;if(j<0||j>=state.rows.length)return;var t=state.rows[i];state.rows[i]=state.rows[j];state.rows[j]=t;persist();render();}
+
+function editor(r,i){
+  var box=document.createElement('div');box.className='body';
+  box.append(textField('标题','t-'+r.uid,r.title,function(v){r.title=v||'未命名';persist();},'full'));
+  box.append(textField('副标题','s-'+r.uid,r.subtitle,function(v){r.subtitle=v;persist();},'full'));
+  if(r.fn===RAW){var dr=document.createElement('div');dr.className='desc full';dr.textContent='这一行来自其他模块，设置原样保留，只能改标题、开关和顺序。';box.append(dr);}
+  else if(r.fn!==WATCH){
+    var m=MODS[r.fn];
+    var d=document.createElement('div');d.className='desc full';d.textContent=m.desc;box.append(d);
+    m.params.forEach(function(p){
+      if(p.type!=='enumeration'||!visible(p,r.params))return;
+      var f=document.createElement('div');f.className='field';
+      var lb=document.createElement('label');lb.htmlFor='p-'+r.uid+'-'+p.n;lb.textContent=p.t;
+      var se=document.createElement('select');se.id='p-'+r.uid+'-'+p.n;
+      p.o.forEach(function(o){var op=document.createElement('option');op.value=o[0];op.textContent=o[1];se.append(op);});
+      se.value=r.params[p.n]!=null?r.params[p.n]:p.v;
+      se.onchange=function(){r.params[p.n]=se.value;persist();render();};
+      f.append(lb,se);box.append(f);
+    });
+  }
+  var del=btn('删除这一行','删除这一行',false,function(){state.rows.splice(i,1);state.open=null;persist();render();});
+  del.classList.add('danger','full');box.append(del);
+  return box;
+}
+function textField(label,id,val,onIn,cls){
+  var f=document.createElement('div');f.className='field '+(cls||'');
+  var lb=document.createElement('label');lb.htmlFor=id;lb.textContent=label;
+  var inp=document.createElement('input');inp.type='text';inp.id=id;inp.value=val;inp.maxLength=40;
+  inp.oninput=function(){onIn(inp.value.trim());var row=inp.closest('.row');if(row){var t=row.querySelector('.rt'),s=row.querySelector('.rs');var rr=state.rows.find(function(x){return 't-'+x.uid===id||'s-'+x.uid===id;});if(rr){t.textContent=rr.title;s.textContent=rr.subtitle||rowSummary(rr);}}};
+  f.append(lb,inp);return f;
+}
+
+$('homeTitle').oninput=function(){state.title=this.value.trim()||'Rex首页';persist();};
+
+// 打开 .rex：本模块的行转成可编辑、改读加密脚本；本模块夹带的脚本删除；其他模块原样保留
+function isOurs(it){return !!(it&&MODS[it.functionId]&&/^rex\.home\.unified/.test(String(it.widgetId||it.widgetBundleId||'')));}
+function b64(u8){var s='',i;for(i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s);}
+function unb64(t){var s=atob(t),u=new Uint8Array(s.length);for(var i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;}
+function scriptPath(url){var m=/^file:\/\/\/(.+)$/.exec(String(url||''));return m?'rex-scripts/'+m[1]:null;}
+$('fileIn').onchange=async function(){
+  var f=this.files&&this.files[0];this.value='';if(!f)return;
+  var note=$('importNote');
+  if(typeof JSZip==='undefined'){setMsg('打包工具没有载入，请重新打开这个页面。',true);return;}
+  try{
+    var z;try{z=await JSZip.loadAsync(f);}catch(e0){throw new Error('这不是 Rex 首页文件（.rex），打不开');}
+    var lf=z.file('rex-layout.json');if(!lf)throw new Error('这个文件里没有首页布局（rex-layout.json），不是 Rex 首页文件。');
+    var layout=JSON.parse(await lf.async('string'));if(!Array.isArray(layout))throw new Error('首页布局格式不对。');
+    var hf=z.file('rex-home.json'),home=hf?JSON.parse(await hf.async('string')):{};
+    var rows=[],converted=0,raw=0,keepScripts={},droppedOurs=0;
+    layout.forEach(function(r){
+      var items=Array.isArray(r&&r.items)?r.items:[];if(!items.length)return;
+      var it=items[0];
+      if(items.length===1&&it.style==='fullWidthWatchProgress'){rows.push({uid:uuid(),fn:WATCH,title:String(r.title||'▶️ 继续观看'),subtitle:String(it.subtitle||''),active:r.isActive!==false,params:{}});return;}
+      if(items.length===1&&isOurs(it)){
+        var p=defaultsFor(it.functionId);(it.params||[]).forEach(function(kv){if(kv&&kv.key!=null)p[kv.key]=String(kv.value);});
+        if(it.widgetURL!==WIDGET_URL||it.widgetId!==WIDGET_ID)converted++;
+        rows.push({uid:uuid(),fn:it.functionId,title:String(r.title||MODS[it.functionId].title),subtitle:String(it.subtitle||''),active:r.isActive!==false,params:p});return;
+      }
+      var copy=JSON.parse(JSON.stringify(r));
+      copy.items.forEach(function(x){if(isOurs(x)){if(x.widgetURL!==WIDGET_URL)converted++;x.widgetURL=WIDGET_URL;x.widgetId=x.widgetBundleId=WIDGET_ID;}else{var sp=scriptPath(x.widgetURL);if(sp)keepScripts[sp]=true;}});
+      raw++;rows.push({uid:uuid(),fn:RAW,title:String(r.title||'未命名'),subtitle:String(it.subtitle||''),active:r.isActive!==false,label:String(it.name||it.style||''),raw:copy});
+    });
+    if(!rows.length)throw new Error('首页里没有任何行。');
+    var extra={},names=Object.keys(z.files);
+    for(var i=0;i<names.length;i++){var n=names[i];if(n.indexOf('rex-scripts/')!==0||z.files[n].dir)continue;
+      if(keepScripts[n])extra[n]=b64(await z.file(n).async('uint8array'));else droppedOurs++;}
+    extraFiles=extra;homeMeta={avatar:home.avatar||'avatar-22',isIndependent:!!home.isIndependent,avatarData:home.avatarData||''};
+    state={title:String(home.title||'Rex首页'),rows:rows,open:null};persist();render();
+    var li=[];
+    li.push('读到 '+rows.length+' 行，其中 '+rows.filter(function(r){return r.active;}).length+' 行开启。');
+    if(converted)li.push(converted+' 行改为读取 GitHub 上的加密脚本。');
+    if(droppedOurs)li.push('删除包里夹带的 '+droppedOurs+' 个脚本，导出后不含明文。');
+    if(raw)li.push(raw+' 行来自其他模块，原样保留'+(Object.keys(extra).length?'（连同它们自带的脚本）':'')+'。');
+    note.hidden=false;note.innerHTML='';var bb=document.createElement('b');bb.textContent='已打开「'+f.name+'」';note.append(bb);
+    var ul=document.createElement('ul');li.forEach(function(t){var x=document.createElement('li');x.textContent=t;ul.append(x);});note.append(ul);
+    setMsg('');
+  }catch(e){note.hidden=true;setMsg((e&&e.message?e.message:'这不是 Rex 首页文件（.rex），打不开')+'。请选 Mac 导出或别人分享的 .rex 文件。',true);}
+};
+$('addBtn').onclick=function(){
+  var fn=$('addSel').value,r;
+  if(fn===WATCH)r={uid:uuid(),fn:WATCH,title:'▶️ 继续观看',subtitle:'',active:true,params:{}};
+  else r={uid:uuid(),fn:fn,title:MODS[fn].title,subtitle:'',active:true,params:defaultsFor(fn)};
+  state.rows.push(r);state.open=r.uid;persist();render();
+  setMsg('已添加「'+r.title+'」到最后一行，可用 ↑ 调整位置。');
+};
+var resetArmed=false;
+$('resetBtn').onclick=function(){
+  if(!resetArmed){resetArmed=true;this.textContent='再点一次确认';setMsg('会清除你的修改，恢复成 v'+META.version.split('.').pop()+' 的默认首页。');var b=this;setTimeout(function(){resetArmed=false;b.textContent='恢复默认';},4000);return;}
+  resetArmed=false;this.textContent='恢复默认';
+  state={title:'Rex首页',rows:fromLayout(DEFAULT_LAYOUT),open:null};extraFiles={};homeMeta={avatar:'avatar-22',isIndependent:false,avatarData:''};$('importNote').hidden=true;persist();render();setMsg('已恢复默认首页。');
+};
+function setMsg(t,err){var m=$('msg');m.textContent=t;m.className='msg'+(err?' err':'');}
+
+function buildLayout(){
+  return state.rows.map(function(r){
+    if(r.fn===RAW){var c=JSON.parse(JSON.stringify(r.raw));c.title=r.title;c.isActive=r.active;if(c.items[0]){c.items[0].title=r.title;c.items[0].subtitle=r.subtitle;}return c;}
+    if(r.fn===WATCH)return{id:uuid(),title:r.title,isActive:r.active,items:[{style:'fullWidthWatchProgress',count:12,gridSize:[-1,2],id:uuid(),title:r.title,subtitle:r.subtitle,iconUrl:'',functionId:'',params:[{key:'type',value:'history'}],widgetBundleId:'',widgetId:'',widgetURL:'',name:'观看进度 - 全宽'}]};
+    var m=MODS[r.fn],banner=r.fn==='rowBanner',params=[];
+    m.params.forEach(function(p){var v=p.type==='page'?'1':(r.params[p.n]!=null?r.params[p.n]:p.v);params.push({key:p.n,value:String(v)});});
+    return{id:uuid(),title:r.title,isActive:r.active,items:[{style:banner?'banner':'fullWidthPoster',count:0,gridSize:banner?[-1,3]:[-1,2.3],id:uuid(),title:r.title,subtitle:r.subtitle,iconUrl:'',functionId:r.fn,params:params,widgetBundleId:WIDGET_ID,widgetId:WIDGET_ID,widgetURL:WIDGET_URL,name:'Rex首页'}]};
+  });
+}
+$('saveBtn').onclick=async function(){
+  if(!state.rows.some(function(r){return r.active;})){setMsg('至少要开启一行。',true);return;}
+  if(typeof JSZip==='undefined'){setMsg('打包工具没有载入，请重新打开这个页面。',true);return;}
+  var b=this;b.disabled=true;setMsg('正在打包……');
+  try{
+    var z=new JSZip();
+    z.file('rex-manifest.json',JSON.stringify({format:'video.fika.rex.home-package',version:1},null,2));
+    z.file('rex-home.json',JSON.stringify({avatar:homeMeta.avatar,isIndependent:homeMeta.isIndependent,title:state.title,avatarData:homeMeta.avatarData},null,2));
+    z.file('rex-layout.json',JSON.stringify(buildLayout(),null,2));
+    Object.keys(extraFiles).forEach(function(n){z.file(n,unb64(extraFiles[n]));});
+    var blob=await z.generateAsync({type:'blob',compression:'DEFLATE'});
+    if(!IN_CLAUDE){
+      // 自己的网站（GitHub Pages 等）：直接下载 RexHome.rex
+      var url=URL.createObjectURL(blob),a=document.createElement('a');
+      a.href=url;a.download='RexHome.rex';document.body.append(a);a.click();a.remove();
+      setTimeout(function(){URL.revokeObjectURL(url);},60000);
+      setMsg('已导出 RexHome.rex。在下载或「文件」里点开，用 Rex 导入。');return;
+    }
+    var dl=await window.claude.use('downloads');
+    if(!dl){setMsg('这个页面目前不能存档。请改用 GitHub 上的网页工具。',true);return;}
+    await dl.save({filename:'RexHome.zip',data:blob});
+    setMsg('已存成 RexHome.zip。claude.ai 不能直接存 .rex：到「文件」改名为 RexHome.rex 再用 Rex 打开。');
+  }catch(e){
+    var c=e&&e.code;
+    if(c==='declined')setMsg('已取消存档。');
+    else if(c==='rate_limited')setMsg('存档窗口还开着，请先完成或稍后再试。',true);
+    else setMsg('存档失败（'+(c||'未知错误')+'）。请重新打开页面再试。',true);
+  }finally{b.disabled=false;}
+};
+if(IN_CLAUDE)document.querySelectorAll('.cl').forEach(function(x){x.hidden=false;});
+render();
+})();
+</script>
+</body></html>
