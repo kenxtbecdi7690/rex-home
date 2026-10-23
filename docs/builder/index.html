@@ -249,9 +249,21 @@ $('fileIn').onchange=async function(){
   if(typeof JSZip==='undefined'){setMsg('打包工具没有载入，请重新打开这个页面。',true);return;}
   try{
     var z;try{z=await JSZip.loadAsync(f);}catch(e0){throw new Error('这不是 Rex 首页文件（.rex），打不开');}
-    var lf=z.file('rex-layout.json');if(!lf)throw new Error('这个文件里没有首页布局（rex-layout.json），不是 Rex 首页文件。');
-    var layout=JSON.parse(await lf.async('string'));if(!Array.isArray(layout))throw new Error('首页布局格式不对。');
-    var hf=z.file('rex-home.json'),home=hf?JSON.parse(await hf.async('string')):{};
+    var fname=f.name,inner=null;
+    var all=Object.keys(z.files).filter(function(n){return !z.files[n].dir&&n.indexOf('__MACOSX/')!==0&&!/(^|\/)\./.test(n);});
+    var lays=all.filter(function(n){return n==='rex-layout.json'||/\/rex-layout\.json$/.test(n);}).sort(function(a,b){return a.length-b.length;});
+    if(!lays.length){
+      // 压缩包里装着 .rex：打开第一个
+      var rexes=all.filter(function(n){return /\.rex$/i.test(n);}).sort();
+      if(rexes.length){inner=rexes;fname=rexes[0].split('/').pop();
+        try{z=await JSZip.loadAsync(await z.file(rexes[0]).async('uint8array'));}catch(e1){throw new Error('包里的「'+fname+'」打不开');}
+        all=Object.keys(z.files).filter(function(n){return !z.files[n].dir;});
+        lays=all.filter(function(n){return n==='rex-layout.json'||/\/rex-layout\.json$/.test(n);}).sort(function(a,b){return a.length-b.length;});}
+    }
+    if(!lays.length)throw new Error('文件里找不到首页布局 rex-layout.json，不像 Rex 首页文件。文件里有：'+(all.slice(0,6).join('、')||'（空）')+(all.length>6?' 等 '+all.length+' 个':''));
+    var base=lays[0].slice(0,lays[0].length-'rex-layout.json'.length);
+    var layout=JSON.parse(await z.file(lays[0]).async('string'));if(!Array.isArray(layout))throw new Error('首页布局格式不对');
+    var hf=z.file(base+'rex-home.json'),home=hf?JSON.parse(await hf.async('string')):{};
     var rows=[],converted=0,raw=0,keepScripts={},droppedOurs=0;
     layout.forEach(function(r){
       var items=Array.isArray(r&&r.items)?r.items:[];if(!items.length)return;
@@ -268,8 +280,9 @@ $('fileIn').onchange=async function(){
     });
     if(!rows.length)throw new Error('首页里没有任何行。');
     var extra={},names=Object.keys(z.files);
-    for(var i=0;i<names.length;i++){var n=names[i];if(n.indexOf('rex-scripts/')!==0||z.files[n].dir)continue;
-      if(keepScripts[n])extra[n]=b64(await z.file(n).async('uint8array'));else droppedOurs++;}
+    for(var i=0;i<names.length;i++){var n=names[i];if(n.indexOf(base+'rex-scripts/')!==0||z.files[n].dir)continue;
+      var rel=n.slice(base.length);
+      if(keepScripts[rel])extra[rel]=b64(await z.file(n).async('uint8array'));else droppedOurs++;}
     extraFiles=extra;homeMeta={avatar:home.avatar||'avatar-22',isIndependent:!!home.isIndependent,avatarData:home.avatarData||''};
     state={title:String(home.title||'Rex首页'),rows:rows,open:null};persist();render();
     var li=[];
@@ -277,10 +290,11 @@ $('fileIn').onchange=async function(){
     if(converted)li.push(converted+' 行改为读取 GitHub 上的加密脚本。');
     if(droppedOurs)li.push('删除包里夹带的 '+droppedOurs+' 个脚本，导出后不含明文。');
     if(raw)li.push(raw+' 行来自其他模块，原样保留'+(Object.keys(extra).length?'（连同它们自带的脚本）':'')+'。');
-    note.hidden=false;note.innerHTML='';var bb=document.createElement('b');bb.textContent='已打开「'+f.name+'」';note.append(bb);
+    if(inner&&inner.length>1)li.unshift('压缩包里有 '+inner.length+' 个首页：'+inner.map(function(n){return n.split('/').pop();}).join('、')+'。已打开第一个；要别的请先解压再打开。');
+    note.hidden=false;note.innerHTML='';var bb=document.createElement('b');bb.textContent='已打开「'+fname+'」';note.append(bb);
     var ul=document.createElement('ul');li.forEach(function(t){var x=document.createElement('li');x.textContent=t;ul.append(x);});note.append(ul);
     setMsg('');
-  }catch(e){note.hidden=true;setMsg((e&&e.message?e.message:'这不是 Rex 首页文件（.rex），打不开')+'。请选 Mac 导出或别人分享的 .rex 文件。',true);}
+  }catch(e){note.hidden=true;setMsg(String(e&&e.message?e.message:'这不是 Rex 首页文件（.rex），打不开').replace(/[。.]+$/,'')+'。请选 Mac 导出或别人分享的 .rex 文件。',true);}
 };
 $('addBtn').onclick=function(){
   var fn=$('addSel').value,r;
