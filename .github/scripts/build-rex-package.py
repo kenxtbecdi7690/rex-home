@@ -1,5 +1,5 @@
 # 由草稿的 RexHome-vN.rex 生成发布用的 RexHome.rex：
-# 去掉包内的明文脚本，首页各行改为读取 main 上的加密 rex-home.js（与 RexHome-v96.rex 相同做法）。
+# 去掉包内的明文脚本，首页各行改为读取 main 上的加密 rex-home.js。
 import json
 import sys
 import zipfile
