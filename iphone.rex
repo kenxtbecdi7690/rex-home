@@ -7,7 +7,7 @@
       "title": "Rex 首頁",
       "description": "热门轮播、剧集、电影、动漫、综艺、纪录片、演唱会、榜单与平台片库。",
       "requiredVersion": "0.0.1",
-      "version": "2026.10.24.134",
+      "version": "2026.10.24.136",
       "author": "Bolinxxlin",
       "url": "https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/rex-home.js"
     }
