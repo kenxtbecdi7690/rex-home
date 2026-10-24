@@ -83,9 +83,9 @@ input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(-
   <div class="home">
     <div class="field"><label for="homeTitle">首页名称</label><input type="text" id="homeTitle" maxlength="30"></div>
     <div class="open">
-      <label class="btn openbtn" for="fileIn">打开 .rex 文件</label>
+      <label class="btn openbtn" for="fileIn">打开 .rex／备份</label>
       <input type="file" id="fileIn" class="vh">
-      <span class="desc">Mac 导出或别人分享的首页都可以打开，照着改成自己的。</span>
+      <span class="desc">可打开 Mac 导出或别人分享的 <code>.rex</code>，或 Rex 备份里的首页设置（<code>payload/homes/configs</code> 里没有 .sync 的 <code>.json</code>）。只在本机读取，不上传。</span>
     </div>
     <div class="note" id="importNote" hidden></div>
   </div>
@@ -106,7 +106,7 @@ input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(-
       <li class="cl" hidden>在 claude.ai 打开时只能存成 <code>RexHome.zip</code>：先在「文件」长按改名为 <code>RexHome.rex</code>，Rex 不支持直接导入 .zip。</li>
     </ol>
     同一个模块可以加好几行，例如地区剧一行韩国、一行日本。<br>
-    分享自己的首页：Mac 版 Rex 可以直接导出；iPhone 用这个页面做好再导出。别人的文件也可以先在这里打开检查一次再转发。
+    分享自己的首页：Mac 版 Rex 可以直接导出。iPhone：Rex 备份 → 解压 → <code>payload/homes/configs</code> → 用上方按钮打开没有 .sync 的 <code>.json</code> → 导出首页。别人的文件也可以先在这里打开检查一次再转发。
   </div>
 </div>
 
@@ -248,10 +248,27 @@ $('fileIn').onchange=async function(){
   var note=$('importNote');
   if(typeof JSZip==='undefined'){setMsg('打包工具没有载入，请重新打开这个页面。',true);return;}
   try{
+    var fname=f.name,inner=null,fromBackup='';
+    var head=new Uint8Array(await f.slice(0,4).arrayBuffer());
+    if(!(head[0]===0x50&&head[1]===0x4b)){
+      // 不是压缩包：当成 Rex 备份里的首页设置（payload/homes/configs/xxx.json）
+      if(/\.sync\.json$/i.test(fname))throw new Error('「.sync.json」只是同步记号，请改选同名、但没有 .sync 的 .json');
+      var cfg;try{cfg=JSON.parse(await f.text());}catch(ej){throw new Error('这不是 Rex 首页文件（.rex），也不是首页设置（.json），打不开');}
+      if(!isLayout(cfg))throw new Error('这个 .json 不是 Rex 的首页设置');
+      await applyLayout(cfg,{},null,'',fname,null,'备份里的首页设置');return;
+    }
     var z;try{z=await JSZip.loadAsync(f);}catch(e0){throw new Error('这不是 Rex 首页文件（.rex），打不开');}
-    var fname=f.name,inner=null;
     var all=Object.keys(z.files).filter(function(n){return !z.files[n].dir&&n.indexOf('__MACOSX/')!==0&&!/(^|\/)\./.test(n);});
     var lays=all.filter(function(n){return n==='rex-layout.json'||/\/rex-layout\.json$/.test(n);}).sort(function(a,b){return a.length-b.length;});
+    if(!lays.length){
+      // Rex 完整备份：只读 payload/homes/configs 里的首页设置，其他档（账号、记录）一律不读
+      var cfgs=all.filter(function(n){return /(^|\/)payload\/homes\/configs\/[^\/]+\.json$/.test(n)&&!/\.sync\.json$/i.test(n);})
+        .sort(function(a,b){return (z.files[b].date||0)-(z.files[a].date||0);});
+      for(var ci=0;ci<cfgs.length;ci++){
+        var c;try{c=JSON.parse(await z.file(cfgs[ci]).async('string'));}catch(ec){continue;}
+        if(isLayout(c)){await applyLayout(c,{},null,'',f.name,cfgs.length>1?cfgs:null,' Rex 备份（只读取首页设置）');return;}
+      }
+    }
     if(!lays.length){
       // 压缩包里装着 .rex：打开第一个
       var rexes=all.filter(function(n){return /\.rex$/i.test(n);}).sort();
@@ -264,7 +281,13 @@ $('fileIn').onchange=async function(){
     var base=lays[0].slice(0,lays[0].length-'rex-layout.json'.length);
     var layout=JSON.parse(await z.file(lays[0]).async('string'));if(!Array.isArray(layout))throw new Error('首页布局格式不对');
     var hf=z.file(base+'rex-home.json'),home=hf?JSON.parse(await hf.async('string')):{};
-    var rows=[],converted=0,raw=0,keepScripts={},droppedOurs=0;
+    await applyLayout(layout,home,z,base,fname,inner,'');
+  }catch(e){note.hidden=true;setMsg(String(e&&e.message?e.message:'这不是 Rex 首页文件（.rex），打不开').replace(/[。.]+$/,'')+'。请选 Mac 导出或别人分享的 .rex，或 Rex 备份里的首页设置 .json。',true);}
+};
+function isLayout(x){return Array.isArray(x)&&x.length>0&&x.every(function(r){return r&&Array.isArray(r.items);});}
+async function applyLayout(layout,home,z,base,fname,inner,kind){
+    var note=$('importNote');
+    var rows=[],converted=0,raw=0,keepScripts={},droppedOurs=0,noScript=0;
     layout.forEach(function(r){
       var items=Array.isArray(r&&r.items)?r.items:[];if(!items.length)return;
       var it=items[0];
@@ -276,10 +299,11 @@ $('fileIn').onchange=async function(){
       }
       var copy=JSON.parse(JSON.stringify(r));
       copy.items.forEach(function(x){if(isOurs(x)){if(x.widgetURL!==WIDGET_URL)converted++;x.widgetURL=WIDGET_URL;x.widgetId=x.widgetBundleId=WIDGET_ID;}else{var sp=scriptPath(x.widgetURL);if(sp)keepScripts[sp]=true;}});
+      if(!z)copy.items.forEach(function(x){if(!isOurs(x)&&/^file:/.test(String(x.widgetURL||'')))noScript++;});
       raw++;rows.push({uid:uuid(),fn:RAW,title:String(r.title||'未命名'),subtitle:String(it.subtitle||''),active:r.isActive!==false,label:String(it.name||it.style||''),raw:copy});
     });
     if(!rows.length)throw new Error('首页里没有任何行。');
-    var extra={},names=Object.keys(z.files);
+    var extra={},names=z?Object.keys(z.files):[];
     for(var i=0;i<names.length;i++){var n=names[i];if(n.indexOf(base+'rex-scripts/')!==0||z.files[n].dir)continue;
       var rel=n.slice(base.length);
       if(keepScripts[rel])extra[rel]=b64(await z.file(n).async('uint8array'));else droppedOurs++;}
@@ -290,12 +314,13 @@ $('fileIn').onchange=async function(){
     if(converted)li.push(converted+' 行改为读取 GitHub 上的加密脚本。');
     if(droppedOurs)li.push('删除包里夹带的 '+droppedOurs+' 个脚本，导出后不含明文。');
     if(raw)li.push(raw+' 行来自其他模块，原样保留'+(Object.keys(extra).length?'（连同它们自带的脚本）':'')+'。');
-    if(inner&&inner.length>1)li.unshift('压缩包里有 '+inner.length+' 个首页：'+inner.map(function(n){return n.split('/').pop();}).join('、')+'。已打开第一个；要别的请先解压再打开。');
+    if(noScript)li.push('其中 '+noScript+' 行用的模块不在这个档里，别人导入后要自己先装那个模块。');
+    if(kind)li.unshift('这是'+kind+'。首页名称不在备份里，请在上方「首页名称」自己填。');
+    if(inner&&inner.length>1)li.unshift((kind?'备份里':'压缩包里')+'有 '+inner.length+' 个首页：'+inner.map(function(n){return n.split('/').pop();}).join('、')+'。已打开'+(kind?'最近修改的那个':'第一个')+'；要别的请先解压，再打开那一个'+(kind?' .json':'')+'。');
     note.hidden=false;note.innerHTML='';var bb=document.createElement('b');bb.textContent='已打开「'+fname+'」';note.append(bb);
     var ul=document.createElement('ul');li.forEach(function(t){var x=document.createElement('li');x.textContent=t;ul.append(x);});note.append(ul);
     setMsg('');
-  }catch(e){note.hidden=true;setMsg(String(e&&e.message?e.message:'这不是 Rex 首页文件（.rex），打不开').replace(/[。.]+$/,'')+'。请选 Mac 导出或别人分享的 .rex 文件。',true);}
-};
+}
 $('addBtn').onclick=function(){
   var fn=$('addSel').value,r;
   if(fn===WATCH)r={uid:uuid(),fn:WATCH,title:'▶️ 继续观看',subtitle:'',active:true,params:{}};
