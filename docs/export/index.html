@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rex首页导出工具</title>
+<meta name="description" content="iPhone 的 Rex 没有导出首页，用这个网页工具把首页导出成 .rex 分享给别人。作者：Bolinxxlin">
+<style>
+:root{--bg:#f6f4fa;--panel:#fff;--ink:#1d1a24;--muted:#6b6478;--line:#e4dfec;--accent:#7b3fe4;--accent-ink:#fff;--warn:#a5540b;--warn-bg:#fff6e8;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121016;--panel:#1c1922;--ink:#ece8f3;--muted:#a39bb1;--line:#2e2a36;--accent:#a77bff;--accent-ink:#140d22;--warn:#f0b35b;--warn-bg:#2a2115;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121016;--panel:#1c1922;--ink:#ece8f3;--muted:#a39bb1;--line:#2e2a36;--accent:#a77bff;--accent-ink:#140d22;--warn:#f0b35b;--warn-bg:#2a2115;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC",system-ui,sans-serif}
+main{max-width:640px;margin:0 auto;padding:28px 16px calc(40px + env(safe-area-inset-bottom,0px))}
+h1{font-size:28px;line-height:1.25;margin:0 0 4px}
+.by{color:var(--muted);font-size:14px;margin:0 0 14px}
+.lead{margin:0 0 18px}
+.cta{display:block;text-align:center;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-weight:600;font-size:17px;padding:14px 16px;border-radius:14px}
+.url{display:block;text-align:center;color:var(--muted);font-size:13px;margin:8px 0 24px;word-break:break-all}
+section{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:0 0 14px}
+h2{font-size:17px;margin:0 0 8px}
+ul,ol{margin:0;padding-left:1.3em}
+li{margin:4px 0}
+code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:0 4px;white-space:nowrap}
+.tip{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:8px 12px;margin-top:10px;font-size:14px}
+footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
+footer a{color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Rex首页导出工具</h1>
+  <p class="by">2026.10.24 版 · 作者：Bolinxxlin</p>
+  <p class="lead">iPhone 的 Rex 没有「导出首页」。这个网页工具帮你把自己调好的首页导出成 <code>.rex</code> 文件，发给朋友，对方导入就有一样的首页。用 Safari 打开就能用，不用安装。</p>
+  <a class="cta" href="../builder/">打开工具</a>
+  <span class="url">kenxtbecdi7690.github.io/rex-home/builder/</span>
+
+  <section>
+    <h2>能做什么</h2>
+    <ul>
+      <li><b>导出首页</b>：从 Rex 备份读出你的首页</li>
+      <li><b>编辑首页</b>：开关、调整顺序、改设置、加行</li>
+      <li><b>一键重置</b>：回到 Rex首页的初始首页</li>
+      <li><b>空白模板</b>：跟 Rex 的空白模板一样，再自己加行</li>
+      <li><b>打开别人的 .rex</b>：照着改成自己的</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>教学一：导出自己的首页</h2>
+    <ol>
+      <li>在 Rex 做一次备份，存到「文件」App</li>
+      <li>在「文件」点备份，解压</li>
+      <li>依序打开 <code>payload</code> → <code>homes</code> → <code>configs</code></li>
+      <li>选<b>没有 .sync</b>、几 KB 的那个 <code>.json</code></li>
+      <li>打开工具 → 点「打开 .rex／备份」→ 选它</li>
+      <li>在「首页名称」填个名字 → 点「导出首页」</li>
+      <li>得到 <code>RexHome.rex</code></li>
+    </ol>
+    <p class="tip">存成 .zip 的话，在「文件」里长按 → 重新命名为 .rex</p>
+  </section>
+
+  <section>
+    <h2>教学二：别人怎么导入</h2>
+    <ol>
+      <li>把 <code>RexHome.rex</code> 存到「文件」</li>
+      <li>在 Rex 长按打开菜单 →「导入配置」→ 选它</li>
+      <li>再到「切换配置」选它，就好了</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>注意</h2>
+    <ul>
+      <li>只在你的手机里读取，不会上传</li>
+      <li>只读首页设置，不碰账号资料</li>
+      <li>整个备份、<code>library-credentials.plist</code> 不要发给任何人</li>
+      <li>按错了都能点「撤销」</li>
+    </ul>
+  </section>
+
+  <footer>作者：Bolinxxlin · <a href="https://github.com/kenxtbecdi7690/rex-home">GitHub</a></footer>
+</main>
+</body>
+</html>
