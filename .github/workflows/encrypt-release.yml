@@ -89,6 +89,10 @@ jobs:
           echo "msg=$msg" >> "$GITHUB_OUTPUT"
           echo "草稿：$path（$(wc -c < /tmp/plain.js) 字节）"
 
+      - name: 发布前检查（模拟数据：每个选项 200 部、首页不重复）
+        if: steps.draft.outputs.same != 'true'
+        run: node .github/scripts/check-module.js /tmp/plain.js
+
       - name: 调用加密服务
         if: steps.draft.outputs.same != 'true'
         run: |
