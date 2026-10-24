@@ -15,7 +15,7 @@
 
 **一键重置**：回到 Rex首页的初始首页（10 行）。**空白模板**：跟 Rex 的空白模板一样，只有官方首页轮播，其他行自己加。按错了都可以点「撤销」。
 
-**Forward**：Forward 的首页请用 [Forward 官方导出工具](https://forward.inch.red/export/)。这个工具也能打开 `.fwd`，「导出格式」可选 Rex 或 Forward 互转；Rex 专用的行（Rex首页、Rex 官方 TMDB）在 Forward 里不能用，导出时会提醒。
+**Forward 转 Rex**：打开 Forward 的 `.fwd` 或 Forward 备份（会列出备份里的首页让你挑），导出成 `RexHome.rex`；各行用的模块，Rex 里也要先装好。Forward 自己的首页导出请用 [Forward 官方导出工具](https://forward.inch.red/export/)。
 
 Rex 自己也有：长按菜单 →「管理配置」→「从设定范本新增」→「空白模板」或「预设配置」（Rex 自带的首页）。
 

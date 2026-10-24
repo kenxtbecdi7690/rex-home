@@ -80,7 +80,7 @@ input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(-
 <div class="wrap">
   <h1>Rex首页导出工具<span class="badge" id="ver"></span></h1>
   <p class="sub">作者：Bolinxxlin</p>
-  <p class="sub">iPhone 的 Rex 没有导出，用这里从备份导出首页；也能打开 Forward 的 <code>.fwd</code>，跟 Rex 互转（Forward 的首页请用<a href="https://forward.inch.red/export/">官方导出工具</a>）。也可以打开别人的首页，或从默认首页开始，勾选行、调整顺序和设置，再导出分享。导出的首页读取 GitHub 上的加密脚本，不含明文。</p>
+  <p class="sub">iPhone 的 Rex 没有导出，用这里从备份导出首页；也能把 Forward 的首页（<code>.fwd</code> 或 Forward 备份）转成 Rex 的。也可以打开别人的首页，或从默认首页开始，勾选行、调整顺序和设置，再导出分享。导出的首页读取 GitHub 上的加密脚本，不含明文。</p>
 
   <div class="home">
     <div class="field"><label for="homeTitle">首页名称</label><input type="text" id="homeTitle" maxlength="30"></div>
@@ -90,7 +90,6 @@ input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(-
       <input type="file" id="fileIn" class="vh">
       <span class="desc">可打开 Mac 导出或别人分享的 <code>.rex</code>、Forward 导出的 <code>.fwd</code>，Rex 或 Forward 的备份（工具会自己找出首页设置），或 Rex 备份里的首页设置（<code>payload/homes/configs</code> 里没有 .sync 的 <code>.json</code>）。只在本机读取，不上传。</span>
     </div>
-    <div class="field"><label for="fmtSel">导出格式</label><select id="fmtSel"><option value="rex">Rex（RexHome.rex）</option><option value="fwd">Forward（ForwardHome.fwd）</option></select></div>
     <div class="note" id="importNote" hidden></div>
   </div>
 
@@ -105,7 +104,7 @@ input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(-
   <div class="how">
     <b>导入方法（iPhone）</b>
     <ol>
-      <li>点下方「导出首页」，得到 <code>RexHome.rex</code>（导出格式选 Forward 则得到 <code>ForwardHome.fwd</code>，用 Forward 导入）。</li>
+      <li>点下方「导出首页」，得到 <code>RexHome.rex</code>。</li>
       <li>在下载或「文件」App 里点开 <code>RexHome.rex</code>，选择用 Rex 打开导入。</li>
       <li class="cl" hidden>在 claude.ai 打开时只能存成 <code>RexHome.zip</code>：先在「文件」长按改名为 <code>RexHome.rex</code>，Rex 不支持直接导入 .zip。</li>
     </ol>
@@ -145,8 +144,6 @@ function uuid(){
   var h=Array.from(b,function(x){return(x+256).toString(16).slice(1);}).join('');
   return(h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20)).toUpperCase();
 }
-function fmt(){return homeMeta.fmt==='fwd'?'fwd':'rex';}
-function syncFmt(){$('fmtSel').value=fmt();}
 function defaultsFor(fn){var o={};(MODS[fn].params||[]).forEach(function(p){o[p.n]=p.v;});return o;}
 function fromLayout(layout){
   return layout.map(function(r){var it=r.items[0];
@@ -162,8 +159,6 @@ try{var saved=JSON.parse(localStorage.getItem('rexhome.builder.v1')||'null');
   if(saved&&Array.isArray(saved.rows)&&saved.rows.every(known)){state={title:saved.title||'Rex首页',rows:saved.rows,open:null};if(saved.home)homeMeta=saved.home;if(saved.extra)extraFiles=saved.extra;}}catch(e){}
 function persist(){try{localStorage.setItem('rexhome.builder.v1',JSON.stringify({title:state.title,rows:state.rows,home:homeMeta,extra:extraFiles}));}catch(e){try{localStorage.setItem('rexhome.builder.v1',JSON.stringify({title:state.title,rows:state.rows.filter(function(r){return r.fn!==RAW;}),home:homeMeta}));}catch(e2){}}}
 
-$('fmtSel').onchange=function(){homeMeta.fmt=this.value;persist();setMsg(this.value==='fwd'?'导出格式改为 Forward（.fwd）。':'导出格式改为 Rex（.rex）。');};
-syncFmt();
 function visible(p,params){return !p.b||p.b[1].indexOf(params[p.b[0]])>=0;}
 function optTitle(p,v){var f=(p.o||[]).find(function(o){return o[0]===v;});return f?f[1]:v;}
 function rowSummary(r){
@@ -345,7 +340,7 @@ async function openForwardBackup(z,all,fname){
   async function pick(h){var home={title:h.title,avatar:h.avatar};var im=z.file(h.img);
     if(im){home.avatar='custom.url';home.avatarData=b64(await im.async('uint8array'));}
     await applyLayout(h.rows,home,null,'',fname,null,'',true);
-    var note=$('importNote'),ul=note.querySelector('ul');if(ul&&ul.firstChild)ul.firstChild.textContent='这是 Forward 备份，导出格式已切到 Forward。备份里有你的账号资料，不要把整个备份发给别人。';
+    var note=$('importNote'),ul=note.querySelector('ul');if(ul&&ul.firstChild)ul.firstChild.textContent='这是 Forward 备份，导出时会转成 Rex 的 RexHome.rex。备份里有你的账号资料，不要把整个备份发给别人。';
     if(ok.length>1){var w=document.createElement('div');w.className='field';w.style.marginTop='8px';
       var lb=document.createElement('label');lb.textContent='备份里有 '+ok.length+' 个首页，选一个：';
       var sel=document.createElement('select');ok.forEach(function(x,j){var o=document.createElement('option');o.value=j;o.textContent=x.title+'（'+usedRows(x.rows)+' 行）';if(x===h)o.selected=true;sel.append(o);});
@@ -378,13 +373,13 @@ async function applyLayout(layout,home,z,base,fname,inner,kind,isFwd){
     for(var i=0;i<names.length;i++){var n=names[i];if(n.indexOf(base+'rex-scripts/')!==0||z.files[n].dir)continue;
       var rel=n.slice(base.length);
       if(keepScripts[rel])extra[rel]=b64(await z.file(n).async('uint8array'));else droppedOurs++;}
-    extraFiles=extra;homeMeta={avatar:home.avatar||'avatar-22',isIndependent:!!home.isIndependent,avatarData:home.avatarData||'',fmt:isFwd?'fwd':'rex'};
-    state={title:String(home.title||(isFwd?'Forward首页':'Rex首页')),rows:rows,open:null};persist();render();syncFmt();
+    extraFiles=extra;homeMeta={avatar:home.avatar||'avatar-22',isIndependent:!!home.isIndependent,avatarData:home.avatarData||''};
+    state={title:String(home.title||(isFwd?'Forward首页':'Rex首页')),rows:rows,open:null};persist();render();
     var li=[];
     li.push('读到 '+rows.length+' 行，其中 '+rows.filter(function(r){return r.active;}).length+' 行开启。');
     if(converted)li.push(converted+' 行改为读取 GitHub 上的加密脚本。');
     if(droppedOurs)li.push('删除包里夹带的 '+droppedOurs+' 个脚本，导出后不含明文。');
-    if(isFwd)li.unshift((kind?'看起来是 Forward 的首页，':'这是 Forward 首页（.fwd），')+'导出格式已切到 Forward；要转给 Rex 用就改选 Rex。');
+    if(isFwd)li.unshift((kind?'看起来是 Forward 的首页，':'这是 Forward 首页（.fwd），')+'导出时会转成 Rex 的 RexHome.rex。各行用的模块，Rex 里也要先装好。');
     if(raw)li.push(raw+' 行来自其他模块，原样保留'+(Object.keys(extra).length?'（连同它们自带的脚本）':'')+'。');
     if(noScript)li.push('其中 '+noScript+' 行用的模块不在这个档里，别人导入后要自己先装那个模块。');
     if(kind)li.unshift('这是'+kind+'。首页名称不在备份里，请在上方「首页名称」自己填。');
@@ -406,10 +401,10 @@ var REX_BLANK=[{title:'banner',isActive:true,id:'home-banner',items:[{functionId
 function rawLabel(it){if(it&&it.widgetId==='rex.tmdb')return 'Rex 官方 TMDB'+(it.functionId==='trending'?' · 今日趋势':'');return String(it&&(it.name||it.style)||'');}
 function replaceHome(rows,label){
   undoState={state:JSON.parse(JSON.stringify(state)),extra:extraFiles,home:homeMeta,note:$('importNote').hidden};
-  state={title:'Rex首页',rows:rows,open:null};extraFiles={};homeMeta={avatar:'avatar-22',isIndependent:false,avatarData:'',fmt:fmt()};$('importNote').hidden=true;persist();render();
+  state={title:'Rex首页',rows:rows,open:null};extraFiles={};homeMeta={avatar:'avatar-22',isIndependent:false,avatarData:''};$('importNote').hidden=true;persist();render();
   var m=$('msg');m.className='msg';m.textContent=label;
   var u=document.createElement('button');u.type='button';u.className='linkbtn';u.textContent='撤销';
-  u.onclick=function(){if(!undoState)return;state=undoState.state;extraFiles=undoState.extra;homeMeta=undoState.home;$('importNote').hidden=undoState.note;undoState=null;persist();render();syncFmt();setMsg('已撤销，回到之前的首页。');};
+  u.onclick=function(){if(!undoState)return;state=undoState.state;extraFiles=undoState.extra;homeMeta=undoState.home;$('importNote').hidden=undoState.note;undoState=null;persist();render();setMsg('已撤销，回到之前的首页。');};
   m.append(' ',u);
 }
 $('resetBtn').onclick=function(){replaceHome(fromLayout(DEFAULT_LAYOUT),'已重置为 v'+META.version.split('.').pop()+' 的初始首页。');};
@@ -438,7 +433,6 @@ $('saveBtn').onclick=async function(){
   var b=this;b.disabled=true;setMsg('正在打包……');
   try{
     var z=new JSZip();
-    if(fmt()==='fwd')return await saveForward(z);
     z.file('rex-manifest.json',JSON.stringify({format:'video.fika.rex.home-package',version:1},null,2));
     z.file('rex-home.json',JSON.stringify({avatar:homeMeta.avatar,isIndependent:homeMeta.isIndependent,title:state.title,avatarData:homeMeta.avatarData},null,2));
     z.file('rex-layout.json',JSON.stringify(buildLayout(),null,2));
@@ -462,26 +456,6 @@ $('saveBtn').onclick=async function(){
     else setMsg('存档失败（'+(c||'未知错误')+'）。请重新打开页面再试。',true);
   }finally{b.disabled=false;}
 };
-// Forward 的 .fwd：zip 里只有 widgets.json（同 rex-layout.json，项目不带 subtitle）和 home.json
-async function saveForward(z){
-  var rows=buildLayout(),rexOnly=0;
-  rows.forEach(function(r){var bad=false;(r.items||[]).forEach(function(x){delete x.subtitle;
-    if(/^rex\./.test(String(x.widgetId||x.widgetBundleId||''))||/^file:/.test(String(x.widgetURL||'')))bad=true;});if(bad&&r.isActive!==false)rexOnly++;});
-  z.file('widgets.json',JSON.stringify(rows,null,2));
-  z.file('home.json',JSON.stringify({avatarData:homeMeta.avatarData||'',title:state.title,avatar:homeMeta.avatar||'avatar-22'},null,2));
-  var blob=await z.generateAsync({type:'blob',compression:'DEFLATE'});
-  var tip=rexOnly?' 注意：'+rexOnly+' 行用的是 Rex 专用模块（Rex首页、Rex 官方 TMDB 等），在 Forward 里不能用，可先关掉或删除。':'';
-  if(!IN_CLAUDE){
-    var url=URL.createObjectURL(blob),a=document.createElement('a');
-    a.href=url;a.download='ForwardHome.fwd';document.body.append(a);a.click();a.remove();
-    setTimeout(function(){URL.revokeObjectURL(url);},60000);
-    setMsg('已导出 ForwardHome.fwd。在下载或「文件」里点开，用 Forward 导入。'+tip,!!rexOnly);return;
-  }
-  var dl=await window.claude.use('downloads');
-  if(!dl){setMsg('这个页面目前不能存档。请改用 GitHub 上的网页工具。',true);return;}
-  await dl.save({filename:'ForwardHome.zip',data:blob});
-  setMsg('已存成 ForwardHome.zip：到「文件」改名为 ForwardHome.fwd 再用 Forward 打开。'+tip,!!rexOnly);
-}
 if(IN_CLAUDE)document.querySelectorAll('.cl').forEach(function(x){x.hidden=false;});
 render();
 })();
