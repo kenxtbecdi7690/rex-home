@@ -69,6 +69,7 @@ input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(-
 .bar-actions .ghost{height:44px}
 .msg{font-size:12px;color:var(--muted);min-height:18px}
 .msg.err{color:var(--danger)}
+.linkbtn{background:none;border:0;padding:0 2px;font:inherit;color:var(--accent,#6d3fe0);text-decoration:underline;cursor:pointer}
 .how{margin-top:18px;font-size:13px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:var(--r);padding:12px 14px}
 .how ol{margin:6px 0 0;padding-left:20px}
 .how code{font-family:var(--mono);font-size:12px;color:var(--ink)}
@@ -114,7 +115,7 @@ input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(-
 <div class="bar">
   <div class="bar-in">
     <div class="bar-actions">
-      <button class="btn ghost" id="resetBtn" type="button">恢复默认</button>
+      <button class="btn ghost" id="resetBtn" type="button">一键重置</button>
       <button class="btn primary" id="saveBtn" type="button">导出首页</button>
     </div>
     <div class="msg" id="msg" role="status"></div>
@@ -329,11 +330,15 @@ $('addBtn').onclick=function(){
   state.rows.push(r);state.open=r.uid;persist();render();
   setMsg('已添加「'+r.title+'」到最后一行，可用 ↑ 调整位置。');
 };
-var resetArmed=false;
+// 一键重置：按一次就回到默认首页；可撤销，防止误按
+var undoState=null;
 $('resetBtn').onclick=function(){
-  if(!resetArmed){resetArmed=true;this.textContent='再点一次确认';setMsg('会清除你的修改，恢复成 v'+META.version.split('.').pop()+' 的默认首页。');var b=this;setTimeout(function(){resetArmed=false;b.textContent='恢复默认';},4000);return;}
-  resetArmed=false;this.textContent='恢复默认';
-  state={title:'Rex首页',rows:fromLayout(DEFAULT_LAYOUT),open:null};extraFiles={};homeMeta={avatar:'avatar-22',isIndependent:false,avatarData:''};$('importNote').hidden=true;persist();render();setMsg('已恢复默认首页。');
+  undoState={state:JSON.parse(JSON.stringify(state)),extra:extraFiles,home:homeMeta,note:$('importNote').hidden};
+  state={title:'Rex首页',rows:fromLayout(DEFAULT_LAYOUT),open:null};extraFiles={};homeMeta={avatar:'avatar-22',isIndependent:false,avatarData:''};$('importNote').hidden=true;persist();render();
+  var m=$('msg');m.className='msg';m.textContent='已重置为 v'+META.version.split('.').pop()+' 的默认首页。';
+  var u=document.createElement('button');u.type='button';u.className='linkbtn';u.textContent='撤销';
+  u.onclick=function(){if(!undoState)return;state=undoState.state;extraFiles=undoState.extra;homeMeta=undoState.home;$('importNote').hidden=undoState.note;undoState=null;persist();render();setMsg('已撤销，回到重置前的首页。');};
+  m.append(' ',u);
 };
 function setMsg(t,err){var m=$('msg');m.textContent=t;m.className='msg'+(err?' err':'');}
 
