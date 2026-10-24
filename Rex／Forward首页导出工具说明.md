@@ -1,4 +1,4 @@
-# Rex首页导出工具 说明
+# Rex／Forward首页导出工具 说明
 
 作者：Bolinxxlin
 
