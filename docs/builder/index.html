@@ -268,6 +268,7 @@ $('fileIn').onchange=async function(){
     var z;try{z=await JSZip.loadAsync(f);}catch(e0){throw new Error('这不是 Rex 首页文件（.rex），打不开');}
     var all=Object.keys(z.files).filter(function(n){return !z.files[n].dir&&n.indexOf('__MACOSX/')!==0&&!/(^|\/)\./.test(n);});
     var lays=all.filter(function(n){return n==='rex-layout.json'||/\/rex-layout\.json$/.test(n);}).sort(function(a,b){return a.length-b.length;});
+    if(!lays.length&&await isForwardBackup(z,all)){await openForwardBackup(z,all,f.name);return;}
     if(!lays.length){
       // Rex 完整备份：只读 payload/homes/configs 里的首页设置，其他档（账号、记录）一律不读
       var cfgs=all.filter(function(n){return /(^|\/)payload\/homes\/configs\/[^\/]+\.json$/.test(n)&&!/\.sync\.json$/i.test(n);})
@@ -317,7 +318,42 @@ function guessFwd(names,rows){var j=names.join(' ');
   if(/(^|\/|\s)rex[-_]/i.test(j))return false;if(/forward/i.test(j))return true;
   var f=0,r=0;(rows||[]).forEach(function(x){(x.items||[]).forEach(function(it){var u=String(it.widgetURL||'')+' '+String(it.widgetId||'');
     if(/vvebo|forward/i.test(u))f++;if(/rexnow|^rex\.|\srex\.|rex-home/i.test(u))r++;});});return f>r;}
-function isHomeRows(x){return isLayout(x)&&x.every(function(r){return r.items.every(function(it){return it&&typeof it==='object'&&('style' in it)&&('widgetId' in it||'widgetURL' in it);});});}
+// Forward 备份（export.json 的 format 是 forward-data）：
+// data.sqlite 的 home_configuration 记首页名称与头像，各行在 configs/{library_id}-{id}.json，自订头像在 configs/{library_id}-{id}-avatar.jpg
+// 只查 home_configuration，不读账号等其他资料
+function fbBase(all){var e=all.filter(function(n){return /(^|\/)export\.json$/.test(n);}).sort(function(a,b){return a.length-b.length;})[0];return e==null?null:e.slice(0,e.length-'export.json'.length);}
+async function isForwardBackup(z,all){var b=fbBase(all);if(b==null||!z.file(b+'data.sqlite'))return false;
+  try{return JSON.parse(await z.file(b+'export.json').async('string')).format==='forward-data';}catch(e){return false;}}
+var SQLJS='https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/';
+function loadSqlJs(){if(window.initSqlJs)return Promise.resolve();return new Promise(function(ok,no){var t=document.createElement('script');t.src=SQLJS+'sql-wasm.js';t.onload=ok;t.onerror=function(){no(new Error('读取工具没有载入，请检查网络后重试'));};document.head.append(t);});}
+async function forwardHomes(z,b){
+  await loadSqlJs();var SQL=await initSqlJs({locateFile:function(f){return SQLJS+f;}});
+  var db=new SQL.Database(await z.file(b+'data.sqlite').async('uint8array')),out=[];
+  try{var r=db.exec('select id,library_id,title,avatar from home_configuration order by sort, updated_at desc');
+    ((r[0]&&r[0].values)||[]).forEach(function(v){var key=b+'configs/'+v[1]+'-'+v[0];if(z.file(key+'.json'))out.push({file:key+'.json',img:key+'-avatar.jpg',title:String(v[2]||'未命名'),avatar:String(v[3]||'')});});
+  }finally{db.close();}
+  return out;}
+async function openForwardBackup(z,all,fname){
+  var b=fbBase(all),homes;
+  setMsg('正在读取 Forward 备份里的首页……');
+  try{homes=await forwardHomes(z,b);}catch(e){homes=null;}
+  if(!homes||!homes.length){// 读不到名称：退回逐一检查 configs 里的首页设置
+    homes=all.filter(function(n){return n.indexOf(b+'configs/')===0&&/\.json$/.test(n);}).map(function(n){return{file:n,img:n.replace(/\.json$/,'-avatar.jpg'),title:n.split('/').pop().replace(/\.json$/,''),avatar:''};});}
+  var ok=[];for(var i=0;i<homes.length;i++){var c;try{c=JSON.parse(await z.file(homes[i].file).async('string'));}catch(e){continue;}if(isHomeRows(c)){homes[i].rows=c;ok.push(homes[i]);}}
+  if(!ok.length)throw new Error('Forward 备份里找不到首页设置');
+  async function pick(h){var home={title:h.title,avatar:h.avatar};var im=z.file(h.img);
+    if(im){home.avatar='custom.url';home.avatarData=b64(await im.async('uint8array'));}
+    await applyLayout(h.rows,home,null,'',fname,null,'',true);
+    var note=$('importNote'),ul=note.querySelector('ul');if(ul&&ul.firstChild)ul.firstChild.textContent='这是 Forward 备份，导出格式已切到 Forward。备份里有你的账号资料，不要把整个备份发给别人。';
+    if(ok.length>1){var w=document.createElement('div');w.className='field';w.style.marginTop='8px';
+      var lb=document.createElement('label');lb.textContent='备份里有 '+ok.length+' 个首页，选一个：';
+      var sel=document.createElement('select');ok.forEach(function(x,j){var o=document.createElement('option');o.value=j;o.textContent=x.title+'（'+usedRows(x.rows)+' 行）';if(x===h)o.selected=true;sel.append(o);});
+      sel.onchange=function(){pick(ok[+this.value]).catch(function(e){setMsg(String(e&&e.message||e),true);});};
+      w.append(lb,sel);note.append(w);}}
+  await pick(ok[0]);
+}
+function usedRows(x){return x.filter(function(r){return r.items.length>0;}).length;}
+function isHomeRows(x){return isLayout(x)&&usedRows(x)>0&&x.every(function(r){return r.items.every(function(it){return it&&typeof it==='object'&&('style' in it)&&('widgetId' in it||'widgetURL' in it);});});}
 function isLayout(x){return Array.isArray(x)&&x.length>0&&x.every(function(r){return r&&Array.isArray(r.items);});}
 async function applyLayout(layout,home,z,base,fname,inner,kind,isFwd){
     var note=$('importNote');
@@ -387,7 +423,8 @@ function buildLayout(){
     if(r.fn===RAW){var c=JSON.parse(JSON.stringify(r.raw));c.isActive=r.active;
       // 其他模块的行：没改名就原样输出，改了才写回标题
       if(r.origTitle==null||r.title!==r.origTitle||r.subtitle!==r.origSubtitle){c.title=r.title;if(c.items[0]){c.items[0].title=r.title;c.items[0].subtitle=r.subtitle;}}return c;}
-    if(r.fn===WATCH&&r.orig){var w=JSON.parse(JSON.stringify(r.orig));w.title=r.title;w.isActive=r.active;w.items[0].title=r.title;if(r.subtitle||w.items[0].subtitle!=null)w.items[0].subtitle=r.subtitle;return w;}
+    if(r.fn===WATCH&&r.orig){var w=JSON.parse(JSON.stringify(r.orig));w.isActive=r.active;
+      if(r.title!==String(r.orig.title||'')||r.subtitle!==String(r.orig.items[0].subtitle||'')){w.title=r.title;w.items[0].title=r.title;w.items[0].subtitle=r.subtitle;}return w;}
     if(r.fn===WATCH)return{id:uuid(),title:r.title,isActive:r.active,items:[{style:'fullWidthWatchProgress',count:12,gridSize:[-1,2],id:uuid(),title:r.title,subtitle:r.subtitle,iconUrl:'',functionId:'',params:[{key:'type',value:'history'}],widgetBundleId:'',widgetId:'',widgetURL:'',name:'观看进度 - 全宽'}]};
     var m=MODS[r.fn],banner=r.fn==='rowBanner',params=[];
     m.params.forEach(function(p){var v=p.type==='page'?'1':(r.params[p.n]!=null?r.params[p.n]:p.v);params.push({key:p.n,value:String(v)});});
