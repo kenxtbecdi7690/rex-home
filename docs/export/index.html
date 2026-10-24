@@ -83,7 +83,7 @@ footer a{color:var(--muted)}
 
   <section id="s1">
     <h2><span class="no">1</span>在 Rex 导出备份</h2>
-    <p>Rex 设置 →「iCloud」→ 往下滑到「备份与还原」→ 点「<b>导出本机备份</b>」，存到「文件」App。</p>
+    <p>Rex 设置 →「iCloud」→ 往下滑到「备份与还原」→ 点「<b>导出本机备份</b>」，存到「ES 文件浏览器」。</p>
     <figure>
       <div class="ph">
         <div class="hd">iCloud</div>
@@ -104,7 +104,7 @@ footer a{color:var(--muted)}
   <section id="s2">
     <h2><span class="no">2</span>找到首页设置档</h2>
     <ol>
-      <li>在「文件」找到 <code>rex-backup-一串数字</code>，点一下解压</li>
+      <li>在「ES 文件浏览器」找到 <code>rex-backup-一串数字</code>，点一下解压</li>
       <li>依序打开 <code>payload</code> → <code>homes</code> → <code>configs</code></li>
       <li>选<b>没有 .sync</b>、<b>几 KB</b> 的 <code>.json</code>；有好几个就选修改时间最新的</li>
     </ol>
@@ -116,7 +116,7 @@ footer a{color:var(--muted)}
         <div class="row no-pick"><span class="f"><i>📄</i><span>d46c563f-…-45b3879b2.sync.json</span></span><span class="sz">18 byte</span></div>
         <div class="row"><span class="f"><i>📄</i><span>b87e3174-…-66628f7120fd.json</span></span><span class="sz">15 KB</span></div>
       </div>
-      <figcaption>示意图：「文件」App 里的 configs 文件夹（编号每个人不同）</figcaption>
+      <figcaption>示意图：ES 文件浏览器里的 configs 文件夹（编号每个人不同）</figcaption>
     </figure>
     <p class="tip">只有 18 byte 的 <code>.sync.json</code> 是同步记号，选它工具会提醒你改选。</p>
   </section>
@@ -125,7 +125,7 @@ footer a{color:var(--muted)}
     <h2><span class="no">3</span>用工具导出首页</h2>
     <ol>
       <li>点上方「打开工具」</li>
-      <li>点「<b>打开 .rex／备份</b>」→ 选第 2 步的 <code>.json</code></li>
+      <li>点「<b>打开 .rex／备份</b>」→「浏览」→ 选「ES 文件浏览器」→ 选第 2 步的 <code>.json</code></li>
       <li>在「首页名称」填个名字，需要的话调整各行</li>
       <li>点「<b>导出首页</b>」，得到 <code>RexHome.rex</code></li>
     </ol>
@@ -142,13 +142,13 @@ footer a{color:var(--muted)}
       </div>
       <figcaption>示意图：Rex首页导出工具</figcaption>
     </figure>
-    <p class="tip">存成 .zip 的话，在「文件」里长按 → 重新命名为 <code>RexHome.rex</code></p>
+    <p class="tip">「浏览」里找不到 ES 文件浏览器：在 ES 里长按那个 <code>.json</code> → 分享 →「存储到文件」，再从「文件」选它。<br>存成 .zip 的话，在 ES 文件浏览器里长按 → 重命名为 <code>RexHome.rex</code>。</p>
   </section>
 
   <section id="s4">
     <h2><span class="no">4</span>发给别人，对方导入</h2>
     <ol>
-      <li>把 <code>RexHome.rex</code> 发给对方，存到「文件」</li>
+      <li>把 <code>RexHome.rex</code> 发给对方，存到「ES 文件浏览器」</li>
       <li>在 Rex <b>长按</b>打开菜单 →「<b>导入配置</b>」→ 选它</li>
       <li>再到「切换配置」选新的首页</li>
     </ol>
