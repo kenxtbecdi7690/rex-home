@@ -2,9 +2,7 @@
 
 Rex 影视首页：**7 大分类＋豆瓣榜单**，共 11 个模块。最新的片排最前面，每行 200 部、可翻页，各行不重复。
 
-![首页示意图](docs/home-preview.svg)
-
-> 上图按首页布局绘制，为示意图，不是 App 实际截图。
+<img src="docs/home-preview.jpg" alt="Rex首页实际截图" width="320">
 
 ## 安装
 
