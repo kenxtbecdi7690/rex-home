@@ -21,6 +21,7 @@ h1{font-size:28px;line-height:1.25;margin:0 0 4px}
 .toc{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 18px;padding:0;list-style:none}
 .toc a{display:block;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 4px;color:var(--ink);text-decoration:none;font-size:13px;line-height:1.3}
 .toc b{display:block;color:var(--accent);font-size:16px}
+.toc .wide{grid-column:1/-1}
 section{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:0 0 14px}
 h2{font-size:18px;margin:0 0 8px;display:flex;align-items:center;gap:8px}
 .no{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:14px;display:grid;place-items:center}
@@ -83,6 +84,7 @@ footer a{color:var(--muted)}
     <li><a href="#s2"><b>2</b>找设置档</a></li>
     <li><a href="#s3"><b>3</b>用工具导出</a></li>
     <li><a href="#s4"><b>4</b>别人导入</a></li>
+    <li class="wide"><a href="#fw"><b>FW → Rex</b>Forward 首页转到 Rex</a></li>
   </ol>
 
   <section id="s1">
@@ -168,6 +170,22 @@ footer a{color:var(--muted)}
       </div>
       <figcaption>示意图：在 Rex 长按打开的菜单</figcaption>
     </figure>
+  </section>
+
+  <section id="fw">
+    <h2><span class="no" style="width:auto;padding:0 8px;border-radius:13px">FW</span>Forward 首页转到 Rex</h2>
+    <p>把 Forward 的首页搬到 Rex，两种档都能用：</p>
+    <ul>
+      <li><b>Forward 的 <code>.fwd</code></b>：用 <a href="https://forward.inch.red/export/" target="_blank" rel="noopener">Forward 官方导出工具</a> 导出，或别人分享的</li>
+      <li><b>Forward 备份</b>：Forward 设置里导出的备份 zip，<b>不用解压</b></li>
+    </ul>
+    <ol>
+      <li>点上方「打开工具」→「<b>打开 .rex／.fwd／备份</b>」→ 选那个档</li>
+      <li>选的是备份的话，在「<b>备份里有 N 个首页，选一个</b>」挑你要的首页</li>
+      <li>名称、头像、各行会自动带入，需要的话再调整</li>
+      <li>点「<b>导出首页</b>」，得到 <code>RexHome.rex</code>，再照上面<a href="#s4">第 4 段</a>用 Rex 导入</li>
+    </ol>
+    <p class="tip">各行用的模块，Rex 里也要先装好，那一行才会显示。Forward 备份里有你的账号资料，不要整份发给别人。</p>
   </section>
 
   <section>
