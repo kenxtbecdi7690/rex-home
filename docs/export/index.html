@@ -23,6 +23,18 @@ ul,ol{margin:0;padding-left:1.3em}
 li{margin:4px 0}
 code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:0 4px;white-space:nowrap}
 .tip{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:8px 12px;margin-top:10px;font-size:14px}
+figure{margin:10px 0 6px}
+.phone{background:linear-gradient(180deg,#2b2433,#3b3550);color:#f1eef6;border-radius:18px;padding:16px 14px 14px;font-size:14px;line-height:1.5}
+.phone .hd{text-align:center;font-weight:600;font-size:15px;margin-bottom:10px}
+.phone .ok{text-align:center;font-weight:700;font-size:18px}
+.phone .sub{text-align:center;color:#b9b0c8;font-size:12px;margin:2px 0 10px}
+.phone .row{display:flex;justify-content:space-between;border-top:1px solid #4a4358;padding:7px 2px}
+.phone .row span:last-child{color:#4cc76a}
+.phone .sec{text-align:center;font-weight:700;margin:12px 0 4px}
+.phone .desc{text-align:center;color:#b9b0c8;font-size:12px;margin:0 0 10px}
+.phone .pbtn{display:block;text-align:center;border-radius:999px;background:#57506b;padding:10px;margin-top:8px}
+.phone .pbtn.hi{outline:3px solid #ffb648;outline-offset:2px;background:#6a5f86;font-weight:700}
+figcaption{color:var(--muted);font-size:12px;text-align:center;margin-top:6px}
 footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
 footer a{color:var(--muted)}
 </style>
@@ -49,7 +61,23 @@ footer a{color:var(--muted)}
   <section>
     <h2>教学一：导出自己的首页</h2>
     <ol>
-      <li>Rex 设置 →「iCloud」→「备份与还原」→「<b>导出本机备份</b>」，存到「文件」App</li>
+      <li>Rex 设置 →「iCloud」→「备份与还原」→「<b>导出本机备份</b>」，存到「文件」App
+        <figure aria-label="Rex iCloud 页面示意图">
+          <div class="phone">
+            <div class="hd">iCloud</div>
+            <div class="ok">同步已完成</div>
+            <div class="sub">本机已与 iCloud 完成同步，其他设备将在连线后同步。</div>
+            <div class="row"><span>资源服务器</span><span>✓</span></div>
+            <div class="row"><span>模块</span><span>✓</span></div>
+            <div class="row"><span>偏好和记录</span><span>✓</span></div>
+            <div class="sec">备份与还原</div>
+            <div class="desc">将目前设备的资料、模块与设置导出至「文件」。备份包含资源库账号，不含 Rex 登录、购买凭证、影片文件和设备授权。</div>
+            <span class="pbtn hi">⇪ 导出本机备份 ← 点这个</span>
+            <span class="pbtn">▭ 导入资料</span>
+          </div>
+          <figcaption>示意图：照 Rex 的 iCloud 页面重画（简体）</figcaption>
+        </figure>
+      </li>
       <li>在「文件」点备份，解压</li>
       <li>依序打开 <code>payload</code> → <code>homes</code> → <code>configs</code></li>
       <li>选<b>没有 .sync</b>、几 KB 的那个 <code>.json</code></li>
