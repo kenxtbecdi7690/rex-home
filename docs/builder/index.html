@@ -116,6 +116,7 @@ input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(-
   <div class="bar-in">
     <div class="bar-actions">
       <button class="btn ghost" id="resetBtn" type="button">一键重置</button>
+      <button class="btn ghost" id="blankBtn" type="button">空白模板</button>
       <button class="btn primary" id="saveBtn" type="button">导出首页</button>
     </div>
     <div class="msg" id="msg" role="status"></div>
@@ -330,15 +331,19 @@ $('addBtn').onclick=function(){
   state.rows.push(r);state.open=r.uid;persist();render();
   setMsg('已添加「'+r.title+'」到最后一行，可用 ↑ 调整位置。');
 };
-// 一键重置：按一次就回到默认首页；可撤销，防止误按
+// 一键重置／空白模板：按一次就换掉整个首页；可撤销，防止误按
 var undoState=null;
-$('resetBtn').onclick=function(){
+function replaceHome(rows,label){
   undoState={state:JSON.parse(JSON.stringify(state)),extra:extraFiles,home:homeMeta,note:$('importNote').hidden};
-  state={title:'Rex首页',rows:fromLayout(DEFAULT_LAYOUT),open:null};extraFiles={};homeMeta={avatar:'avatar-22',isIndependent:false,avatarData:''};$('importNote').hidden=true;persist();render();
-  var m=$('msg');m.className='msg';m.textContent='已重置为 v'+META.version.split('.').pop()+' 的默认首页。';
+  state={title:'Rex首页',rows:rows,open:null};extraFiles={};homeMeta={avatar:'avatar-22',isIndependent:false,avatarData:''};$('importNote').hidden=true;persist();render();
+  var m=$('msg');m.className='msg';m.textContent=label;
   var u=document.createElement('button');u.type='button';u.className='linkbtn';u.textContent='撤销';
-  u.onclick=function(){if(!undoState)return;state=undoState.state;extraFiles=undoState.extra;homeMeta=undoState.home;$('importNote').hidden=undoState.note;undoState=null;persist();render();setMsg('已撤销，回到重置前的首页。');};
+  u.onclick=function(){if(!undoState)return;state=undoState.state;extraFiles=undoState.extra;homeMeta=undoState.home;$('importNote').hidden=undoState.note;undoState=null;persist();render();setMsg('已撤销，回到之前的首页。');};
   m.append(' ',u);
+}
+$('resetBtn').onclick=function(){replaceHome(fromLayout(DEFAULT_LAYOUT),'已重置为 v'+META.version.split('.').pop()+' 的初始首页。');};
+$('blankBtn').onclick=function(){
+  replaceHome(fromLayout(DEFAULT_LAYOUT).filter(function(r){return r.fn==='rowBanner';}),'已换成空白模板：只留精选轮播，用「＋ 添加一行」加你要的行。');
 };
 function setMsg(t,err){var m=$('msg');m.textContent=t;m.className='msg'+(err?' err':'');}
 
