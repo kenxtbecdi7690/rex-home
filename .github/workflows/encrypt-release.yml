@@ -120,13 +120,15 @@ jobs:
             echo "$version" > .github/release-version
           fi
           python3 -I .github/scripts/build-rex-package.py /tmp/draft.rex RexHome.rex "$WIDGET_URL"
+          # 网页编辑器的模块与选项名称跟着已发布的版本走
+          node .github/scripts/update-builder.js /tmp/plain.js docs/builder/index.html
 
-          if [ -z "$(git status --porcelain -- rex-home.js RexHome.rex .github/release-version)" ]; then
+          if [ -z "$(git status --porcelain -- rex-home.js RexHome.rex .github/release-version docs/builder/index.html)" ]; then
             echo "v${N} 已是最新，跳过提交"; exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add rex-home.js RexHome.rex .github/release-version
+          git add rex-home.js RexHome.rex .github/release-version docs/builder/index.html
           git commit -m "v${N}: ${MSG}（加密模块）"
           git push origin HEAD:main
           echo "已发布 v${N}，版本 ${version}，commit $(git rev-parse --short HEAD)"

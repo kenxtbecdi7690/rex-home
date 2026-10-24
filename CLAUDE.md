@@ -20,7 +20,7 @@
 - 剧集、电影、动漫、综艺、纪录片、演唱会之间按类型互斥，不让同一部片同时属于两类。
 
 ## 提交前检查
-- `node .github/scripts/check-module.js vN-draft/rex-home-vN.js` 要显示「检查通过」。工作流发布前也会自动跑这项检查，不通过就不加密、不发布。
+- `node .github/scripts/check-module.js vN-draft/rex-home-vN.js` 要显示「检查通过」。工作流发布前也会自动跑这项检查，不通过就不加密、不发布。它也会检查选项名称长度（中文算 2 格，最多 24 格），太长的话 Rex 设置页左边的参数名称会被挤成一个字。
 - `node --check vN-draft/rex-home-vN.js`，并确认第一行与版本号一致。
 - 用模拟的 `Widget.tmdb` 把每个模块的每个下拉选项跑一遍：TMDB 片库模式每页都要刚好 200 部、不报错；豆瓣模式在没有网络时报“格式异常”属正常。
 - 首页各行按布局顺序跑一遍，统计重复应为 0（豆瓣榜单除外）。
@@ -33,6 +33,7 @@
 ## 改完要同步
 - `README.md`「分类与更新」：在「更新事项」补一行；模块、类型、地区或榜单数量有变时，同步更新「共 11 个模块」那张表与开头的总数。
 - 脚本新增或更换会访问的网址时，同步更新 `代理规则.md` 与 `proxy/rex-home.list`。
+- 网页编辑器 `docs/builder/index.html` 的模块与选项名称由工作流发布时自动同步（`.github/scripts/update-builder.js`），不用手改。
 
 ## 发布
 1. 把草稿推到 `rex-home-v130`。

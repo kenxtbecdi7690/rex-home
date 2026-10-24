@@ -11,9 +11,9 @@ Rex 影视首页：**7 大分类＋豆瓣榜单**，共 11 个模块。最新的
 | [`rex-home.js`](rex-home.js) | 加密后的模块脚本（`REXENC` 格式） |
 | [`RexHome.rex`](RexHome.rex) | 首页布局包，导入后直接得到上图的首页；不含明文，读取上面的加密脚本 |
 
-想要自己的首页：用 [Rex首页编辑器](https://kenxtbecdi7690.github.io/rex-home/builder/)（GitHub Pages）勾选行、调整顺序和设置，直接导出 `RexHome.rex`；也能打开别人分享的 `.rex` 照着改。
+想要自己的首页：用 [Rex首页编辑器](https://kenxtbecdi7690.github.io/rex-home/builder/)（GitHub Pages）勾选行、调整顺序和设置，直接导出 `RexHome.rex`；也能打开别人分享的 `.rex` 照着改。编辑器的选项名称每次发布都会自动跟上最新模块。
 
-代理设置见 [代理规则](代理规则.md)。
+代理设置见 [代理规则](代理规则.md)；`.rex` 格式与自动更新的原理见 [导入导出规则](导入导出规则.md)。
 
 ### 豆瓣密钥（可选）
 

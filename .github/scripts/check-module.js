@@ -3,6 +3,7 @@
 //    豆瓣模式在没有网络时报「格式异常」属正常，不计失败。
 // 2) 首页各行同时读取（豆瓣榜单开去重时），各行之间重复为 0。
 // 3) 模拟 App 重开（记忆体清空、本机储存保留），先读的行占用的影片，后读的行不会再出现。
+// 4) 选项名称不能太长（中文算 2 格），否则 Rex 设置页左边的参数名称会被挤成一个字。
 const vm = require('vm');
 const fs = require('fs');
 
@@ -70,6 +71,20 @@ const defaults = (ctx, id) => {
 const keyOf = (x) => x.mediaType + '.' + x.id;
 const withTimeout = (promise) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('超时 20 秒')), 20000))]);
 
+const MAX_OPTION_WIDTH = 24;
+const width = (text) => Array.from(String(text)).reduce((n, ch) => n + (ch.charCodeAt(0) > 0xff ? 2 : 1), 0);
+
+function checkOptionNames() {
+  const ctx = load(null);
+  for (const m of ctx.WidgetMetadata.modules) {
+    for (const p of m.params) {
+      for (const o of p.enumOptions || []) {
+        if (width(o.title) > MAX_OPTION_WIDTH) failures.push(m.title + '「' + p.title + '」选项太长：' + o.title);
+      }
+    }
+  }
+}
+
 async function checkEveryOption() {
   const ctx = load(null);
   const SKIP = new Set(['page', 'pageSize', 'size', 'dedupe']);
@@ -133,6 +148,7 @@ async function checkRestart() {
 }
 
 (async () => {
+  checkOptionNames();
   const combos = await checkEveryOption();
   await checkNoDuplicates();
   await checkRestart();
@@ -141,5 +157,5 @@ async function checkRestart() {
     console.log('检查未通过：' + failures.length + ' 项');
     process.exit(1);
   }
-  console.log('检查通过：' + combos + ' 种选项组合都是 200 部（轮播 20 张）；首页与 App 重开后重复 0');
+  console.log('检查通过：' + combos + ' 种选项组合都是 200 部（轮播 20 张）；首页与 App 重开后重复 0；选项名称长度正常');
 })().catch((e) => { console.log('::error::检查程序出错：' + (e && e.stack || e)); process.exit(1); });
