@@ -303,7 +303,7 @@ async function applyLayout(layout,home,z,base,fname,inner,kind){
       var copy=JSON.parse(JSON.stringify(r));
       copy.items.forEach(function(x){if(isOurs(x)){if(x.widgetURL!==WIDGET_URL)converted++;x.widgetURL=WIDGET_URL;x.widgetId=x.widgetBundleId=WIDGET_ID;}else{var sp=scriptPath(x.widgetURL);if(sp)keepScripts[sp]=true;}});
       if(!z)copy.items.forEach(function(x){if(!isOurs(x)&&/^file:/.test(String(x.widgetURL||'')))noScript++;});
-      raw++;rows.push({uid:uuid(),fn:RAW,title:String(r.title||'未命名'),subtitle:String(it.subtitle||''),active:r.isActive!==false,label:String(it.name||it.style||''),raw:copy});
+      raw++;rows.push({uid:uuid(),fn:RAW,title:String(r.title||'未命名'),subtitle:String(it.subtitle||''),active:r.isActive!==false,label:rawLabel(it),origTitle:String(r.title||'未命名'),origSubtitle:String(it.subtitle||''),raw:copy});
     });
     if(!rows.length)throw new Error('首页里没有任何行。');
     var extra={},names=z?Object.keys(z.files):[];
@@ -333,6 +333,8 @@ $('addBtn').onclick=function(){
 };
 // 一键重置／空白模板：按一次就换掉整个首页；可撤销，防止误按
 var undoState=null;
+var REX_BLANK=[{title:'banner',isActive:true,id:'home-banner',items:[{functionId:'trending',params:[{key:'time_window',value:'day'}],title:'',name:'',widgetBundleId:'rex.tmdb',id:'home-banner-card',widgetURL:'https://assets.rexnow.tv/scripts/rex-tmdb.js',widgetId:'rex.tmdb',subtitle:'',gridSize:[-1,3],count:0,iconUrl:'',style:'banner'}]}];
+function rawLabel(it){if(it&&it.widgetId==='rex.tmdb')return 'Rex 官方 TMDB'+(it.functionId==='trending'?' · 今日趋势':'');return String(it&&(it.name||it.style)||'');}
 function replaceHome(rows,label){
   undoState={state:JSON.parse(JSON.stringify(state)),extra:extraFiles,home:homeMeta,note:$('importNote').hidden};
   state={title:'Rex首页',rows:rows,open:null};extraFiles={};homeMeta={avatar:'avatar-22',isIndependent:false,avatarData:''};$('importNote').hidden=true;persist();render();
@@ -343,13 +345,16 @@ function replaceHome(rows,label){
 }
 $('resetBtn').onclick=function(){replaceHome(fromLayout(DEFAULT_LAYOUT),'已重置为 v'+META.version.split('.').pop()+' 的初始首页。');};
 $('blankBtn').onclick=function(){
-  replaceHome(fromLayout(DEFAULT_LAYOUT).filter(function(r){return r.fn==='rowBanner';}),'已换成空白模板：只留精选轮播，用「＋ 添加一行」加你要的行。');
+  var r=JSON.parse(JSON.stringify(REX_BLANK[0]));
+  replaceHome([{uid:uuid(),fn:RAW,title:'🎞 首页轮播',origTitle:'🎞 首页轮播',subtitle:'',origSubtitle:'',active:true,label:rawLabel(r.items[0]),raw:r}],'已换成空白模板（跟 Rex 的一样：只有官方首页轮播），用「＋ 添加一行」加你要的行。');
 };
 function setMsg(t,err){var m=$('msg');m.textContent=t;m.className='msg'+(err?' err':'');}
 
 function buildLayout(){
   return state.rows.map(function(r){
-    if(r.fn===RAW){var c=JSON.parse(JSON.stringify(r.raw));c.title=r.title;c.isActive=r.active;if(c.items[0]){c.items[0].title=r.title;c.items[0].subtitle=r.subtitle;}return c;}
+    if(r.fn===RAW){var c=JSON.parse(JSON.stringify(r.raw));c.isActive=r.active;
+      // 其他模块的行：没改名就原样输出，改了才写回标题
+      if(r.origTitle==null||r.title!==r.origTitle||r.subtitle!==r.origSubtitle){c.title=r.title;if(c.items[0]){c.items[0].title=r.title;c.items[0].subtitle=r.subtitle;}}return c;}
     if(r.fn===WATCH)return{id:uuid(),title:r.title,isActive:r.active,items:[{style:'fullWidthWatchProgress',count:12,gridSize:[-1,2],id:uuid(),title:r.title,subtitle:r.subtitle,iconUrl:'',functionId:'',params:[{key:'type',value:'history'}],widgetBundleId:'',widgetId:'',widgetURL:'',name:'观看进度 - 全宽'}]};
     var m=MODS[r.fn],banner=r.fn==='rowBanner',params=[];
     m.params.forEach(function(p){var v=p.type==='page'?'1':(r.params[p.n]!=null?r.params[p.n]:p.v);params.push({key:p.n,value:String(v)});});
