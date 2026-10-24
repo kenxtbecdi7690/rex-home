@@ -11,6 +11,7 @@
 - 从上一版复制，版本号 N 加 1，以下几处一起改：第一行 `// Rex首页 vN · 作者：Bolinxxlin`；`WidgetMetadata` 的 `version`（`YYYY.MM.DD.N`，北京时间日期）；`RexHomeVer='vN'`。
 - 模块编号固定为 `rex.home.unified`（`WidgetMetadata.id` 与布局里的 `widgetId`／`widgetBundleId` 都是它），**不要改**；改了 Rex 会当成新模块，用户就得重新导入首页。
 - 草稿提交信息写成 `新增 Rex 首页 vN 草稿：要点`，冒号后的要点会成为发布提交信息。
+- 提交作者用 `Bolinxxlin <272575256+kenxtbecdi7690@users.noreply.github.com>`（`git config user.name` / `user.email`），不要用 AI 代理的名字；提交信息末尾的协作署名行照常保留。
 - 标题与选项用简体中文。
 
 ## 必须保持的规则
