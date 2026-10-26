@@ -427,17 +427,20 @@ function buildLayout(){
     return{id:uuid(),title:r.title,isActive:r.active,items:[{style:banner?'banner':'fullWidthPoster',count:0,gridSize:banner?[-1,3]:[-1,2.3],id:uuid(),title:r.title,subtitle:r.subtitle,iconUrl:'',functionId:r.fn,params:params,widgetBundleId:WIDGET_ID,widgetId:WIDGET_ID,widgetURL:WIDGET_URL,name:'Rex首页'}]};
   });
 }
+// 跟 Mac 版 Rex 导出的一样：紧凑 JSON、/ 写成 \/、顺序 manifest→layout→home、Unix 0644
+function macJson(x){return JSON.stringify(x).replace(/\//g,'\\/');}
+var MACF={unixPermissions:0o100644};
 $('saveBtn').onclick=async function(){
   if(!state.rows.some(function(r){return r.active;})){setMsg('至少要开启一行。',true);return;}
   if(typeof JSZip==='undefined'){setMsg('打包工具没有载入，请重新打开这个页面。',true);return;}
   var b=this;b.disabled=true;setMsg('正在打包……');
   try{
     var z=new JSZip();
-    z.file('rex-manifest.json',JSON.stringify({format:'video.fika.rex.home-package',version:1},null,2));
-    z.file('rex-home.json',JSON.stringify({avatar:homeMeta.avatar,isIndependent:homeMeta.isIndependent,title:state.title,avatarData:homeMeta.avatarData},null,2));
-    z.file('rex-layout.json',JSON.stringify(buildLayout(),null,2));
+    z.file('rex-manifest.json',macJson({format:'video.fika.rex.home-package',version:1}),MACF);
+    z.file('rex-layout.json',macJson(buildLayout()),MACF);
+    z.file('rex-home.json',macJson({avatar:homeMeta.avatar,avatarData:homeMeta.avatarData,isIndependent:homeMeta.isIndependent,title:state.title}),MACF);
     Object.keys(extraFiles).forEach(function(n){z.file(n,unb64(extraFiles[n]));});
-    var blob=await z.generateAsync({type:'blob',compression:'DEFLATE'});
+    var blob=await z.generateAsync({type:'blob',compression:'DEFLATE',platform:'UNIX',streamFiles:true});
     if(!IN_CLAUDE){
       // 自己的网站（GitHub Pages 等）：直接下载 RexHome.rex
       var url=URL.createObjectURL(blob),a=document.createElement('a');
