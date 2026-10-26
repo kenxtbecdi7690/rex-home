@@ -172,6 +172,13 @@ $('homeSel').onchange=function(){cur=homes[+this.value];render();};
 
 
 // 跟 Mac 版 Rex 导出的一样：紧凑 JSON、/ 写成 \/、顺序 manifest→layout→home、Unix 0644
+// 头像：Mac 版 Rex 的写法是自订头像 avatar 写 avatar-22，avatarData 放 333×333 PNG；Forward 的 JPG／custom.url 导出时转过来
+function avSrcOf(d){return d?'data:image/'+(d.slice(0,4)==='iVBO'?'png':'jpeg')+';base64,'+d:'';}
+function toPng(src,size){return new Promise(function(ok,no){var im=new Image();im.onload=function(){var c=document.createElement('canvas');c.width=c.height=size;
+  var m=Math.min(im.naturalWidth,im.naturalHeight);c.getContext('2d').drawImage(im,(im.naturalWidth-m)/2,(im.naturalHeight-m)/2,m,m,0,0,size,size);ok(c.toDataURL('image/png').split(',')[1]);};
+  im.onerror=function(){no(new Error('图片读不出来'));};im.src=src;});}
+async function rexAvatar(avatar,data){if(!data)return{avatar:/^avatar-\d+$/.test(avatar||'')?avatar:'avatar-22',data:''};
+  if(data.slice(0,4)!=='iVBO')data=await toPng(avSrcOf(data),333);return{avatar:/^avatar-\d+$/.test(avatar||'')?avatar:'avatar-22',data:data};}
 function macJson(x){return JSON.stringify(x).replace(/\//g,'\\/');}
 var MACF={unixPermissions:0o100644};
 function macHome(avatar,data,indep,title){var h={avatar:avatar||'avatar-22'};if(data)h.avatarData=data;h.isIndependent=!!indep;h.title=title;return h;}
@@ -181,7 +188,8 @@ $('saveBtn').onclick=async function(){
     var z=new JSZip(),title=$('nameIn').value.trim()||cur.title;
     z.file('rex-manifest.json',macJson({format:'video.fika.rex.home-package',version:1}),MACF);
     z.file('rex-layout.json',macJson(used(cur.rows)),MACF);
-    z.file('rex-home.json',macJson(macHome(cur.avatar,cur.avatarData,false,title)),MACF);
+    var av=await rexAvatar(cur.avatar,cur.avatarData);
+    z.file('rex-home.json',macJson(macHome(av.avatar,av.data,false,title)),MACF);
     var blob=await z.generateAsync({type:'blob',compression:'DEFLATE',platform:'UNIX',streamFiles:true});
     if(!IN_CLAUDE){
       var url=URL.createObjectURL(blob),a=document.createElement('a');

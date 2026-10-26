@@ -17,6 +17,8 @@
 
 **预设配置**：换成 Rex 自带的「预设配置」首页（14 行：官方 TMDB、Bangumi、继续观看、网盘等），跟 Mac 版 Rex 导出的一模一样，可以从这里再改。
 
+**头像**：首页名称下面显示目前的头像。「换头像」选一张图，自动裁成正方形、存成 333×333 PNG（跟 Mac 版 Rex 一样）；「用默认头像」拿掉自订图片。Forward 转过来的头像也会自动转成 Rex 的写法。
+
 **Forward 转 Rex**：打开 Forward 的 `.fwd` 或 Forward 备份（会列出备份里的首页让你挑），导出成 `RexHome.rex`；各行用的模块，Rex 里也要先装好。Forward 自己的首页导出请用 [Forward 官方导出工具](https://forward.inch.red/export/)。
 
 Rex 自己也有：长按菜单 →「管理配置」→「从设定范本新增」→「空白模板」或「预设配置」（Rex 自带的首页）。
