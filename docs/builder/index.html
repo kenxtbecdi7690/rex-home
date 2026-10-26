@@ -63,6 +63,7 @@ input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(-
 .tag{font-size:11px;color:var(--gold);border:1px solid var(--gold);border-radius:6px;padding:0 5px;margin-left:6px;vertical-align:1px}
 .add select{flex:1}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body.dropping::after{content:'放开即可打开档案';position:fixed;inset:12px;z-index:100;display:grid;place-items:center;border:3px dashed var(--accent);border-radius:20px;background:var(--bg);color:var(--accent);font-size:22px;font-weight:700;pointer-events:none}
 .bar-in{max-width:640px;margin:0 auto;display:grid;gap:6px}
 .bar-actions{display:flex;gap:8px}
 .bar-actions .primary{flex:1;height:44px;font-size:16px}
@@ -88,7 +89,7 @@ input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(-
       <label class="btn openbtn" for="fileIn">打开 .rex／.fwd／备份</label>
       <a class="btn openbtn" href="https://forward.inch.red/export/" target="_blank" rel="noopener" style="text-decoration:none">Forward 官方导出工具 ↗</a>
       <input type="file" id="fileIn" class="vh">
-      <span class="desc">可打开 Mac 导出或别人分享的 <code>.rex</code>、Forward 导出的 <code>.fwd</code>，Rex 或 Forward 的备份（工具会自己找出首页设置），或 Rex 备份里的首页设置（<code>payload/homes/configs</code> 里没有 .sync 的 <code>.json</code>）。只在本机读取，不上传。</span>
+      <span class="desc">可打开 Mac 导出或别人分享的 <code>.rex</code>、Forward 导出的 <code>.fwd</code>，Rex 或 Forward 的备份（工具会自己找出首页设置），或 Rex 备份里的首页设置（<code>payload/homes/configs</code> 里没有 .sync 的 <code>.json</code>）。只在本机读取，不上传。用电脑（Mac）时也可以把档案直接拖进这个网页。</span>
     </div>
     <div class="note" id="importNote" hidden></div>
   </div>
@@ -102,14 +103,15 @@ input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(-
   </div>
 
   <div class="how">
-    <b>导入方法（iPhone）</b>
+    <b>导入方法</b>
     <ol>
-      <li>点下方「导出首页」，得到 <code>RexHome.rex</code>。</li>
-      <li>在下载或「文件」App 里点开 <code>RexHome.rex</code>，选择用 Rex 打开导入。</li>
+      <li>点下方「导出首页」，得到 <code>RexHome.rex</code>（写法跟 Mac 版 Rex 导出的一样）。</li>
+      <li>iPhone／iPad：在下载或「文件」App 里点开 <code>RexHome.rex</code>，选择用 Rex 打开；或在 Rex 长按打开菜单 →「导入配置」选它。</li>
+      <li>Mac：<code>RexHome.rex</code> 在「下载」文件夹，用 Rex 的「导入配置」选它。</li>
       <li class="cl" hidden>在 claude.ai 打开时只能存成 <code>RexHome.zip</code>：先在「文件」长按改名为 <code>RexHome.rex</code>，Rex 不支持直接导入 .zip。</li>
     </ol>
     同一个模块可以加好几行，例如地区剧一行韩国、一行日本。<br>
-    分享自己的首页：Mac 版 Rex 可以直接导出。iPhone：Rex 设置 →「iCloud」→「导出本机备份」→ 在「文件」解压 → <code>payload/homes/configs</code> → 用上方按钮打开没有 .sync 的 <code>.json</code> → 导出首页。别人的文件也可以先在这里打开检查一次再转发。
+    分享自己的首页：Mac 版 Rex 可以直接导出。iPhone／iPad：Rex 设置 →「iCloud」→「导出本机备份」→ 用上方按钮打开备份 zip（不用解压）→ 导出首页。别人的文件也可以先在这里打开检查一次再转发。
   </div>
 </div>
 
@@ -459,6 +461,15 @@ $('saveBtn').onclick=async function(){
     else setMsg('存档失败（'+(c||'未知错误')+'）。请重新打开页面再试。',true);
   }finally{b.disabled=false;}
 };
+// Mac 等电脑：把档案直接拖进网页
+(function(){var inp=$('fileIn'),n=0,b=document.body;
+  function hasFiles(e){return e.dataTransfer&&[].indexOf.call(e.dataTransfer.types||[],'Files')>=0;}
+  document.addEventListener('dragenter',function(e){if(!hasFiles(e))return;e.preventDefault();n++;b.classList.add('dropping');});
+  document.addEventListener('dragover',function(e){if(hasFiles(e))e.preventDefault();});
+  document.addEventListener('dragleave',function(){if(--n<=0){n=0;b.classList.remove('dropping');}});
+  document.addEventListener('drop',function(e){if(!hasFiles(e))return;e.preventDefault();n=0;b.classList.remove('dropping');
+    if(!e.dataTransfer.files.length)return;try{inp.files=e.dataTransfer.files;}catch(x){return;}inp.dispatchEvent(new Event('change'));});
+})();
 if(IN_CLAUDE)document.querySelectorAll('.cl').forEach(function(x){x.hidden=false;});
 render();
 })();
