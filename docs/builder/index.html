@@ -98,6 +98,7 @@ body.dropping::after{content:'放开即可打开档案';position:fixed;inset:12p
       <input type="file" id="fileIn" class="vh">
       <span class="desc">可打开 Mac 导出或别人分享的 <code>.rex</code>、Forward 导出的 <code>.fwd</code>，Rex 或 Forward 的备份（工具会自己找出首页设置），或 Rex 备份里的首页设置（<code>payload/homes/configs</code> 里没有 .sync 的 <code>.json</code>）。只在本机读取，不上传。用电脑（Mac）时也可以把档案直接拖进这个网页。</span>
     </div>
+    <div class="field" style="margin-top:10px"><label for="sizeSel">版面尺寸</label><select id="sizeSel"><option value="">原样（手机、iPad）</option><option value="macMid">Mac 中尺寸（全宽行放大）</option></select></div>
     <div class="note" id="importNote" hidden></div>
   </div>
 
@@ -263,6 +264,8 @@ $('avIn').onchange=function(){var f=this.files&&this.files[0];this.value='';if(!
   var r=new FileReader();r.onload=function(){toPng(r.result,333).then(function(d){homeMeta.avatar='avatar-22';homeMeta.avatarData=d;persist();renderAvatar();setMsg('已换头像（裁成正方形，333×333 PNG，跟 Mac 版 Rex 一样）。');}).catch(function(e){setMsg(String(e.message||e),true);});};
   r.onerror=function(){setMsg('图片读不出来。',true);};r.readAsDataURL(f);};
 $('avDel').onclick=function(){homeMeta.avatarData='';if(!/^avatar-\d+$/.test(homeMeta.avatar||''))homeMeta.avatar='avatar-22';persist();renderAvatar();setMsg('已改用 Rex 默认头像。');};
+$('sizeSel').value=getSize();
+$('sizeSel').onchange=function(){try{localStorage.setItem('rexhome.size',this.value);}catch(e){}setMsg(this.value?'导出时全宽行会放大成 Mac 中尺寸（轮播 3.8、海报行 3.2、横图行 2.2……），一行多格的不变。':'导出时版面照原样。');};
 $('homeTitle').oninput=function(){state.title=this.value.trim()||'Rex首页';persist();};
 
 // 打开 .rex：本模块的行转成可编辑、改读加密脚本；本模块夹带的脚本删除；其他模块原样保留
@@ -460,6 +463,12 @@ function buildLayout(){
   });
 }
 // 跟 Mac 版 Rex 导出的一样：紧凑 JSON、/ 写成 \/、顺序 manifest→layout→home、Unix 0644
+// 版面尺寸：Mac 中尺寸只放大全宽行（gridSize 第一格是 -1）的高度，表照 MakkaPakka-tv-mac-mid
+var MAC_MID={banner:[3,3.8],fullWidthPoster:[2.3,3.2],fullWidthBackdrop:[1.5,2.2],backdropFeature:[2,2.8],fullWidthWatchProgress:[2,2.8]};
+function sizeRows(rows,mode){if(mode!=='macMid')return rows;
+  return rows.map(function(r){var c=JSON.parse(JSON.stringify(r));(c.items||[]).forEach(function(it){var g=it.gridSize,t=MAC_MID[it.style];
+    if(t&&Array.isArray(g)&&g[0]===-1&&typeof g[1]==='number')it.gridSize=[-1,g[1]===t[0]?t[1]:Math.round((g[1]+t[1]-t[0])*10)/10];});return c;});}
+function getSize(){try{return localStorage.getItem('rexhome.size')||'';}catch(e){return '';}}
 function macJson(x){return JSON.stringify(x).replace(/\//g,'\\/');}
 var MACF={unixPermissions:0o100644};
 function macHome(avatar,data,indep,title){var h={avatar:avatar||'avatar-22'};if(data)h.avatarData=data;h.isIndependent=!!indep;h.title=title;return h;}
@@ -470,7 +479,7 @@ $('saveBtn').onclick=async function(){
   try{
     var z=new JSZip();
     z.file('rex-manifest.json',macJson({format:'video.fika.rex.home-package',version:1}),MACF);
-    z.file('rex-layout.json',macJson(buildLayout()),MACF);
+    z.file('rex-layout.json',macJson(sizeRows(buildLayout(),$('sizeSel').value)),MACF);
     var av=await rexAvatar(homeMeta.avatar,homeMeta.avatarData);
     z.file('rex-home.json',macJson(macHome(av.avatar,av.data,homeMeta.isIndependent,state.title)),MACF);
     Object.keys(extraFiles).forEach(function(n){z.file(n,unb64(extraFiles[n]));});
