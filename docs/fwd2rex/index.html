@@ -174,13 +174,14 @@ $('homeSel').onchange=function(){cur=homes[+this.value];render();};
 // 跟 Mac 版 Rex 导出的一样：紧凑 JSON、/ 写成 \/、顺序 manifest→layout→home、Unix 0644
 function macJson(x){return JSON.stringify(x).replace(/\//g,'\\/');}
 var MACF={unixPermissions:0o100644};
+function macHome(avatar,data,indep,title){var h={avatar:avatar||'avatar-22'};if(data)h.avatarData=data;h.isIndependent=!!indep;h.title=title;return h;}
 $('saveBtn').onclick=async function(){
   if(!cur)return;var b=this;b.disabled=true;show('saveMsg','正在打包……');
   try{
     var z=new JSZip(),title=$('nameIn').value.trim()||cur.title;
     z.file('rex-manifest.json',macJson({format:'video.fika.rex.home-package',version:1}),MACF);
     z.file('rex-layout.json',macJson(used(cur.rows)),MACF);
-    z.file('rex-home.json',macJson({avatar:cur.avatar||'avatar-22',avatarData:cur.avatarData||'',isIndependent:false,title:title}),MACF);
+    z.file('rex-home.json',macJson(macHome(cur.avatar,cur.avatarData,false,title)),MACF);
     var blob=await z.generateAsync({type:'blob',compression:'DEFLATE',platform:'UNIX',streamFiles:true});
     if(!IN_CLAUDE){
       var url=URL.createObjectURL(blob),a=document.createElement('a');
