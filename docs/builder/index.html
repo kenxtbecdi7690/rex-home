@@ -390,8 +390,10 @@ async function rexHomeNames(z,all,ids){var out={},db=all.filter(function(n){retu
 // 测试版备份：payload/kernel/rex-kernel.db 的 home_document 记着还在用的首页（名称、头像、排序），没被删的才列出来
 async function rexKernelHomes(z,all){var k=all.filter(function(n){return /(^|\/)payload\/kernel\/rex-kernel\.db$/.test(n);})[0];if(!k)return null;
   try{await loadSqlJs();var SQL=await initSqlJs({locateFile:function(f){return SQLJS+f;}});var d=new SQL.Database(await z.file(k).async('uint8array')),out={},n=0;
-    try{var r=d.exec("select id,title,avatarName,avatarFileName,sort,isIndependent from home_document where deletedAt is null order by sort");
-      ((r[0]&&r[0].values)||[]).forEach(function(v,i){out[String(v[0]).toLowerCase()]={title:String(v[1]||''),avatar:String(v[2]||''),file:v[3]?String(v[3]):'',sort:i,indep:!!v[5]};n++;});}
+    try{var env={},e=[];try{e=d.exec("select id,title,isDefault from environment where deletedAt is null");}catch(x){}
+      ((e[0]&&e[0].values)||[]).forEach(function(v){if(!v[2])env[String(v[0])]=String(v[1]||'');});
+      var r=d.exec("select id,title,avatarName,avatarFileName,sort,isIndependent,environmentID from home_document where deletedAt is null order by sort");
+      ((r[0]&&r[0].values)||[]).forEach(function(v,i){out[String(v[0]).toLowerCase()]={title:String(v[1]||''),avatar:String(v[2]||''),file:v[3]?String(v[3]):'',sort:i,indep:!!v[5],env:env[String(v[6])]||''};n++;});}
     finally{d.close();}return n?out:null;}catch(e){return null;}}
 async function openRexBackup(z,all,cfgs,fname){
   var list=[];for(var i=0;i<cfgs.length;i++){var c;try{c=JSON.parse(await z.file(cfgs[i]).async('string'));}catch(e){continue;}
@@ -404,7 +406,7 @@ async function openRexBackup(z,all,cfgs,fname){
   else if(list.length>1)names=await rexHomeNames(z,all,list.map(function(h){return h.id;}));
   list.forEach(function(h,i){var n=names[h.id.toLowerCase()];h.named=!!n;
     var t=h.rows.map(function(r){return String(r.title||'').trim();}).filter(function(x){return x&&x!=='banner';}).slice(0,2).join('、');
-    h.title=n||'';h.label=(n||('首页 '+(i+1)+(t?'：'+t:(hasServerPage(h.rows)?'：Forward 资源库页面':''))))+'（'+(usedRows(h.rows)||h.rows.reduce(function(a,r){return a+(r.serverPage?r.serverPage.length:0);},0))+' 行）';});
+    h.title=n||'';h.label=(h.k&&h.k.env?'〔'+h.k.env+'〕':'')+(n||('首页 '+(i+1)+(t?'：'+t:(hasServerPage(h.rows)?'：Forward 资源库页面':''))))+'（'+(usedRows(h.rows)||h.rows.reduce(function(a,r){return a+(r.serverPage?r.serverPage.length:0);},0))+' 行）';});
   async function pick(h){var cf=guessFwd(all,h.rows),home={title:h.title};
     if(h.k){home.avatar=h.k.avatar;home.isIndependent=h.k.indep;var base=cfgs[0].slice(0,cfgs[0].lastIndexOf('/')+1),im=h.k.file&&z.file(base+h.k.file);if(im)home.avatarData=b64(await im.async('uint8array'));}
     await applyLayout(h.rows,home,null,'',fname,null,(cf?' Forward':' Rex')+' 备份（只读取首页设置）',cf);
