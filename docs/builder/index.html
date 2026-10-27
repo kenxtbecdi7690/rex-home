@@ -409,9 +409,11 @@ async function applyLayout(layout,home,z,base,fname,inner,kind,isFwd){
     var note=$('importNote');
     var rows=[],converted=0,raw=0,keepScripts={},droppedOurs=0,noScript=0;
     layout.forEach(function(r){
-      var items=Array.isArray(r&&r.items)?r.items:[];if(!items.length)return;
+      var items=Array.isArray(r&&r.items)?r.items:[];
+      // 没有格子的行是分组标题，原样保留
+      if(!items.length){if(!r)return;rows.push({uid:uuid(),fn:RAW,title:String(r.title||''),subtitle:'',active:r.isActive!==false,label:'分组标题（没有格子）',origTitle:String(r.title||''),origSubtitle:'',raw:JSON.parse(JSON.stringify(r))});raw++;return;}
       var it=items[0];
-      if(items.length===1&&it.style==='fullWidthWatchProgress'){rows.push({uid:uuid(),fn:WATCH,title:String(r.title||'▶️ 继续观看'),subtitle:String(it.subtitle||''),active:r.isActive!==false,params:{},orig:JSON.parse(JSON.stringify(r))});return;}
+      if(items.length===1&&it.style==='fullWidthWatchProgress'){rows.push({uid:uuid(),fn:WATCH,title:String(r.title||'▶️ 继续观看'),shown:String(r.title||'▶️ 继续观看'),subtitle:String(it.subtitle||''),active:r.isActive!==false,params:{},orig:JSON.parse(JSON.stringify(r))});return;}
       if(items.length===1&&isOurs(it)){
         var p=defaultsFor(it.functionId);(it.params||[]).forEach(function(kv){if(kv&&kv.key!=null)p[kv.key]=String(kv.value);});
         if(it.widgetURL!==WIDGET_URL||it.widgetId!==WIDGET_ID)converted++;
@@ -483,7 +485,7 @@ function buildLayout(){
       // 其他模块的行：没改名就原样输出，改了才写回标题
       if(r.origTitle==null||r.title!==r.origTitle||r.subtitle!==r.origSubtitle){c.title=r.title;if(c.items[0]){c.items[0].title=r.title;c.items[0].subtitle=r.subtitle;}}return c;}
     if(r.fn===WATCH&&r.orig){var w=JSON.parse(JSON.stringify(r.orig));w.isActive=r.active;
-      if(r.title!==String(r.orig.title||'')||r.subtitle!==String(r.orig.items[0].subtitle||'')){w.title=r.title;w.items[0].title=r.title;w.items[0].subtitle=r.subtitle;}return w;}
+      if(r.title!==(r.shown!=null?r.shown:String(r.orig.title||''))||r.subtitle!==String(r.orig.items[0].subtitle||'')){w.title=r.title;w.items[0].title=r.title;w.items[0].subtitle=r.subtitle;}return w;}
     if(r.fn===WATCH)return{id:uuid(),title:r.title,isActive:r.active,items:[{style:'fullWidthWatchProgress',count:12,gridSize:[-1,2],id:uuid(),title:r.title,subtitle:r.subtitle,iconUrl:'',functionId:'',params:[{key:'type',value:'history'}],widgetBundleId:'',widgetId:'',widgetURL:'',name:'观看进度 - 全宽'}]};
     var m=MODS[r.fn],banner=r.fn==='rowBanner',params=[];
     m.params.forEach(function(p){var v=p.type==='page'?'1':(r.params[p.n]!=null?r.params[p.n]:p.v);params.push({key:p.n,value:String(v)});});

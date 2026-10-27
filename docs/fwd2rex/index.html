@@ -187,7 +187,7 @@ $('saveBtn').onclick=async function(){
   try{
     var z=new JSZip(),title=$('nameIn').value.trim()||cur.title;
     z.file('rex-manifest.json',macJson({format:'video.fika.rex.home-package',version:1}),MACF);
-    z.file('rex-layout.json',macJson(used(cur.rows)),MACF);
+    z.file('rex-layout.json',macJson(cur.rows),MACF);
     var av=await rexAvatar(cur.avatar,cur.avatarData);
     z.file('rex-home.json',macJson(macHome(av.avatar,av.data,false,title)),MACF);
     var blob=await z.generateAsync({type:'blob',compression:'DEFLATE',platform:'UNIX',streamFiles:true});
