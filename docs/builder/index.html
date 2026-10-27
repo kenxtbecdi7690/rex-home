@@ -295,10 +295,7 @@ $('fileIn').onchange=async function(){
       // Rex 完整备份：只读 payload/homes/configs 里的首页设置，其他档（账号、记录）一律不读
       var cfgs=all.filter(function(n){return /(^|\/)payload\/homes\/configs\/[^\/]+\.json$/.test(n)&&!/\.sync\.json$/i.test(n);})
         .sort(function(a,b){return (z.files[b].date||0)-(z.files[a].date||0);});
-      for(var ci=0;ci<cfgs.length;ci++){
-        var c;try{c=JSON.parse(await z.file(cfgs[ci]).async('string'));}catch(ec){continue;}
-        if(isLayout(c)){var cf=guessFwd(all,c);await applyLayout(c,{},null,'',f.name,cfgs.length>1?cfgs:null,(cf?' Forward':' Rex')+' 备份（只读取首页设置）',cf);return;}
-      }
+      if(cfgs.length&&await openRexBackup(z,all,cfgs,f.name))return;
     }
     if(!lays.length){
       // Forward 导出的 .fwd：widgets.json（各行，格式同 rex-layout.json）+ home.json（名称、头像）
@@ -375,6 +372,37 @@ async function openForwardBackup(z,all,fname){
   await pick(ok[0]);
 }
 function usedRows(x){return x.filter(function(r){return r.items.length>0;}).length;}
+// Rex 备份（video.rex.local-backup）：首页在 payload/homes/configs/{编号}.json；名称试着从 payload/data/rex.db 里
+// 带 title／name 栏位、编号对得上的表读出来，只查这两栏，读不到就用各行标题当名字
+async function rexHomeNames(z,all,ids){var out={},db=all.filter(function(n){return /(^|\/)payload\/data\/rex\.db$/.test(n);})[0];if(!db)return out;
+  try{await loadSqlJs();var SQL=await initSqlJs({locateFile:function(f){return SQLJS+f;}});var d=new SQL.Database(await z.file(db).async('uint8array'));
+    try{var want={};ids.forEach(function(i){want[i.toLowerCase()]=1;});
+      var ts=(d.exec("select name from sqlite_master where type='table'")[0]||{values:[]}).values.map(function(v){return v[0];});
+      ts.forEach(function(t){var cols=((d.exec('pragma table_info("'+t.replace(/"/g,'""')+'")')[0]||{values:[]}).values).map(function(v){return v[1];});
+        var tc=cols.filter(function(c){return /^(title|name)$/i.test(c);})[0];if(!tc)return;
+        cols.filter(function(c){return /(^|_)(id|uuid)$/i.test(c)||/^(id|uuid|identifier)$/i.test(c);}).forEach(function(ic){
+          var r=d.exec('select "'+ic.replace(/"/g,'""')+'","'+tc.replace(/"/g,'""')+'" from "'+t.replace(/"/g,'""')+'"');
+          ((r[0]&&r[0].values)||[]).forEach(function(v){var k=String(v[0]||'').toLowerCase().replace(/-default$/,'');if(want[k]&&v[1]&&!out[k])out[k]=String(v[1]);});});});
+    }finally{d.close();}
+  }catch(e){}
+  return out;}
+async function openRexBackup(z,all,cfgs,fname){
+  var list=[];for(var i=0;i<cfgs.length;i++){var c;try{c=JSON.parse(await z.file(cfgs[i]).async('string'));}catch(e){continue;}
+    if(isLayout(c)&&usedRows(c)>0)list.push({id:cfgs[i].split('/').pop().replace(/\.json$/,''),rows:c});}
+  if(!list.length)return false;
+  if(list.length>1)setMsg('正在读取备份里的 '+list.length+' 个首页……');
+  var names=list.length>1?await rexHomeNames(z,all,list.map(function(h){return h.id;})):{};
+  list.forEach(function(h,i){var n=names[h.id.toLowerCase()];h.named=!!n;
+    var t=h.rows.map(function(r){return String(r.title||'').trim();}).filter(function(x){return x&&x!=='banner';}).slice(0,2).join('、');
+    h.title=n||'';h.label=(n||('首页 '+(i+1)+(t?'：'+t:'')))+'（'+usedRows(h.rows)+' 行）';});
+  async function pick(h){var cf=guessFwd(all,h.rows);
+    await applyLayout(h.rows,{title:h.title},null,'',fname,null,(cf?' Forward':' Rex')+' 备份（只读取首页设置）',cf);
+    if(list.length>1){var w=document.createElement('div');w.className='field';w.style.marginTop='8px';
+      var lb=document.createElement('label');lb.textContent='备份里有 '+list.length+' 个首页，选一个'+(Object.keys(names).length?'：':'（名称读不到，先看行数和行名）：');
+      var sel=document.createElement('select');list.forEach(function(x,j){var o=document.createElement('option');o.value=j;o.textContent=x.label;if(x===h)o.selected=true;sel.append(o);});
+      sel.onchange=function(){pick(list[+this.value]).catch(function(e){setMsg(String(e&&e.message||e),true);});};
+      w.append(lb,sel);$('importNote').append(w);}}
+  await pick(list[0]);return true;}
 function isHomeRows(x){return isLayout(x)&&usedRows(x)>0&&x.every(function(r){return r.items.every(function(it){return it&&typeof it==='object'&&('style' in it)&&('widgetId' in it||'widgetURL' in it);});});}
 function isLayout(x){return Array.isArray(x)&&x.length>0&&x.every(function(r){return r&&Array.isArray(r.items);});}
 async function applyLayout(layout,home,z,base,fname,inner,kind,isFwd){
@@ -408,7 +436,7 @@ async function applyLayout(layout,home,z,base,fname,inner,kind,isFwd){
     if(isFwd)li.unshift((kind?'看起来是 Forward 的首页，':'这是 Forward 首页（.fwd），')+'导出时会转成 Rex 的 RexHome.rex。各行用的模块，Rex 里也要先装好。');
     if(raw)li.push(raw+' 行来自其他模块，原样保留'+(Object.keys(extra).length?'（连同它们自带的脚本）':'')+'。');
     if(noScript)li.push('其中 '+noScript+' 行用的模块不在这个档里，别人导入后要自己先装那个模块。');
-    if(kind)li.unshift('这是'+kind+'。首页名称不在备份里，请在上方「首页名称」自己填。');
+    if(kind)li.unshift('这是'+kind+'。'+(home.title?'':'首页名称不在备份里，请在上方「首页名称」自己填。'));
     if(inner&&inner.length>1)li.unshift((kind?'备份里':'压缩包里')+'有 '+inner.length+' 个首页：'+inner.map(function(n){return n.split('/').pop();}).join('、')+'。已打开'+(kind?'最近修改的那个':'第一个')+'；要别的请先解压，再打开那一个'+(kind?' .json':'')+'。');
     note.hidden=false;note.innerHTML='';var bb=document.createElement('b');bb.textContent='已打开「'+fname+'」';note.append(bb);
     var ul=document.createElement('ul');li.forEach(function(t){var x=document.createElement('li');x.textContent=t;ul.append(x);});note.append(ul);
