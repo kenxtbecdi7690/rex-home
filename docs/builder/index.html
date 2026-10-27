@@ -411,13 +411,14 @@ async function applyLayout(layout,home,z,base,fname,inner,kind,isFwd){
     layout.forEach(function(r){
       var items=Array.isArray(r&&r.items)?r.items:[];
       // 没有格子的行是分组标题，原样保留
-      if(!items.length){if(!r)return;rows.push({uid:uuid(),fn:RAW,title:String(r.title||''),subtitle:'',active:r.isActive!==false,label:'分组标题（没有格子）',origTitle:String(r.title||''),origSubtitle:'',raw:JSON.parse(JSON.stringify(r))});raw++;return;}
+      if(!items.length){if(!r)return;rows.push({uid:uuid(),fn:RAW,title:String(r.title||''),subtitle:'',active:r.isActive!==false,label:Array.isArray(r.serverPage)?'Forward 资源库页面（Rex 内部用，原样保留）':'分组标题（没有格子）',origTitle:String(r.title||''),origSubtitle:'',raw:JSON.parse(JSON.stringify(r))});raw++;return;}
       var it=items[0];
       if(items.length===1&&it.style==='fullWidthWatchProgress'){rows.push({uid:uuid(),fn:WATCH,title:String(r.title||'▶️ 继续观看'),shown:String(r.title||'▶️ 继续观看'),subtitle:String(it.subtitle||''),active:r.isActive!==false,params:{},orig:JSON.parse(JSON.stringify(r))});return;}
       if(items.length===1&&isOurs(it)){
         var p=defaultsFor(it.functionId);(it.params||[]).forEach(function(kv){if(kv&&kv.key!=null)p[kv.key]=String(kv.value);});
         if(it.widgetURL!==WIDGET_URL||it.widgetId!==WIDGET_ID)converted++;
-        rows.push({uid:uuid(),fn:it.functionId,title:String(r.title||MODS[it.functionId].title),subtitle:String(it.subtitle||''),active:r.isActive!==false,params:p});return;
+        var t0=String(r.title||MODS[it.functionId].title);
+        rows.push({uid:uuid(),fn:it.functionId,title:t0,subtitle:String(it.subtitle||''),active:r.isActive!==false,params:p,orig:JSON.parse(JSON.stringify(r)),t0:t0,s0:String(it.subtitle||''),p0:JSON.stringify(p)});return;
       }
       var copy=JSON.parse(JSON.stringify(r));
       copy.items.forEach(function(x){if(isOurs(x)){if(x.widgetURL!==WIDGET_URL)converted++;x.widgetURL=WIDGET_URL;x.widgetId=x.widgetBundleId=WIDGET_ID;}else{var sp=scriptPath(x.widgetURL);if(sp)keepScripts[sp]=true;}});
@@ -489,6 +490,11 @@ function buildLayout(){
     if(r.fn===WATCH)return{id:uuid(),title:r.title,isActive:r.active,items:[{style:'fullWidthWatchProgress',count:12,gridSize:[-1,2],id:uuid(),title:r.title,subtitle:r.subtitle,iconUrl:'',functionId:'',params:[{key:'type',value:'history'}],widgetBundleId:'',widgetId:'',widgetURL:'',name:'观看进度 - 全宽'}]};
     var m=MODS[r.fn],banner=r.fn==='rowBanner',params=[];
     m.params.forEach(function(p){var v=p.type==='page'?'1':(r.params[p.n]!=null?r.params[p.n]:p.v);params.push({key:p.n,value:String(v)});});
+    // 打开的首页里本模块的行：样式、高度、编号等照原样，只换成 GitHub 上的脚本；改了设置才换参数
+    if(r.orig&&r.orig.items&&r.orig.items[0]){var c=JSON.parse(JSON.stringify(r.orig)),ci=c.items[0];c.isActive=r.active;
+      if(JSON.stringify(r.params)!==r.p0)ci.params=params;
+      if(r.title!==r.t0||r.subtitle!==r.s0){c.title=r.title;ci.title=r.title;ci.subtitle=r.subtitle;}
+      ci.widgetURL=WIDGET_URL;ci.widgetId=ci.widgetBundleId=WIDGET_ID;return c;}
     return{id:uuid(),title:r.title,isActive:r.active,items:[{style:banner?'banner':'fullWidthPoster',count:0,gridSize:banner?[-1,3]:[-1,2.3],id:uuid(),title:r.title,subtitle:r.subtitle,iconUrl:'',functionId:r.fn,params:params,widgetBundleId:WIDGET_ID,widgetId:WIDGET_ID,widgetURL:WIDGET_URL,name:'Rex首页'}]};
   });
 }
@@ -503,7 +509,7 @@ function macJson(x){return JSON.stringify(x).replace(/\//g,'\\/');}
 var MACF={unixPermissions:0o100644};
 function macHome(avatar,data,indep,title){var h={avatar:avatar||'avatar-22'};if(data)h.avatarData=data;h.isIndependent=!!indep;h.title=title;return h;}
 $('saveBtn').onclick=async function(){
-  if(!state.rows.some(function(r){return r.active;})){setMsg('至少要开启一行。',true);return;}
+  if(!state.rows.some(function(r){return r.active||(r.raw&&Array.isArray(r.raw.serverPage)&&r.raw.serverPage.length);})){setMsg('至少要开启一行。',true);return;}
   if(typeof JSZip==='undefined'){setMsg('打包工具没有载入，请重新打开这个页面。',true);return;}
   var b=this;b.disabled=true;setMsg('正在打包……');
   try{
