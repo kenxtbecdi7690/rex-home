@@ -31,3 +31,18 @@
 - 平台接口是网页版自己用的，平台改版时那个平台的行可能变空。
 - 第一次打开每行较慢（最久约 25 秒），之后有缓存。
 - 模块装在首页包里，不会自动更新；有新版要重新导入。
+
+---
+
+# 片单合集 首页
+
+27 行榜单：TMDB 今日／本周趋势、正在热映、正在播出；Bangumi 今日放送；豆瓣 12 个榜单；猫眼热度（腾讯视频、爱奇艺、优酷、芒果TV）；B站 番剧、国创、纪录片、电影、电视剧、综艺排行。**只有片单**，播放靠自己的片源模块或媒体库。
+
+| 装置 | 链接 |
+|---|---|
+| iPhone、iPad | `https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/ListHome.rex` |
+| Mac | `https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/ListHome-Mac.rex` |
+
+- TMDB、Bangumi 用 Rex 官方模块；豆瓣、猫眼用 Rex首页模块（会自动更新）；豆瓣不填密钥也能用。
+- B站排行：[bilibili-rank.js](modules/bilibili-rank.js)（读 B站公开排行，配对 TMDB 海报，照排名显示；装在首页包里）。
+- 榜单行照原榜排名，不做去重。
