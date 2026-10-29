@@ -5,7 +5,7 @@ description: Use when maintaining rex-home's web tools (docs/builder Rex homepag
 
 # Maintaining the Rex Homepage Export Tools
 
-Detailed format rules live in `导入导出规则.md` at the repo root — read it before changing the tools. This file only covers the places where maintenance tends to go wrong. Repo-wide rules are in `CLAUDE.md`. For module-writing rules, load `writing-rex-modules`.
+Detailed format rules live in `导入导出规则.md` at the repo root — read it before changing the tools. This file only covers the places where maintenance tends to go wrong. Repo-wide rules are in `CLAUDE.md`. For module-writing rules, load `writing-rex-modules`; for module code syntax and packing modules into a `.rex`, load `rex-module-syntax`. Both live in `.claude/skills/`.
 
 ## The three pages
 
