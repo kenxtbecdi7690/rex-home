@@ -83,7 +83,7 @@ body.dropping::after{content:'放开即可打开档案';position:fixed;inset:12p
 </style>
 
 <div class="wrap">
-  <h1>Rex首页导出工具<span class="badge" title="工具版本">2026.10.27</span><span class="badge" id="ver" title="模块版本"></span></h1>
+  <h1>Rex首页导出工具<span class="badge" title="工具版本">2026.10.30</span><span class="badge" id="ver" title="模块版本"></span></h1>
   <p class="sub">作者：Bolinxxlin</p>
   <p class="sub">iPhone 的 Rex 没有导出，用这里从备份导出首页；也能把 Forward 的首页（<code>.fwd</code> 或 Forward 备份）转成 Rex 的。也可以打开别人的首页，或从默认首页开始，勾选行、调整顺序和设置，再导出分享。导出的首页读取 GitHub 上的加密脚本，不含明文。</p>
 
@@ -98,6 +98,7 @@ body.dropping::after{content:'放开即可打开档案';position:fixed;inset:12p
       <input type="file" id="fileIn" class="vh">
       <span class="desc">可打开 Mac 导出或别人分享的 <code>.rex</code>、Forward 导出的 <code>.fwd</code>，Rex 或 Forward 的备份（工具会自己找出首页设置），或 Rex 备份里的首页设置（<code>payload/homes/configs</code> 里没有 .sync 的 <code>.json</code>）。只在本机读取，不上传。用电脑（Mac）时也可以把档案直接拖进这个网页。</span>
     </div>
+    <div class="field" style="margin-top:10px"><label for="prodSel">成品首页</label><select id="prodSel"><option value="">选一个直接载入……</option><option value="PlatformHome">四大平台：爱奇艺＋腾讯＋芒果＋优酷</option><option value="DoubanBilibili">豆瓣＋B站榜单</option></select></div>
     <div class="field" style="margin-top:10px"><label for="sizeSel">版面尺寸</label><select id="sizeSel"><option value="">原样（手机、iPad）</option><option value="macMid">Mac 中尺寸（全宽行放大）</option></select></div>
     <div class="note" id="importNote" hidden></div>
   </div>
@@ -113,10 +114,10 @@ body.dropping::after{content:'放开即可打开档案';position:fixed;inset:12p
   <div class="how">
     <b>导入方法</b>
     <ol>
-      <li>点下方「导出首页」，得到 <code>RexHome.rex</code>（写法跟 Mac 版 Rex 导出的一样）。</li>
-      <li>iPhone／iPad：在下载或「文件」App 里点开 <code>RexHome.rex</code>，选择用 Rex 打开；或在 Rex 长按打开菜单 →「导入配置」选它。</li>
-      <li>Mac：<code>RexHome.rex</code> 在「下载」文件夹，用 Rex 的「导入配置」选它。</li>
-      <li class="cl" hidden>在 claude.ai 打开时只能存成 <code>RexHome.zip</code>：先在「文件」长按改名为 <code>RexHome.rex</code>，Rex 不支持直接导入 .zip。</li>
+      <li>点下方「导出首页」，得到「首页名称.rex」，例如 <code>Rex首页.rex</code>；Mac 中尺寸会是 <code>Rex首页-Mac.rex</code>（写法跟 Mac 版 Rex 导出的一样）。</li>
+      <li>iPhone／iPad：在下载或「文件」App 里点开导出的 <code>.rex</code>，选择用 Rex 打开；或在 Rex 长按打开菜单 →「导入配置」选它。</li>
+      <li>Mac：导出的 <code>.rex</code> 在「下载」文件夹，用 Rex 的「导入配置」选它。</li>
+      <li class="cl" hidden>在 claude.ai 打开时只能存成 <code>.zip</code>：先在「文件」长按把 .zip 改成 <code>.rex</code>，Rex 不支持直接导入 .zip。</li>
     </ol>
     同一个模块可以加好几行，例如地区剧一行韩国、一行日本。<br>
     分享自己的首页：Mac 版 Rex 可以直接导出。iPhone／iPad：Rex 设置 →「iCloud」→「导出本机备份」→ 用上方按钮打开备份 zip（不用解压）→ 导出首页。别人的文件也可以先在这里打开检查一次再转发。
@@ -273,8 +274,8 @@ function isOurs(it){return !!(it&&MODS[it.functionId]&&/^rex\.home\.unified/.tes
 function b64(u8){var s='',i;for(i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s);}
 function unb64(t){var s=atob(t),u=new Uint8Array(s.length);for(var i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;}
 function scriptPath(url){var m=/^file:\/\/\/(.+)$/.exec(String(url||''));return m?'rex-scripts/'+m[1]:null;}
-$('fileIn').onchange=async function(){
-  var f=this.files&&this.files[0];this.value='';if(!f)return;
+$('fileIn').onchange=function(){var f=this.files&&this.files[0];this.value='';if(f)openFile(f);};
+async function openFile(f){
   var note=$('importNote');
   if(typeof JSZip==='undefined'){setMsg('打包工具没有载入，请重新打开这个页面。',true);return;}
   try{
@@ -363,7 +364,7 @@ async function openForwardBackup(z,all,fname){
   async function pick(h){var home={title:h.title,avatar:h.avatar};var im=z.file(h.img);
     if(im){home.avatar='custom.url';home.avatarData=b64(await im.async('uint8array'));}
     await applyLayout(h.rows,home,null,'',fname,null,'',true);
-    var note=$('importNote'),ul=note.querySelector('ul');if(ul&&ul.firstChild)ul.firstChild.textContent='这是 Forward 备份，导出时会转成 Rex 的 RexHome.rex。备份里有你的账号资料，不要把整个备份发给别人。';
+    var note=$('importNote'),ul=note.querySelector('ul');if(ul&&ul.firstChild)ul.firstChild.textContent='这是 Forward 备份，导出时会转成 Rex 的 .rex。备份里有你的账号资料，不要把整个备份发给别人。';
     if(ok.length>1){var w=document.createElement('div');w.className='field';w.style.marginTop='8px';
       var lb=document.createElement('label');lb.textContent='备份里有 '+ok.length+' 个首页，选一个：';
       var sel=document.createElement('select');ok.forEach(function(x,j){var o=document.createElement('option');o.value=j;o.textContent=x.title+'（'+usedRows(x.rows)+' 行）';if(x===h)o.selected=true;sel.append(o);});
@@ -450,7 +451,7 @@ async function applyLayout(layout,home,z,base,fname,inner,kind,isFwd){
     li.push('读到 '+rows.length+' 行，其中 '+rows.filter(function(r){return r.active;}).length+' 行开启。');
     if(converted)li.push(converted+' 行改为读取 GitHub 上的加密脚本。');
     if(droppedOurs)li.push('删除包里夹带的 '+droppedOurs+' 个脚本，导出后不含明文。');
-    if(isFwd)li.unshift((kind?'看起来是 Forward 的首页，':'这是 Forward 首页（.fwd），')+'导出时会转成 Rex 的 RexHome.rex。各行用的模块，Rex 里也要先装好。');
+    if(isFwd)li.unshift((kind?'看起来是 Forward 的首页，':'这是 Forward 首页（.fwd），')+'导出时会转成 Rex 的 .rex。各行用的模块，Rex 里也要先装好。');
     if(raw)li.push(raw+' 行来自其他模块，原样保留'+(Object.keys(extra).length?'（连同它们自带的脚本）':'')+'。');
     if(noScript)li.push('其中 '+noScript+' 行用的模块不在这个档里，别人导入后要自己先装那个模块。');
     if(kind)li.unshift('这是'+kind+'。'+(home.title?'':'首页名称不在备份里，请在上方「首页名称」自己填。'));
@@ -521,6 +522,7 @@ function sizeRows(rows,mode){if(mode!=='macMid')return rows;
 function getSize(){try{return localStorage.getItem('rexhome.size')||'';}catch(e){return '';}}
 function macJson(x){return JSON.stringify(x).replace(/\//g,'\\/');}
 var MACF={unixPermissions:0o100644};
+function outName(){var t=String(state.title||'').replace(/[\\\/:*?"<>|\u0000-\u001f]/g,'').trim()||'RexHome';return t+($('sizeSel').value==='macMid'?'-Mac':'');}
 function macHome(avatar,data,indep,title){var h={avatar:avatar||'avatar-22'};if(data)h.avatarData=data;h.isIndependent=!!indep;h.title=title;return h;}
 $('saveBtn').onclick=async function(){
   if(!state.rows.some(function(r){return r.active||(r.raw&&Array.isArray(r.raw.serverPage)&&r.raw.serverPage.length);})){setMsg('至少要开启一行。',true);return;}
@@ -532,19 +534,20 @@ $('saveBtn').onclick=async function(){
     z.file('rex-layout.json',macJson(sizeRows(buildLayout(),$('sizeSel').value)),MACF);
     var av=await rexAvatar(homeMeta.avatar,homeMeta.avatarData);
     z.file('rex-home.json',macJson(macHome(av.avatar,av.data,homeMeta.isIndependent,state.title)),MACF);
-    Object.keys(extraFiles).forEach(function(n){z.file(n,unb64(extraFiles[n]));});
+    Object.keys(extraFiles).forEach(function(n){z.file(n,unb64(extraFiles[n]),{unixPermissions:0o100644,createFolders:false});});
     var blob=await z.generateAsync({type:'blob',compression:'DEFLATE',platform:'UNIX',streamFiles:true});
+    var nm=outName();
     if(!IN_CLAUDE){
-      // 自己的网站（GitHub Pages 等）：直接下载 RexHome.rex
+      // 自己的网站（GitHub Pages 等）：直接下载「首页名称.rex」
       var url=URL.createObjectURL(blob),a=document.createElement('a');
-      a.href=url;a.download='RexHome.rex';document.body.append(a);a.click();a.remove();
+      a.href=url;a.download=nm+'.rex';document.body.append(a);a.click();a.remove();
       setTimeout(function(){URL.revokeObjectURL(url);},60000);
-      setMsg('已导出 RexHome.rex。在下载或「文件」里点开，用 Rex 导入。');return;
+      setMsg('已导出 '+nm+'.rex。在下载或「文件」里点开，用 Rex 导入。');return;
     }
     var dl=await window.claude.use('downloads');
     if(!dl){setMsg('这个页面目前不能存档。请改用 GitHub 上的网页工具。',true);return;}
-    await dl.save({filename:'RexHome.zip',data:blob});
-    setMsg('已存成 RexHome.zip。claude.ai 不能直接存 .rex：到「文件」改名为 RexHome.rex 再用 Rex 打开。');
+    await dl.save({filename:nm+'.zip',data:blob});
+    setMsg('已存成 '+nm+'.zip。claude.ai 不能直接存 .rex：到「文件」改名为 '+nm+'.rex 再用 Rex 打开。');
   }catch(e){
     var c=e&&e.code;
     if(c==='declined')setMsg('已取消存档。');
@@ -552,6 +555,13 @@ $('saveBtn').onclick=async function(){
     else setMsg('存档失败（'+(c||'未知错误')+'）。请重新打开页面再试。',true);
   }finally{b.disabled=false;}
 };
+// 成品首页：从成品网站（GitHub 的 platform-home）载入，跟打开文件一样处理
+var PROD='https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/';
+$('prodSel').onchange=async function(){var v=this.value,t=this.options[this.selectedIndex].text;this.value='';if(!v)return;
+  setMsg('正在载入成品「'+t+'」……');
+  try{var r=await fetch(PROD+v+'.rex',{cache:'no-store'});if(!r.ok)throw new Error(String(r.status));
+    await openFile(new File([await r.blob()],v+'.rex'));}
+  catch(e){setMsg('载入不了成品，请检查网络（国内可能要开代理），或到成品网站下载后用上方按钮打开。',true);}};
 // Mac 等电脑：把档案直接拖进网页
 (function(){var inp=$('fileIn'),n=0,b=document.body;
   function hasFiles(e){return e.dataTransfer&&[].indexOf.call(e.dataTransfer.types||[],'Files')>=0;}
