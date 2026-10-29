@@ -34,15 +34,15 @@
 
 ---
 
-# 片单合集 首页
+# 豆瓣＋B站 首页
 
-27 行榜单：TMDB 今日／本周趋势、正在热映、正在播出；Bangumi 今日放送；豆瓣 12 个榜单；猫眼热度（腾讯视频、爱奇艺、优酷、芒果TV）；B站 番剧、国创、纪录片、电影、电视剧、综艺排行。**只有片单**，播放靠自己的片源模块或媒体库。
+18 行榜单：豆瓣 12 个榜单（实时热门剧集、热门国产剧、美剧、韩剧、日剧、动画、综艺、实时热门电影、院线热映、一周口碑电影榜、华语口碑剧集榜、Top 250）＋ B站 番剧、国创、纪录片、电影、电视剧、综艺排行。**只有片单**，播放靠自己的片源模块或媒体库。
 
 | 装置 | 链接 |
 |---|---|
-| iPhone、iPad | `https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/ListHome.rex` |
-| Mac | `https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/ListHome-Mac.rex` |
+| iPhone、iPad | `https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/DoubanBilibili.rex` |
+| Mac | `https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/DoubanBilibili-Mac.rex` |
 
-- TMDB、Bangumi 用 Rex 官方模块；豆瓣、猫眼用 Rex首页模块（会自动更新）；豆瓣不填密钥也能用。
+- 豆瓣用 Rex首页模块（会自动更新），不填密钥也能用。
 - B站排行：[bilibili-rank.js](modules/bilibili-rank.js)（读 B站公开排行，配对 TMDB 海报，照排名显示；装在首页包里）。
-- 榜单行照原榜排名，不做去重。
+- 榜单照原榜排名，不做去重。
