@@ -1,236 +1,174 @@
 <!doctype html>
-<html lang="zh-Hans">
+<html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Rex首页导出工具</title>
-<meta name="description" content="iPhone 的 Rex 没有导出首页，用这个网页工具把首页导出成 .rex 分享给别人，Forward 首页请用 Forward 官方导出工具。作者：Bolinxxlin">
+<title>Rex 首頁匯出與匯入圖文教學</title>
+<meta name="description" content="依 Rex 首頁匯出工具 2026.10.30 整理的繁體中文教學：三種成品首頁、編輯、iPhone／iPad／Mac 匯出匯入，以及 Forward .fwd 和備份轉換。">
 <style>
-:root{--bg:#f6f4fa;--panel:#fff;--ink:#1d1a24;--muted:#6b6478;--line:#e4dfec;--accent:#7b3fe4;--accent-ink:#fff;--hi:#ff9f1c;--warn:#a5540b;--warn-bg:#fff6e8;--ok:#2f9e57;--bad:#c2334b;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121016;--panel:#1c1922;--ink:#ece8f3;--muted:#a39bb1;--line:#2e2a36;--accent:#a77bff;--accent-ink:#140d22;--hi:#ffb648;--warn:#f0b35b;--warn-bg:#2a2115;--ok:#5fd38a;--bad:#ff6b81;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#121016;--panel:#1c1922;--ink:#ece8f3;--muted:#a39bb1;--line:#2e2a36;--accent:#a77bff;--accent-ink:#140d22;--hi:#ffb648;--warn:#f0b35b;--warn-bg:#2a2115;--ok:#5fd38a;--bad:#ff6b81;color-scheme:dark}
+:root{--bg:#f6f4fa;--panel:#fff;--ink:#211b2c;--muted:#665c76;--line:#e4ddec;--accent:#7137ce;--accent-ink:#fff;--tip:#f2ecfc;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#151019;--panel:#221a2b;--ink:#f1eafa;--muted:#b7aac7;--line:#40324f;--accent:#bd95ff;--accent-ink:#211433;--tip:#31233f;color-scheme:dark}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans SC",system-ui,sans-serif}
-main{max-width:640px;margin:0 auto;padding:28px 16px calc(40px + env(safe-area-inset-bottom,0px))}
-h1{font-size:28px;line-height:1.25;margin:0 0 4px}
-.by{color:var(--muted);font-size:14px;margin:0 0 14px}
-.lead{margin:0 0 18px}
-.cta{display:block;text-align:center;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-weight:600;font-size:17px;padding:14px 16px;border-radius:14px}
-.cta.alt{background:var(--panel);color:var(--accent);border:1px solid var(--line);margin-top:-8px}
-.url{display:block;text-align:center;color:var(--muted);font-size:13px;margin:8px 0 22px;word-break:break-all}
-.toc{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 18px;padding:0;list-style:none}
-.toc a{display:block;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 4px;color:var(--ink);text-decoration:none;font-size:13px;line-height:1.3}
-.toc b{display:block;color:var(--accent);font-size:16px}
-.toc .wide{grid-column:1/-1}
-section{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin:0 0 14px}
-h2{font-size:18px;margin:0 0 8px;display:flex;align-items:center;gap:8px}
-.no{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:14px;display:grid;place-items:center}
-p{margin:0 0 8px}
-ul,ol{margin:0 0 8px;padding-left:1.3em}
-li{margin:3px 0}
-code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:0 4px;white-space:nowrap}
-.tip{background:var(--warn-bg);color:var(--warn);border-radius:10px;padding:8px 12px;margin:10px 0 0;font-size:14px}
-figure{margin:12px 0 4px}
-figcaption{color:var(--muted);font-size:12px;text-align:center;margin-top:6px}
-/* 示意图：手机画面 */
-.ph{background:linear-gradient(180deg,#2b2433,#3b3550);color:#f1eef6;border-radius:20px;padding:14px;font-size:14px;line-height:1.45;max-width:340px;margin:0 auto}
-.ph.light{background:#f2f2f7;color:#111}
-.ph .hd{text-align:center;font-weight:600;margin-bottom:8px}
-.ph .t{text-align:center;font-weight:700;font-size:17px}
-.ph .s{text-align:center;opacity:.7;font-size:12px;margin:2px 0 8px}
-.ph .row{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid rgba(127,127,127,.25);padding:8px 2px}
-.ph .row:first-of-type{border-top:0}
-.ph .ok{color:#4cc76a}
-.ph .pb{display:block;text-align:center;border-radius:999px;background:#57506b;padding:9px;margin-top:8px}
-.ph.light .pb{background:#e5e5ea}
-.hl{outline:3px solid var(--hi);outline-offset:2px;border-radius:10px}
-.ph .pb.hl{border-radius:999px;font-weight:700}
-.tag{font-size:11px;font-weight:700;color:#1d1a24;background:var(--hi);border-radius:6px;padding:0 6px;margin-left:6px;white-space:nowrap}
-.ph .path{font-size:12px;opacity:.65;margin-bottom:6px}
-.ph .f{display:flex;align-items:center;gap:8px;min-width:0}
-.ph .f i{font-style:normal;flex:none}
-.ph .f span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ph .sz{flex:none;font-size:12px;opacity:.6}
-.ph .no-pick{opacity:.45;text-decoration:line-through}
-.ph .bar{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:6px;margin-top:10px}
-.ph .bar span{text-align:center;border-radius:10px;padding:8px 2px;font-size:12px;background:#fff;border:1px solid #d9d4e3}
-.ph .bar .pri{background:#7b3fe4;color:#fff;border-color:#7b3fe4;font-weight:700}
-.ph .fld{background:#fff;border:1px solid #d9d4e3;border-radius:10px;padding:6px 10px;margin:4px 0 8px}
-.ph .btn{display:inline-block;background:#fff;border:1px solid #d9d4e3;border-radius:10px;padding:6px 10px;font-weight:600}
-.ph .menu .row{padding:7px 4px}
-.ph .av{display:inline-block;width:22px;height:22px;border-radius:50%;background:#c7b8ff;vertical-align:middle;margin-right:6px}
-.ph .cap{font-size:12px;opacity:.6;margin:2px 0 4px}
-.feat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0}
-.feat div{border:1px solid var(--line);border-radius:12px;padding:10px;font-size:14px}
-.feat b{display:block}
-.feat div:last-child:nth-child(odd){grid-column:1/-1}
-.shots{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
-.shots figure{margin:0}
-.shots img{display:block;width:100%;border-radius:10px;border:1px solid var(--line)}
-@media (max-width:420px){.shots{grid-template-columns:repeat(2,1fr)}}
-footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
-footer a{color:var(--muted)}
-@media (max-width:360px){.toc{grid-template-columns:repeat(2,1fr)}.feat{grid-template-columns:1fr}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans CJK TC",system-ui,sans-serif;overflow-wrap:anywhere}
+main{max-width:720px;margin:auto;padding:28px max(16px,env(safe-area-inset-left)) calc(40px + env(safe-area-inset-bottom))}
+h1{font-size:29px;line-height:1.3;margin:0 0 10px}h2{font-size:21px;line-height:1.4;margin:0 0 12px}h3{font-size:17px;margin:18px 0 8px}
+p{margin:0 0 12px}.by,figcaption,footer{color:var(--muted);font-size:13px}
+a{color:var(--accent);text-underline-offset:3px}a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.cta{display:block;background:var(--accent);color:var(--accent-ink);border-radius:14px;text-align:center;padding:13px;font-weight:700;text-decoration:none;margin:16px 0}
+nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:18px 0}
+nav a{background:var(--panel);border:1px solid var(--line);padding:9px 12px;border-radius:10px;text-decoration:none;font-size:14px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin:0 0 16px;scroll-margin-top:16px}
+ol,ul{margin:8px 0 12px;padding-left:1.4em}li{margin:7px 0}
+code{font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:1px 4px;white-space:normal;overflow-wrap:anywhere}
+figure{margin:18px 0}figure img{display:block;width:100%;max-width:520px;height:auto;margin:auto;border:1px solid var(--line);border-radius:12px;background:#f7f4fc}figcaption{text-align:center;margin-top:7px}
+.tip{background:var(--tip);padding:12px;border-radius:10px;font-size:14px;margin-top:12px}
+.cards{display:grid;gap:10px}.card{border:1px solid var(--line);padding:12px;border-radius:10px}.card b{display:block}
+table{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed}th,td{padding:10px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);overflow-wrap:anywhere}th{background:var(--bg)}
+.badge{display:inline-block;font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:2px 9px}
+footer{text-align:center;margin-top:22px}
+@media(min-width:650px){nav{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 </head>
 <body>
 <main>
-  <h1>Rex首页导出工具</h1>
-  <p class="by">2026.10.27 版 · 作者：Bolinxxlin</p>
-  <p class="lead">iPhone 的 Rex 没有「导出首页」。用这个网页工具，把你调好的首页导出成 <code>RexHome.rex</code> 发给朋友，对方导入就有一样的首页。Forward 的首页请用 <a href="https://forward.inch.red/export/">Forward 官方导出工具</a>。Safari 打开就能用，不用安装。</p>
-  <a class="cta" href="../builder/">打开工具</a>
-  <span class="url">kenxtbecdi7690.github.io/rex-home/builder/</span>
-  <a class="cta alt" href="https://forward.inch.red/export/" target="_blank" rel="noopener">Forward 官方导出工具 ↗</a>
-  <span class="url">Forward 的首页用这个导出</span>
+<header>
+<span class="badge">繁體中文圖文教學</span>
+<h1>Rex 首頁匯出與匯入</h1>
+<p class="by">2026-10-31 更新 · 對應工具 2026.10.30 · 作者：Bolinxxlin</p>
+<p>先選現成首頁，或打開自己的首頁／備份；調整後匯出 <code>首頁名稱.rex</code>，再用 Rex 匯入。iPhone、iPad、Mac 都能使用網頁工具。Forward 的 <code>.fwd</code> 與備份也能直接轉成 Rex 首頁。</p>
+<p class="by">正文用繁體中文；「」內保留工具介面原文。圖均為示意圖，App 選單可能隨版本不同。</p>
+<a class="cta" href="../builder/">開啟 Rex 首頁匯出工具</a>
+</header>
+<nav aria-label="教學目錄">
+<a href="#products">① 選成品首頁</a><a href="#s1">② 開現有首頁</a><a href="#edit">③ 編輯各行</a><a href="#s3">④ 選尺寸匯出</a>
+<a href="#s4">⑤ iPhone／iPad 匯入</a><a href="#mac">⑥ Mac 匯入</a><a href="#fw">⑦ Forward 轉換</a><a href="#checks">驗證與疑難</a>
+</nav>
 
-  <ol class="toc">
-    <li><a href="#s1"><b>1</b>导出备份</a></li>
-    <li><a href="#s2"><b>2</b>找设置档</a></li>
-    <li><a href="#s3"><b>3</b>用工具导出</a></li>
-    <li><a href="#s4"><b>4</b>别人导入</a></li>
-    <li class="wide"><a href="#fw"><b>FW → Rex</b>Forward 首页转到 Rex</a></li>
-  </ol>
+<section id="products">
+<h2>① 沒有檔案？先選成品首頁</h2>
+<ol>
+<li>打開上方工具，找到「<b>成品首页</b>」選單。</li>
+<li>點選下列任一項；載入會<b>替換目前編輯內容</b>，要保留舊版本請先匯出。</li>
+<li>等名稱與各行更新，再往下編輯。選單會回到「选一个直接载入……」，這是正常的。</li>
+</ol>
+<div class="cards">
+<div class="card"><b>四大平台：爱奇艺＋腾讯＋芒果＋优酷</b>從四平台首頁配置開始。</div>
+<div class="card"><b>豆瓣＋B站榜单</b>從豆瓣與 B 站榜單配置開始。</div>
+<div class="card"><b>MakkaPakka 快速版</b>從 MakkaPakka 快速配置開始。</div>
+</div>
+<figure><img src="img/builder-presets-guide.svg" width="520" height="550" alt="示意圖：成品首页三個選項與版面尺寸，不是實機截圖"><figcaption>示意圖：按鈕文字依 main 程式核對，非實機截圖。</figcaption></figure>
+<p class="tip">載入需要網路。出現「载入不了成品」時，先檢查網路；也可到 <a href="https://github.com/kenxtbecdi7690/rex-home/tree/platform-home">platform-home 分支</a>下載 <code>PlatformHome.rex</code>、<code>DoubanBilibili.rex</code> 或 <code>MakkaFast.rex</code>，再用「打开 .rex／.fwd／备份」讀取。</p>
+</section>
 
-  <section id="s1">
-    <h2><span class="no">1</span>在 Rex 导出备份</h2>
-    <p>Rex 设置 →「iCloud」→ 往下滑到「备份与还原」→ 点「<b>导出本机备份</b>」，存到「ES 文件浏览器」。</p>
-    <figure>
-      <div class="ph">
-        <div class="hd">iCloud</div>
-        <div class="t">同步已完成</div>
-        <div class="s">本机已与 iCloud 完成同步</div>
-        <div class="row"><span>资源服务器</span><span class="ok">✓</span></div>
-        <div class="row"><span>模块</span><span class="ok">✓</span></div>
-        <div class="row"><span>偏好和记录</span><span class="ok">✓</span></div>
-        <div class="t" style="font-size:15px;margin-top:10px">备份与还原</div>
-        <div class="s">备份包含资源库账号，不含 Rex 登录、购买凭证……</div>
-        <span class="pb hl">⇪ 导出本机备份</span>
-        <span class="pb">▭ 导入资料</span>
-      </div>
-      <figcaption>示意图：Rex 设置 → iCloud</figcaption>
-    </figure>
-  </section>
+<section id="s1">
+<h2>② 打開自己的首頁或備份</h2>
+<h3>iPhone／iPad：從 Rex 備份取出</h3>
+<ol>
+<li>在 Rex 設定進入「<b>iCloud</b>」，找到備份區域，按「<b>导出本机备份</b>」。此路徑依倉庫既有說明，未經本輪 App 實機確認。</li>
+<li>在系統分享選單儲存到「檔案」，記下位置，例如 iCloud Drive 或「我的 iPhone」。不必安裝 ES 檔案瀏覽器。</li>
+<li>回網頁工具，按「<b>打开 .rex／.fwd／备份</b>」選剛存的備份 zip，<b>不用解壓</b>。</li>
+<li>若出現多首頁選單，選要匯出的首頁，核對名稱、行數與行名。名稱讀不到時，手動填「首页名称」。</li>
+</ol>
+<h3>已經有檔案</h3>
+<ul>
+<li><b>Mac 匯出或朋友分享的 <code>.rex</code>：</b>同一開啟按鈕選檔，電腦也可直接拖進網頁。</li>
+<li><b>Forward 的 <code>.fwd</code>／備份 zip：</b>同一按鈕直接開啟，詳細步驟見<a href="#fw">第 ⑦ 段</a>。</li>
+</ul>
+<div id="s2">
+<h3>進階：只有個別首頁 JSON</h3>
+<p>從 Rex 備份的 <code>payload → homes → configs</code> 選<b>不含 <code>.sync</code></b> 的首頁 <code>.json</code>。<code>.sync.json</code> 是同步記號；不要只看檔案大小或選「最新修改」的檔案，因為可能包含已刪首頁的舊檔。</p>
+<p class="tip">優先開完整備份 zip，讓工具列出首頁；工具不支援 <code>.rar</code>、<code>.7z</code>。不要把整份備份寄給別人，備份內含帳號等個人資料。</p>
+</div>
+</section>
 
-  <section id="s2">
-    <h2><span class="no">2</span>找到首页设置档</h2>
-    <ol>
-      <li><b>最快：</b>不用解压，直接跳到第 3 步选备份 zip，工具会列出备份里所有首页让你挑</li>
-      <li>要自己找的话：在「ES 文件浏览器」找到 <code>rex-backup-一串数字</code>，点一下解压</li>
-      <li>依序打开 <code>payload</code> → <code>homes</code> → <code>configs</code></li>
-      <li>选<b>没有 .sync</b>、<b>几 KB</b> 的 <code>.json</code>；有好几个就选修改时间最新的</li>
-    </ol>
-    <figure>
-      <div class="ph light">
-        <div class="path">rex-backup-… › payload › homes › configs</div>
-        <div class="row hl"><span class="f"><i>📄</i><span>3d56616c-…-adaebe39201c.json</span></span><span class="sz">8 KB</span><span class="tag">选这个</span></div>
-        <div class="row no-pick"><span class="f"><i>📄</i><span>3d56616c-…-adaebe39201c.sync.json</span></span><span class="sz">18 byte</span></div>
-        <div class="row no-pick"><span class="f"><i>📄</i><span>d46c563f-…-45b3879b2.sync.json</span></span><span class="sz">18 byte</span></div>
-        <div class="row"><span class="f"><i>📄</i><span>b87e3174-…-66628f7120fd.json</span></span><span class="sz">15 KB</span></div>
-      </div>
-      <figcaption>示意图：ES 文件浏览器里的 configs 文件夹（编号每个人不同）</figcaption>
-    </figure>
-    <p class="tip">只有 18 byte 的 <code>.sync.json</code> 是同步记号，选它工具会提醒你改选。</p>
-  </section>
+<section id="edit">
+<h2>③ 編輯名稱、順序與各行</h2>
+<ol>
+<li>「<b>首页名称</b>」填入如「我的首頁」。按「<b>换头像</b>」選圖，會裁成 333×333 PNG；「用默认头像」移除自訂圖。</li>
+<li>每行開關控制顯示；按「<b>↑／↓</b>」上下移動。</li>
+<li>按「<b>设置</b>」修改「标题」、「副标题」與該模組提供的地區、類型等選項，完成按「收起」。</li>
+<li>底部選擇模組後按「<b>＋ 添加一行</b>」。同一模組可加入多次，例如日本與韓國各一行。</li>
+<li>要移除行，在該行「设置」內按「<b>删除这一行</b>」。</li>
+</ol>
+<figure><img src="img/builder-edit-guide.svg" width="520" height="610" alt="示意圖：行開關、上下移、设置、標題及新增行，非實機截圖" loading="lazy"><figcaption>示意圖：只呈現操作位置，非實機截圖。</figcaption></figure>
+<p>標示「其他模块」的行保留來源設定，可調整標題、副標題、開關、順序；不能在此編輯資料參數。Rex 內仍要具備所用的模組與必要設定。</p>
+<p class="tip">「一键重置」回工具初始首頁；「空白模板」從官方輪播開始；「预设配置」是 Rex 預設的 14 行。三者都會替換目前內容，剛按完可立即點訊息中的「撤销」。一般編輯、刪除與載入成品沒有通用的復原鍵，請先匯出留底。</p>
+</section>
 
-  <section id="s3">
-    <h2><span class="no">3</span>用工具导出首页</h2>
-    <ol>
-      <li>点上方「打开工具」</li>
-      <li>点「<b>打开 .rex／备份</b>」→「浏览」→ 选「ES 文件浏览器」→ 选第 2 步的 <code>.json</code></li>
-      <li>在「首页名称」填个名字，需要的话调整各行</li>
-      <li>点「<b>导出首页</b>」，得到 <code>RexHome.rex</code></li>
-    </ol>
-    <figure>
-      <div class="ph light">
-        <div class="cap">首页名称</div>
-        <div class="fld">我的首页</div>
-        <span class="btn hl">打开 .rex／备份</span>
-        <div class="row" style="margin-top:8px"><span>1　🎞 精选轮播</span><span>设置</span></div>
-        <div class="row"><span>2　▶️ 继续观看</span><span>设置</span></div>
-        <div class="row"><span>3　📺 剧集</span><span>设置</span></div>
-        <div class="row"><span style="opacity:.6">……</span><span></span></div>
-        <div class="bar"><span>一键重置</span><span>空白模板</span><span class="pri hl">导出首页</span></div>
-      </div>
-      <figcaption>示意图：Rex首页导出工具</figcaption>
-    </figure>
-    <figure>
-      <video src="img/builder.mp4" poster="img/builder-poster.jpg" controls playsinline muted preload="none" style="display:block;width:100%;max-width:300px;margin:0 auto;border-radius:16px;border:1px solid var(--line)"></video>
-      <figcaption>教学影片：从 Rex 备份导出首页</figcaption>
-    </figure>
-    <p class="tip">「浏览」里找不到 ES 文件浏览器：在 ES 里长按那个 <code>.json</code> → 分享 →「存储到文件」，再从「文件」选它。<br>存成 .zip 的话，在 ES 文件浏览器里长按 → 重命名为 <code>RexHome.rex</code>。</p>
-  </section>
+<section id="s3">
+<h2>④ 選版面尺寸，再匯出</h2>
+<p>在「<b>版面尺寸</b>」選適合的選項，再按「<b>导出首页</b>」。以下以「首页名称」填「我的首頁」為例：</p>
+<table><thead><tr><th>介面選項原文</th><th>下載檔名</th></tr></thead><tbody>
+<tr><td>原样（手机、iPad）</td><td><code>我的首頁.rex</code></td></tr>
+<tr><td>Mac 中尺寸（全宽行放大）</td><td><code>我的首頁-Mac.rex</code></td></tr>
+</tbody></table>
+<p>主工具不再固定輸出 <code>RexHome.rex</code>。不合法的檔名字元會移除，清理後空白才用 <code>RexHome</code> 當後備名稱。Mac 也可選「原样」保留來源尺寸。</p>
+<p class="tip">「原样」不會把 Mac 首頁縮回手機尺寸；Mac 中尺寸會加高支援的全寬格子，避免對已加高的檔案重複套用。一般首頁至少開一行，否則會顯示「至少要开启一行。」</p>
+</section>
 
-  <section id="s4">
-    <h2><span class="no">4</span>发给别人，对方导入</h2>
-    <ol>
-      <li>把 <code>RexHome.rex</code> 发给对方，存到「ES 文件浏览器」</li>
-      <li>在 Rex <b>长按</b>打开菜单 →「<b>导入配置</b>」→ 选它</li>
-      <li>再到「切换配置」选新的首页</li>
-    </ol>
-    <figure>
-      <div class="ph menu">
-        <div class="row"><span>📅 日历</span><span></span></div>
-        <div class="cap" style="padding:4px 4px 0">切换配置</div>
-        <div class="row"><span><i class="av"></i>我的首页</span><span></span></div>
-        <div class="row"><span><i class="av"></i>Rex首页</span><span style="font-size:12px;opacity:.6">当前选择</span></div>
-        <div class="row"><span><i class="av"></i>预设配置</span><span></span></div>
-        <div class="row hl"><span>⤓ 导入配置</span><span class="tag">点这个</span></div>
-        <div class="row"><span>⚙ 管理配置</span><span></span></div>
-      </div>
-      <figcaption>示意图：在 Rex 长按打开的菜单</figcaption>
-    </figure>
-  </section>
+<section id="s4">
+<h2>⑤ iPhone／iPad 匯入</h2>
+<ol>
+<li>在 Safari 下載項目或「檔案」找到剛匯出的 <code>.rex</code>；朋友收到檔案，也先儲存到「檔案」。</li>
+<li>點檔案並選 Rex 開啟；若沒有 Rex 選項，改到 Rex <b>長按打開配置選單 →「导入配置」</b>，挑選該檔案。</li>
+<li>在「<b>切换配置</b>」確認並選新首頁，檢查名稱、行順序及相關模組。</li>
+</ol>
+<figure><img src="img/rex-import-guide.svg" width="520" height="390" alt="示意圖：iPhone／iPad 從配置選單導入配置後選首頁，非實機截圖" loading="lazy"><figcaption>示意圖：依既有說明繪製；未經本輪 Rex App 實機驗證。</figcaption></figure>
+<p class="tip">GitHub Pages 正常會下載 <code>.rex</code>。只有特殊嵌入環境存成 <code>.zip</code> 時，才把<b>工具匯出的首頁包</b>副檔名改成 <code>.rex</code>，避免留下 <code>.rex.zip</code>。不要改整份備份 zip，也不要靠改副檔名轉換 <code>.fwd</code>。</p>
+</section>
 
-  <section id="fw">
-    <h2><span class="no" style="width:auto;padding:0 8px;border-radius:13px">FW</span>Forward 首页转到 Rex</h2>
-    <p>把 Forward 的首页搬到 Rex，两种档都能用。只要转换、不用编辑的话，用更简单的 <a href="../fwd2rex/">Forward转Rex</a> 网页。</p>
-    <ul>
-      <li><b>Forward 的 <code>.fwd</code></b>：用 <a href="https://forward.inch.red/export/" target="_blank" rel="noopener">Forward 官方导出工具</a> 导出，或别人分享的</li>
-      <li><b>Forward 备份</b>：Forward 设置里导出的备份 zip，<b>不用解压</b></li>
-    </ul>
-    <ol>
-      <li>点上方「打开工具」→「<b>打开 .rex／.fwd／备份</b>」→ 选那个档</li>
-      <li>选的是备份的话，在「<b>备份里有 N 个首页，选一个</b>」挑你要的首页</li>
-      <li>名称、头像、各行会自动带入，需要的话再调整</li>
-      <li>点「<b>导出首页</b>」，得到 <code>RexHome.rex</code>，再照上面<a href="#s4">第 4 段</a>用 Rex 导入</li>
-    </ol>
-    <p class="tip">各行用的模块，Rex 里也要先装好，那一行才会显示。Forward 备份里有你的账号资料，不要整份发给别人。</p>
-    <figure>
-      <video src="img/fwd2rex.mp4" poster="img/fwd2rex-1.jpg" controls playsinline muted preload="none" style="display:block;width:100%;max-width:300px;margin:0 auto;border-radius:16px;border:1px solid var(--line)"></video>
-      <figcaption>教学影片（13 秒）：用「Forward转Rex」网页转换</figcaption>
-    </figure>
-    <div class="shots">
-      <figure><img src="img/fwd2rex-1.jpg" alt="第 1 步：点选择档案" loading="lazy"><figcaption>1 选档案</figcaption></figure>
-      <figure><img src="img/fwd2rex-2.jpg" alt="第 2 步：选备份里的首页" loading="lazy"><figcaption>2 选首页</figcaption></figure>
-      <figure><img src="img/fwd2rex-3.jpg" alt="第 3 步：点导出" loading="lazy"><figcaption>3 导出</figcaption></figure>
-      <figure><img src="img/fwd2rex-4.jpg" alt="完成：用 Rex 导入" loading="lazy"><figcaption>4 用 Rex 导入</figcaption></figure>
-    </div>
-  </section>
+<section id="mac">
+<h2>⑥ Mac 匯出與匯入</h2>
+<ol>
+<li>用瀏覽器開相同工具；選成品首頁，或開啟／拖入自己的 <code>.rex</code>、<code>.fwd</code>、備份 zip。</li>
+<li>有多個首頁就先挑選；編輯後可選「Mac 中尺寸（全宽行放大）」。</li>
+<li>按「导出首页」，到瀏覽器設定的下載位置（通常是「下載項目」）找到 <code>首頁名稱-Mac.rex</code>；選原樣則沒有 <code>-Mac</code>。</li>
+<li>用 Rex 的「导入配置」選檔，再切換新首頁。</li>
+</ol>
+<p class="tip"><b>Mac 的「导入配置」確切位置尚未經本輪實機確認</b>，不指定左側欄或選單位置。倉庫既有說明指出 Mac Rex 可直接匯出首頁；本教學示範的是網頁工具流程。</p>
+</section>
 
-  <section>
-    <h2>其他功能</h2>
-    <div class="feat">
-      <div><b>一键重置</b>回到 Rex首页的初始首页</div>
-      <div><b>空白模板</b>跟 Rex 的空白模板一样，再自己加行</div>
-      <div><b>预设配置</b>Rex 自带的预设首页（14 行），可以从这里改</div>
-      <div><b>编辑首页</b>开关、排序、改设置、加行</div>
-      <div><b>Mac 尺寸</b>「版面尺寸」选 Mac 中尺寸，全宽行放大给 Mac 看</div>
-      <div><b>换头像</b>选一张图，自动裁成 Rex 用的正方形头像</div>
-      <div><b>撤销</b>按错了都能点「撤销」</div>
-      <div><b>Forward 转 Rex</b>打开 Forward 的 <code>.fwd</code> 或 Forward 备份，导出成 <code>RexHome.rex</code></div>
-    </div>
-  </section>
+<section id="fw">
+<h2>⑦ Forward .fwd／備份轉成 Rex</h2>
+<p>準備 Forward 匯出的 <code>.fwd</code>，或 Forward 設定匯出的備份 zip；備份不用解壓。App 匯出備份選單的確切位置未經本輪實機確認。</p>
+<figure><img src="img/forward-convert-guide.svg" width="520" height="550" alt="示意圖：Forward 主工具與快速轉換路徑，非實機截圖" loading="lazy"><figcaption>示意圖：選擇主工具可編輯；快速工具仍固定輸出 RexHome.rex。</figcaption></figure>
+<h3>A．要編輯各行、選尺寸：用主工具</h3>
+<ol>
+<li>開 <a href="../builder/">Rex 首頁匯出工具</a> →「<b>打开 .rex／.fwd／备份</b>」選檔。</li>
+<li>備份有多個首頁時，在出現的首頁選單挑選；確認名稱、行數與行名。</li>
+<li>名稱、頭像與各行讀入後，依第 ③ 段編輯，再選尺寸。</li>
+<li>按「<b>导出首页</b>」，得到 <code>首頁名稱.rex</code> 或 <code>首頁名稱-Mac.rex</code>，依第 ⑤／⑥ 段匯入。</li>
+</ol>
+<h3>B．只需快速轉換：用獨立工具</h3>
+<ol>
+<li>開 <a href="../fwd2rex/">Forward转Rex</a> →「<b>选择档案</b>」。</li>
+<li>選 <code>.fwd</code> 或 Forward 備份 zip；有多個首頁時選「<b>备份里的首页</b>」。</li>
+<li>核對首頁及行數，可修改「<b>首页名称</b>」。</li>
+<li>按「<b>导出 RexHome.rex</b>」，再用 Rex 匯入。</li>
+</ol>
+<p class="tip"><b>兩個工具檔名不同：</b>主編輯器依首頁名稱命名；獨立「Forward转Rex」目前仍固定輸出 <code>RexHome.rex</code>，即使修改「首页名称」也一樣。獨立工具沒有各行編輯或尺寸選單。</p>
+<h3>要保留 Forward 格式？</h3>
+<p>使用 <a href="https://forward.inch.red/export/" target="_blank" rel="noopener">Forward 官方匯出工具 ↗</a> 產生供 Forward 使用的 <code>.fwd</code>。本頁兩個 Rex 工具都輸出 <code>.rex</code>，不輸出 <code>.fwd</code>；不必先經官方工具，才能讀取既有的 Forward 備份。</p>
+<p>轉換首頁不會替你登入或移轉資源庫帳號，也不代表各行播放可用。第三方模組及必要參數仍需在 Rex 內設定。不要分享整份備份；分享首頁包前，也請檢查第三方行是否有個人網址或參數。</p>
+<details><summary>舊版教學影片與圖片</summary>
+<p class="by">以下為倉庫既有的歷史素材，本次未重新錄製或核驗內容。畫面、按鈕或檔名可能不同；以本頁文字及上述示意圖為準，不代表新版操作已測試通過。</p>
+<p><a href="img/builder.mp4">舊版主工具影片</a> · <a href="img/fwd2rex.mp4">舊版獨立轉換工具影片</a></p>
+</details>
+</section>
 
-  <section>
-    <h2>注意</h2>
-    <ul>
-      <li>只在你的手机里读取，<b>不会上传</b></li>
-      <li>只读首页设置，不碰账号资料</li>
-      <li>整个备份里有你的资源库账号，<b>不要发给任何人</b>；只发 <code>RexHome.rex</code></li>
-    </ul>
-  </section>
-
-  <footer>作者：Bolinxxlin · <a href="https://github.com/kenxtbecdi7690/rex-home">GitHub</a></footer>
+<section id="checks">
+<h2>驗證範圍與常見問題</h2>
+<p class="by">功能核對依據：main <a href="https://github.com/kenxtbecdi7690/rex-home/blob/22e1e8ee4e8895b807313cbc17dd578b36fe81ce/docs/builder/index.html">22e1e8e 的主工具</a>及<a href="https://github.com/kenxtbecdi7690/rex-home/blob/22e1e8ee4e8895b807313cbc17dd578b36fe81ce/docs/fwd2rex/index.html">獨立轉換工具</a>。靜態與程式層級檢查、瀏覽器受阻情形另列於 PR。</p>
+<ul>
+<li><b>本輪未完成：</b>iPhone、iPad、Mac 的 Rex／Forward App 實機匯入、播放，以及 Forward 官方匯出工具操作。示意圖不是實測截圖，舊版測試不作為新版通過證據。</li>
+<li><b>下載後找不到：</b>查看瀏覽器下載清單與設定的位置，按首頁名稱找檔案。</li>
+<li><b>匯入後缺行或空白：</b>確認匯入及切換的是目標首頁、行已開啟，並檢查 Rex 內的模組與必要設定。</li>
+<li><b>讀取失敗：</b>檢查副檔名、是否拿到備份而非首頁包，以及畫面錯誤訊息；工具不讀 RAR／7z。</li>
+<li><b>本機處理與網路：</b>備份及首頁在瀏覽器本機處理，不上傳；載入成品、JSZip 及備份讀取所需的 sql.js 程式庫仍可能需要網路。</li>
+</ul>
+</section>
+<footer>作者：Bolinxxlin · <a href="https://github.com/kenxtbecdi7690/rex-home">GitHub 儲存庫</a></footer>
 </main>
 </body>
 </html>
+

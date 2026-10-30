@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="550" viewBox="0 0 520 550" role="img" aria-labelledby="title desc">
+<title id="title">Forward 轉 Rex：兩條路徑</title>
+<desc id="desc">操作示意圖，非實機截圖；按鈕文字依 main 工具程式核對。</desc>
+<rect width="520" height="100%" rx="16" fill="#f7f4fc"/>
+<g font-family="Noto Sans CJK TC, PingFang TC, sans-serif" fill="#251d34">
+<text x="24" y="38" font-size="24" fill="#251d34" font-weight="700">Forward 轉 Rex：兩條路徑</text>
+<text x="24" y="68" font-size="16" fill="#6d5d80" font-weight="400">示意圖 · 非實機截圖</text>
+<text x="24" y="110" font-size="21" fill="#251d34" font-weight="400">準備 .fwd 或 Forward 備份 zip</text>
+<text x="24" y="147" font-size="18" fill="#6d5d80" font-weight="400">有多個首頁時，先挑選目標首頁。</text>
+<text x="24" y="194" font-size="21" fill="#251d34" font-weight="700">要編輯各行／選 Mac 尺寸</text>
+<rect x="24" y="208" width="472" height="46" rx="10" fill="#fff" stroke="#cbbddd"/>
+<text x="38" y="239.0" font-size="21" fill="#251d34" font-weight="400">打开 .rex／.fwd／备份</text>
+<rect x="24" y="265" width="472" height="46" rx="10" fill="#7137ce" stroke="#7137ce"/>
+<text x="38" y="296.0" font-size="21" fill="#fff" font-weight="400">导出首页</text>
+<text x="24" y="345" font-size="21" fill="#251d34" font-weight="700">只要快速轉換：Forward转Rex</text>
+<rect x="24" y="359" width="472" height="46" rx="10" fill="#fff" stroke="#cbbddd"/>
+<text x="38" y="390.0" font-size="21" fill="#251d34" font-weight="400">选择档案</text>
+<rect x="24" y="416" width="472" height="46" rx="10" fill="#7137ce" stroke="#7137ce"/>
+<text x="38" y="447.0" font-size="21" fill="#fff" font-weight="400">导出 RexHome.rex</text>
+<text x="24" y="510" font-size="18" fill="#6d5d80" font-weight="400">主工具依名稱命名；快速工具仍固定檔名。</text>
+</g></svg>

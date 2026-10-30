@@ -12,7 +12,7 @@ Rex 影视首页：**7 大分类＋豆瓣榜单**，共 11 个模块。最新的
 | [`RexHome.rex`](RexHome.rex) | 首页布局包（iPhone、iPad），导入后直接得到上图的首页；不含明文，读取上面的加密脚本 |
 | [`RexHome-Mac.rex`](RexHome-Mac.rex) | 同一个首页的 Mac 版：全宽行加高，适合 Mac 大萤幕；用同一个模块（[手机版放到 Mac 的样子](docs/rex-mac-vs-phone.jpg)） |
 
-想要自己的首页：用 [Rex首页导出工具](https://kenxtbecdi7690.github.io/rex-home/builder/)（作者：Bolinxxlin，[介绍网页](https://kenxtbecdi7690.github.io/rex-home/export/)、[说明](Rex首页导出工具说明.md)）。iPhone 的 Rex 没有导出，可以用它从 Rex 备份导出首页；也能勾选行、调整顺序和设置，或打开别人分享的 `.rex` 照着改，再导出 `RexHome.rex`。
+想製作自己的首頁：用 [Rex 首頁匯出工具](https://kenxtbecdi7690.github.io/rex-home/builder/)（作者：Bolinxxlin，[繁體中文圖文教學](https://kenxtbecdi7690.github.io/rex-home/export/)、[說明](Rex首页导出工具说明.md)）。可在「成品首页」選四大平台、豆瓣＋B站榜單或 MakkaPakka 快速版，也能開啟 `.rex`、Forward `.fwd`、Rex／Forward 備份 zip（不用解壓），編輯後匯出「首頁名稱.rex」；Mac 中尺寸為「首頁名稱-Mac.rex」。倉庫上方已發布的 `RexHome.rex`、`RexHome-Mac.rex` 檔名不變；獨立的 [Forward转Rex](https://kenxtbecdi7690.github.io/rex-home/fwd2rex/) 工具仍固定輸出 `RexHome.rex`。
 
 第一次用请看 [新手教学](新手教学.md)；想把自己的首页分享出去，看 [首页导出教学](首页导出教学.md)。代理设置见 [代理规则](代理规则.md)；`.rex` 格式与自动更新的原理见 [导入导出规则](导入导出规则.md)。
 
@@ -54,6 +54,7 @@ Rex 影视首页：**7 大分类＋豆瓣榜单**，共 11 个模块。最新的
 
 | 版本 | 内容 |
 |---|---|
+| 教學 2026.10.31 | 同步主工具依首頁名稱匯出的規則、三種成品首頁、編輯及 iPhone／iPad／Mac 匯入步驟；補充 Forward `.fwd`／備份轉換與獨立工具固定檔名的差異，區分示意圖、程式核對與未完成的 App 實機驗證 |
 | 短剧 0.4.4（2026.10.31） | [独立短剧模块](shortdrama/README.md)：修正红果缓存期限与身份核对、访客登入并发、受保护画质排除及柚漫剧旧资料；保留未加密 JS、九来源快取与最高画质选择；[验证纪录](shortdrama/verification.json)区分离线检查、在线抽样与待完成的 Rex 实机验证 |
 | 导出工具 2026.10.30 | 新增「成品首页」选单，一键载入四大平台、豆瓣＋B站来改；导出的文件改用首页名称（Mac 中尺寸加 `-Mac`）；包里的模块照 Mac 写法打包，不再多一个空资料夹 |
 | 首页包 2026.10.27 | 新增 Mac 版首页 `RexHome-Mac.rex`（全宽行加高）；`RexHome.rex` 改照 Mac 版 Rex 的写法打包，内容不变；模块仍是 v151 |
@@ -76,3 +77,4 @@ Rex 影视首页：**7 大分类＋豆瓣榜单**，共 11 个模块。最新的
 | v134 | 首页精简为 6 行；豆瓣榜单新增奥斯卡、IMDb 电影／剧集 Top 250、意外结局电影 |
 
 维护这个仓库（含 AI 代理）请先读 [`CLAUDE.md`](CLAUDE.md)。
+

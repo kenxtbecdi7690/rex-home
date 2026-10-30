@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="390" viewBox="0 0 520 390" role="img" aria-labelledby="title desc">
+<title id="title">③ 匯入，再切換首頁</title>
+<desc id="desc">操作示意圖，非實機截圖；按鈕文字依 main 工具程式核對。</desc>
+<rect width="520" height="100%" rx="16" fill="#f7f4fc"/>
+<g font-family="Noto Sans CJK TC, PingFang TC, sans-serif" fill="#251d34">
+<text x="24" y="38" font-size="24" fill="#251d34" font-weight="700">③ 匯入，再切換首頁</text>
+<text x="24" y="68" font-size="16" fill="#6d5d80" font-weight="400">示意圖 · 非實機截圖</text>
+<text x="24" y="110" font-size="20" fill="#251d34" font-weight="400">iPhone／iPad：在 Rex 長按開配置選單</text>
+<text x="24" y="150" font-size="17" fill="#6d5d80" font-weight="400">切换配置</text>
+<rect x="24" y="166" width="472" height="46" rx="10" fill="#fff" stroke="#cbbddd"/>
+<text x="38" y="197.0" font-size="21" fill="#251d34" font-weight="400">我的首頁</text>
+<rect x="24" y="226" width="472" height="52" rx="10" fill="#7137ce" stroke="#7137ce"/>
+<text x="38" y="260.0" font-size="21" fill="#fff" font-weight="400">导入配置</text>
+<text x="24" y="315" font-size="20" fill="#251d34" font-weight="400">先用「导入配置」選剛下載的 .rex。</text>
+<text x="24" y="353" font-size="20" fill="#251d34" font-weight="400">匯入後，在「切换配置」選新首頁。</text>
+</g></svg>
