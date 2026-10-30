@@ -1,5 +1,5 @@
 /*
- * ShortDrama 0.4.1 — 原創 Rex Widget，2026-10-30。
+ * ShortDrama 0.4.2 — 原創 Rex Widget，2026-10-30。
  * Sources: 紅果、河馬、七貓、星芽、好看、圍觀、柚漫劇、抖音連結、喜番分享單集。
  * 只使用來源實際提供的播放網址。公開集數/畫質以來源為準。
  * 不需要 Worker；不包含 balge 的程式碼、帳號或加密模組。
@@ -8,7 +8,7 @@ var WidgetMetadata = {
   id: 'bolin.shortdrama.original',
   title: '短劇聚合・柏霖',
   author: '柏霖',
-  version: '0.4.1',
+  version: '0.4.2',
   requiredVersion: '0.0.1',
   description: '九個來源；喜番僅分享單集，抖音為連結入口，柚漫劇僅部分公開分集。需 Rex 真機驗收。',
   detailCacheDuration: 60,
@@ -60,7 +60,9 @@ var WidgetMetadata = {
       params:[{name:'link',title:'完整短劇連結／劇集 ID',type:'input',value:'7608061313389955115'}]},
     {id:'xifan',title:'喜番・分享單集',functionName:'xifanList',cacheDuration:60,
       description:'貼上喜番官方分享連結；僅載入分享頁回傳的免費分集，不是全集、分類或搜尋。',
-      params:[{name:'link',title:'喜番分享連結',type:'input',value:''}]}
+      params:[{name:'link',title:'喜番分享連結',type:'input',value:''}]},
+    {id:'loadResource',type:'stream',title:'紅果公開分集',functionName:'loadResource',cacheDuration:60,
+      description:'播放紅果分集時取得該集的公開影片網址。'}
   ],
   search: {title:'短劇搜尋',functionName:'search',params:[
     {name:'keyword',title:'劇名',type:'input',value:''},
@@ -347,18 +349,34 @@ async function redDetail(url) {
   var s=d.seriesDetail,card=redCard(s),ids=s.vid_list || [];
   // accessible_episode_cnt is the website's declared public subset.
   var count=Math.min(ids.length,Math.max(0,Number(s.accessible_episode_cnt)||0));
+  if(!count)throw new Error('這部劇目前沒有網頁公開分集，請使用官方 App');
+  // Rex opens episodes directly in the player. Use URL identities with a
+  // registered stream resolver instead of relying on nested loadDetail calls.
   card.episodeItems=ids.slice(0,count).map(function(id,index){
     var link=SD.red+'/player/'+numberId(s.series_id)+'/'+numberId(id);
-    return {id:link,type:'detail',title:'第 '+(index+1)+' 集',episode:index+1,link:link,mediaType:'tv',posterPath:card.posterPath};
+    return {id:link,type:'url',title:'第 '+(index+1)+' 集',episode:index+1,link:link,mediaType:'tv',posterPath:card.posterPath,playerType:'system'};
   });
+  // Prime episode one for direct playback; resolve later episodes on demand.
+  // This avoids requesting dozens of player pages while opening the catalogue.
+  try {card.episodeItems[0].videoUrl=(await redEpisode(card.episodeItems[0].link)).videoUrl;}
+  catch(e){card.description+='\n首集預載失敗，點選播放時會重新取得：'+text(e&&e.message||e);}
   card.description+='\n網頁公開 '+count+'／'+text(s.episode_cnt)+' 集；其餘集數請於官方 App 觀看。';
-  if(!count)throw new Error('這部劇目前沒有網頁公開分集，請使用官方 App');
   return card;
+}
+async function loadResource(params) {
+  var candidates=typeof params==='string'?[params]:params?[params.link,params.id,params.url,params.videoId]:[];
+  var link=candidates.map(text).filter(function(x){return /^https:\/\/hongguoduanju\.com\/player\/\d+\/\d+$/.test(x);})[0];
+  if(!link)return [];
+  var item=await redEpisode(link);
+  return [{name:'紅果公開分集',url:item.videoUrl,playerType:'system'}];
 }
 async function redEpisode(url) {
   var html=text(await request(url)),data=redData(html);
   var page=data.filter(function(v){return v.seriesDetail && v.publicVideoSeo;})[0];
   if(!page || !page.publicVideoSeo.available)throw new Error('本集未提供網頁公開播放，請使用官方 App');
+  var expected=/\/player\/(\d+)\/(\d+)$/.exec(url);
+  if(!expected||text(page.seriesDetail.series_id)!==expected[1]||text(page.vid)!==expected[2])
+    throw new Error('紅果回傳的分集不一致，請重新開啟本集');
   var m=/"contentUrl"\s*:\s*"((?:\\.|[^"\\])*)"/.exec(html);
   var media=m?videoURL(JSON.parse('"'+m[1]+'"')):'';
   if(!media)throw new Error('本集沒有公開播放網址');

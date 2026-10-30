@@ -1,11 +1,12 @@
 {
-  "version": "0.4.1",
+  "version": "0.4.2",
   "rexDevice": "not verified",
   "checks": {
     "syntax": "passed",
     "offlineContracts": "passed",
     "collection": "passed",
-    "homePackage": "passed"
+    "homePackage": "passed",
+    "redPlayerContract": "passed: inline first episode and registered per-episode stream resolver, without nested loadDetail"
   },
   "sources": {
     "qimao": {
@@ -59,7 +60,17 @@
       "mediaHeader": "MP4",
       "mediaBytes": 4096,
       "search": 10,
-      "pagination": "distinct page 2"
+      "pagination": "distinct page 2",
+      "notes": "Earlier list/media sample; see redPlayerFlow for the 0.4.2 player-path check."
     }
+  },
+  "redPlayerFlow": {
+    "checkedAt": "2026-10-30T14:02:20.889682+00:00",
+    "title": "枝头春意闹",
+    "firstEpisodeInlineURL": "passed",
+    "firstEpisodeMediaHTTP": 206,
+    "firstEpisodeMediaHeader": "MP4",
+    "secondEpisodeLiveRoute": "source returned publicVideoSeo.available=false; explicitly rejected",
+    "rexDevice": "pending user verification"
   }
 }
