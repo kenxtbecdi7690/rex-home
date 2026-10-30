@@ -1,0 +1,31 @@
+# 导出工具自动测试：改动网页工具或测试时自动跑 tests/tools-roundtrip.js（不连网，不含个人资料）
+name: 测试导出工具
+
+on:
+  pull_request:
+    paths: ['docs/**', 'tests/**', '.github/workflows/test-tools.yml']
+  push:
+    branches: [main]
+    paths: ['docs/**', 'tests/**', '.github/workflows/test-tools.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: 安装 playwright 与 jszip（只装在本次运行里，不提交）
+        run: |
+          npm install --no-save --no-audit --no-fund playwright jszip@3.10.1
+          npx playwright install --with-deps chromium
+
+      - name: 运行测试
+        run: node tests/tools-roundtrip.js

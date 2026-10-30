@@ -4,7 +4,15 @@
 // 2) 首页各行同时读取（豆瓣榜单开去重时），各行之间重复为 0。
 // 3) 模拟 App 重开（记忆体清空、本机储存保留），先读的行占用的影片，后读的行不会再出现。
 // 4) 选项名称不能太长（中文算 2 格），否则 Rex 设置页左边的参数名称会被挤成一个字。
+// 5) v152 起：缓存过期后网络失败时，行要沿用上次成功的第一页，不能整行消失（v151 及以前不检查）。
 const vm = require('vm');
+// 假时钟与网络失败开关：只给第 5 项检查用，默认不影响其他检查
+globalThis.__skew = 0;
+globalThis.__fail = false;
+class FakeDate extends Date {
+  constructor(...a) { if (a.length) super(...a); else super(Date.now() + globalThis.__skew); }
+  static now() { return Date.now() + globalThis.__skew; }
+}
 const fs = require('fs');
 
 const file = process.argv[2];
@@ -57,7 +65,7 @@ function load(store, overlap) {
   const storage = store
     ? { get: (k) => (store.has(k) ? store.get(k) : null), set: (k, v) => { store.set(k, v); }, remove: (k) => { store.delete(k); } }
     : { get: () => null, set: () => {} };
-  const ctx = { console: { log() {}, warn() {}, error() {} }, Widget: { tmdb: mockTmdb(overlap), http: { get: async () => ({ status: 200, data: {} }) }, storage }, setTimeout, clearTimeout, Promise, Date, Math, JSON };
+  const ctx = { console: { log() {}, warn() {}, error() {} }, Widget: { tmdb: (function () { const good = mockTmdb(overlap); return { get: (p, o) => (globalThis.__fail ? Promise.reject(new Error('net')) : good.get(p, o)) }; })(), http: { get: async () => ({ status: 200, data: {} }) }, storage }, setTimeout, clearTimeout, Promise, Date: FakeDate, Math, JSON };
   vm.createContext(ctx);
   vm.runInContext(source, ctx);
   return ctx;
@@ -147,15 +155,61 @@ async function checkRestart() {
   if (dup) failures.push('App 重开后重复 ' + dup + ' 部');
 }
 
+
+// v152 起：行读取失败（网络）时沿用上次成功的第一页
+async function checkLastGood() {
+  const flush = () => new Promise((r) => setTimeout(r, 800));
+  const attempt = async (fn) => { try { return { v: await fn() }; } catch (e) { return { e }; } };
+  const hours3 = 3 * 3600 * 1000;
+  try {
+    globalThis.__fail = false; globalThis.__skew = 0;
+    const store = new Map();
+    const a = load(store, true);
+    const first = await a.rowMovie(defaults(a, 'rowMovie'));
+    if (!first.length) { failures.push('上次结果检查：首次读取没有片'); return; }
+    await flush();
+    // 缓存过期（拨 3 小时）后网络失败：沿用上次结果
+    globalThis.__skew = hours3; globalThis.__fail = true;
+    const b = load(store, true);
+    const r = await attempt(() => b.rowMovie(defaults(b, 'rowMovie')));
+    if (r.e || !r.v.length || r.v.map(keyOf).join() !== first.map(keyOf).join()) failures.push('缓存过期后网络失败，电影行没有沿用上次结果（会整行消失）');
+    // 没有上次结果：仍要报错
+    const c = load(new Map(), true);
+    if (!(await attempt(() => c.rowMovie(defaults(c, 'rowMovie')))).e) failures.push('没有上次结果时应该报错，却没有');
+    // 第 2 页失败：不能拿第 1 页顶替
+    const d = load(store, true);
+    if (!(await attempt(() => d.rowMovie(Object.assign(defaults(d, 'rowMovie'), { page: 2 })))).e) failures.push('第 2 页失败时不应拿第 1 页顶替');
+    // 无效设置：仍要报错
+    const e = load(store, true);
+    if (!(await attempt(() => e.rowMovie(Object.assign(defaults(e, 'rowMovie'), { pageSize: 7 })))).e) failures.push('无效设置应该报错，却没有');
+    // 沿用的结果仍要扣掉其他行已占用的影片
+    globalThis.__fail = false; globalThis.__skew = 0;
+    const st = new Map();
+    const f = load(st, true);
+    await f.rowMovie(defaults(f, 'rowMovie')); await flush();
+    const g = load(st, true);
+    const series = await g.rowSeries(defaults(g, 'rowSeries'));
+    globalThis.__skew = hours3; globalThis.__fail = true;
+    const r5 = await attempt(() => g.rowMovie(defaults(g, 'rowMovie')));
+    const ids = new Set(series.map(keyOf));
+    if (r5.e || !r5.v.length || r5.v.some((x) => ids.has(keyOf(x)))) failures.push('沿用上次结果时，与其他行重复或为空');
+  } finally {
+    globalThis.__fail = false; globalThis.__skew = 0;
+  }
+}
+
 (async () => {
   checkOptionNames();
   const combos = await checkEveryOption();
   await checkNoDuplicates();
   await checkRestart();
+  const ver = Number((/RexHomeVer\s*=\s*'v(\d+)'/.exec(source) || [])[1]);
+  const lastGood = ver >= 152;
+  if (lastGood) await checkLastGood();
   if (failures.length) {
     failures.slice(0, 30).forEach((f) => console.log('::error::' + f));
     console.log('检查未通过：' + failures.length + ' 项');
     process.exit(1);
   }
-  console.log('检查通过：' + combos + ' 种选项组合都是 200 部（轮播 20 张）；首页与 App 重开后重复 0；选项名称长度正常');
+  console.log('检查通过：' + combos + ' 种选项组合都是 200 部（轮播 20 张）；首页与 App 重开后重复 0；选项名称长度正常' + (lastGood ? '；网络失败时沿用上次结果' : '（v152 起才检查网络失败时沿用上次结果）'));
 })().catch((e) => { console.log('::error::检查程序出错：' + (e && e.stack || e)); process.exit(1); });

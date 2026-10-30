@@ -30,7 +30,9 @@ Detailed format rules live in `导入导出规则.md` at the repo root — read 
 
 ## Testing after changes
 
-There is no automated test. Use Playwright (`require('playwright')`; Chromium is preinstalled): open `file://…/docs/builder/index.html`, route the JSZip and sql.js URLs to local npm copies with `page.route`, then:
+Run the automated test first: `node tests/tools-roundtrip.js` (needs playwright and jszip 3.10.1; point `JSZIP_PATH` at a local jszip if it is not installed). It builds its own synthetic samples (no personal data) and checks: all three pages have no horizontal scroll and no `pageerror` at 375 and 1440 width; a Mac-written `.rex` exports byte-identical with order manifest → layout → home; a non-Mac-written `.rex` exports in Mac format with the same layout. The GitHub workflow `测试导出工具` runs it automatically when `docs/**` or `tests/**` change.
+
+The automated test does **not** yet cover the items below — test those by hand with Playwright (`require('playwright')`; Chromium is preinstalled): open `file://…/docs/builder/index.html`, route the JSZip and sql.js URLs to local npm copies with `page.route`, then:
 
 - Open a Mac-exported `.rex` the user provided and export it untouched: all three JSON files must be **byte-identical** to the original. Exporting with 「Mac 中尺寸」 must match the user's mac-mid file.
 - Open a zip of a whole `configs` folder, a Rex backup zip, a Forward backup zip and a `.fwd`: every homepage must be listed and exportable, and the parsed `rex-layout.json` must equal the original (only the Rex homepage module's `widgetURL` may differ).
