@@ -229,7 +229,7 @@ Full rules live in rex-home's `导入导出规则.md` (the repo also has `.claud
 7. **Test in Rex:** have the user install by link, add a homepage row, and check list, paging, detail, search and playback. Without that, say "not tested in Rex".
 8. **Publish:** share the module link or a subscription; share homepages as `.rex`. rex-home follows its repo workflow.
 
-Module types built before: link-list sources, YouTube channel RSS aggregation, TMDB-based trending (adapted from Forward's official example) — all use only `Widget.http` and `Widget.tmdb`. Self-hosted short-drama catalog: one Rex shell and one Forward shell (`rex-shortdrama.js` / `forward-shortdrama.js`) reading the same JSON catalog; only videos the user has the right to host.
+Module types built before: link-list sources, YouTube channel RSS aggregation, TMDB-based trending (adapted from Forward's official example) — all use only `Widget.http` and `Widget.tmdb`.
 
 ## Common Mistakes
 
