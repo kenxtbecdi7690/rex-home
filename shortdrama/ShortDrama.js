@@ -1,5 +1,5 @@
 /*
- * ShortDrama 0.4.3 — 原創 Rex Widget，2026-10-30。
+ * ShortDrama 0.4.4 — 原創 Rex Widget，2026-10-31。
  * Sources: 紅果、河馬、七貓、星芽、好看、圍觀、柚漫劇、抖音連結、喜番分享單集。
  * 只使用來源實際提供的播放網址。公開集數/畫質以來源為準。
  * 不需要 Worker；不包含 balge 的程式碼、帳號或加密模組。
@@ -8,7 +8,7 @@ var WidgetMetadata = {
   id: 'bolin.shortdrama.original',
   title: '短劇聚合・柏霖',
   author: '柏霖',
-  version: '0.4.3',
+  version: '0.4.4',
   requiredVersion: '0.0.1',
   description: '九個來源，優先來源提供的最高畫質，含本機資料快取。喜番僅分享單集；抖音為連結入口；柚漫劇僅部分公開分集。',
   detailCacheDuration: 60,
@@ -57,19 +57,19 @@ var WidgetMetadata = {
       params:[{name:'keyword',title:'題材／劇名',type:'input',value:'玄幻'}]},
     {id:'douyin',title:'抖音・短劇連結',functionName:'douyinList',cacheDuration:300,
       description:'貼上完整 playlet/detail 短劇連結或純數字劇集 ID。僅列來源明確免費的分集；沒有全站搜尋。',
-      params:[{name:'link',title:'完整短劇連結／劇集 ID',type:'input',value:'7608061313389955115'}]},
+      params:[{name:'link',title:'短劇連結／ID',type:'input',value:'7608061313389955115'}]},
     {id:'xifan',title:'喜番・分享單集',functionName:'xifanList',cacheDuration:300,
       description:'貼上喜番官方分享連結；僅載入分享頁回傳的免費分集，不是全集、分類或搜尋。',
       params:[{name:'link',title:'喜番分享連結',type:'input',value:''}]},
-    {id:'loadResource',type:'stream',title:'紅果公開分集',functionName:'loadResource',cacheDuration:60,
+    {id:'loadResource',type:'stream',title:'紅果公開分集',functionName:'loadResource',cacheDuration:60,params:[],
       description:'播放紅果分集時取得該集的公開影片網址。'}
   ],
-  search: {title:'短劇搜尋',functionName:'search',params:[
+  search: {title:'短劇搜尋',functionName:'search',cacheDuration:300,params:[
     {name:'keyword',title:'劇名',type:'input',value:''},
     {name:'source',title:'來源',type:'enumeration',value:'all',enumOptions:[
       {title:'全部可搜尋來源',value:'all'},{title:'紅果',value:'hongguo'},
       {title:'河馬',value:'hema'},{title:'七貓',value:'qimao'},{title:'星芽',value:'xingya'},
-      {title:'圍觀',value:'weiguan'},{title:'柚漫劇（部分公開入口）',value:'youman'}]},
+      {title:'圍觀',value:'weiguan'},{title:'柚漫劇（部分）',value:'youman'}]},
     {name:'page',title:'頁碼',type:'page',value:'1'}
   ]}
 };
@@ -220,10 +220,10 @@ function xifanPublicItems(d,share) {
 }
 function xifanMedia(x) {
   var manifest;try{manifest=json(x.videoInfo&&x.videoInfo.manifest);}catch(_){return '';}
-  if(!manifest||!Array.isArray(manifest.adaptationSet)||manifest.drm||manifest.encryption)return '';
+  if(!manifest||!Array.isArray(manifest.adaptationSet)||manifest.hidden||manifest.drm||manifest.encryption)return '';
   var variants=[];
   manifest.adaptationSet.forEach(function(set){
-    if(!/audio/i.test(text(set.contentType||set.mimeType))&&Array.isArray(set.representation))variants=variants.concat(set.representation);
+    if(!set.hidden&&!set.drm&&!set.encryption&&!/audio/i.test(text(set.contentType||set.mimeType))&&Array.isArray(set.representation))variants=variants.concat(set.representation);
   });
   variants=variants.filter(function(v){return !v.hidden&&!v.drm&&!v.encryption&&videoURL(v.url);});
   var selected=highestMedia(variants.map(function(v){return {url:v.url,width:v.width,height:v.height,
@@ -281,10 +281,14 @@ async function writeStore(key,value) {
   try {await Widget.storage.set(SD.storePrefix+key,JSON.stringify(value));} catch (_) {}
 }
 async function deviceId() {
-  var id=await readStore('device');
-  if (typeof id==='string' && /^[a-f0-9]{32}$/.test(id)) return id;
-  id='';for(var i=0;i<32;i++) id+=Math.floor(Math.random()*16).toString(16);
-  await writeStore('device',id);return id;
+  if(SD.devicePending)return SD.devicePending;
+  SD.devicePending=(async function(){
+    var id=await readStore('device');
+    if (typeof id==='string' && /^[a-f0-9]{32}$/.test(id)) return id;
+    id='';for(var i=0;i<32;i++) id+=Math.floor(Math.random()*16).toString(16);
+    await writeStore('device',id);return id;
+  })();
+  try{return await SD.devicePending;}finally{SD.devicePending=null;}
 }
 function unique(rows) {
   var seen={};return rows.filter(function(x){if(!x||!x.id||!x.title||seen[x.id])return false;seen[x.id]=true;return true;});
@@ -312,9 +316,10 @@ function highestMedia(variants){
   return items.length?items[0].url:'';
 }
 function bestDouyinMedia(video){
+  if(!video||video.hidden||video.drm||video.encryption||video.need_set_token)return '';
   var variants=[];
   function add(address,meta){
-    if(!address||address.need_set_token||address.drm||address.encryption||meta&&meta.need_set_token)return;
+    if(!address||address.hidden||address.need_set_token||address.drm||address.encryption||meta&&(meta.hidden||meta.need_set_token))return;
     var u=douyinImage(address);if(!u)return;
     variants.push({url:u,width:address.width||meta&&meta.width,height:address.height||meta&&meta.height,
       bitrate:meta&&meta.bit_rate,label:meta&&meta.gear_name,drm:meta&&meta.drm,encryption:meta&&meta.encryption});
@@ -384,7 +389,10 @@ async function redDetail(url) {
   var data=redData(await request(url));
   var d=data.filter(function(v){return v.seriesDetail;})[0];
   if(!d)throw new Error('紅果沒有這部劇的資料');
-  var s=d.seriesDetail,card=redCard(s),ids=s.vid_list || [];
+  var s=d.seriesDetail,expected=/[?]series_id=(\d+)$/.exec(url);
+  if(!expected||text(s.series_id)!==expected[1])throw new Error('紅果回傳的劇集不一致，請重新開啟本劇');
+  var card=redCard(s),ids=Array.isArray(s.vid_list)?s.vid_list:[];
+  if(!card)throw new Error('紅果沒有這部劇的有效資料');
   // accessible_episode_cnt is the website's declared public subset.
   var count=Math.min(ids.length,Math.max(0,Number(s.accessible_episode_cnt)||0));
   if(!count)throw new Error('這部劇目前沒有網頁公開分集，請使用官方 App');
@@ -411,7 +419,7 @@ async function loadResource(params) {
 async function redEpisode(url) {
   var html=text(await request(url)),data=redData(html);
   var page=data.filter(function(v){return v.seriesDetail && v.publicVideoSeo;})[0];
-  if(!page || !page.publicVideoSeo.available)throw new Error('本集未提供網頁公開播放，請使用官方 App');
+  if(!page || page.publicVideoSeo.available!==true)throw new Error('本集未提供網頁公開播放，請使用官方 App');
   var expected=/\/player\/(\d+)\/(\d+)$/.exec(url);
   if(!expected||text(page.seriesDetail.series_id)!==expected[1]||text(page.vid)!==expected[2])
     throw new Error('紅果回傳的分集不一致，請重新開啟本集');
@@ -519,12 +527,16 @@ async function qmDetail(id) {
   if(!card.episodeItems.length)throw new Error('七貓目前沒有提供本劇播放網址');return card;
 }
 async function starToken(force) {
-  if(!force){var cache=await readStore('starAuth');if(cache&&cache.token&&cache.expires>Date.now())return cache.token;}
-  var r=json(await request('https://u.shytkjgs.com/user/v1/account/login',
-    {device:await deviceId()},{'User-Agent':'okhttp/4.10.0','platform':'1'}));
-  var token=r&&r.data&&r.data.token;
-  if(!token)throw new Error('星芽訪客登入失敗'+(r&&r.msg?'：'+r.msg:''));
-  await writeStore('starAuth',{token:token,expires:Date.now()+3600000});return token;
+  if(SD.starPending)return SD.starPending;
+  SD.starPending=(async function(){
+    if(!force){var cache=await readStore('starAuth');if(cache&&cache.token&&cache.expires>Date.now())return cache.token;}
+    var r=json(await request('https://u.shytkjgs.com/user/v1/account/login',
+      {device:await deviceId()},{'User-Agent':'okhttp/4.10.0','platform':'1'}));
+    var token=r&&r.data&&r.data.token;
+    if(!token)throw new Error('星芽訪客登入失敗'+(r&&r.msg?'：'+r.msg:''));
+    await writeStore('starAuth',{token:token,expires:Date.now()+3600000});return token;
+  })();
+  try{return await SD.starPending;}finally{SD.starPending=null;}
 }
 async function starRequest(path,body) {
   for(var attempt=0;attempt<2;attempt++){
@@ -790,6 +802,7 @@ async function youmanDetail(id){
   if(!record||Date.now()-record.created>60000){
     var queries=await readStore('youmanQueries')||{},word=record&&record.word||queries[url];
     if(!word)throw new Error('請先在柚漫劇重新搜尋本劇，再開啟分集');
+    delete YM.cache[url];
     await youmanSearch(word);record=YM.cache[url];
   }
   if(!record)throw new Error('這部柚漫劇已不在目前搜尋結果，請重新搜尋');
@@ -835,7 +848,7 @@ async function saveResultCache(){
   });
   await SDCACHE.writes;
 }
-function withResultCache(name,fn,seconds){
+function withResultCache(name,fn,seconds,expiresAt){
   return async function(params){
     await resultCacheReady();
     var key=name+':'+md5(JSON.stringify(cacheArguments(params))),now=Date.now(),entry=SDCACHE.entries[key];
@@ -845,8 +858,10 @@ function withResultCache(name,fn,seconds){
       var result=await fn(params);
       var partial=Array.isArray(result)&&result.some(function(x){return x&&/未完成搜尋/.test(text(x.description));});
       if(result!==undefined&&result!==null&&!partial){
-        var copy=cacheCopy(result),created=Date.now();
-        SDCACHE.entries[key]={created:created,expires:created+seconds*1000,value:copy};
+        var copy=cacheCopy(result),created=Date.now(),expires=created+seconds*1000;
+        var bound=expiresAt?Number(expiresAt(params,result)):0;
+        if(bound>0&&isFinite(bound))expires=Math.min(expires,bound);
+        SDCACHE.entries[key]={created:created,expires:expires,value:copy};
         await saveResultCache();
       }
       return result;
@@ -865,6 +880,18 @@ youmanList=withResultCache('youmanList',youmanList,300);
 douyinList=withResultCache('douyinList',douyinList,300);
 xifanList=withResultCache('xifanList',xifanList,300);
 search=withResultCache('search',search,300);
-loadDetail=withResultCache('loadDetail',loadDetail,60);
-loadResource=withResultCache('loadResource',loadResource,60);
 redEpisode=withResultCache('redEpisode',redEpisode,60);
+// A player URL has one shared 60-second lifetime. Wrapping loadResource or
+// player loadDetail again would extend a previously cached URL by another TTL.
+var cachedDetail=withResultCache('loadDetail',loadDetail,60,function(link,result){
+  if(!/^https:\/\/hongguoduanju\.com\/detail\?series_id=\d+$/.test(text(link)))return 0;
+  var first=result.episodeItems&&result.episodeItems[0];
+  if(!first||!first.videoUrl)return 0;
+  // A catalogue containing a cached first-episode URL inherits that URL's
+  // original expiry, including when the episode was opened before the series.
+  var entry=SDCACHE.entries['redEpisode:'+md5(JSON.stringify(cacheArguments(first.link)))];
+  return entry?entry.expires:Date.now();
+});
+loadDetail=async function(link){
+  return /^https:\/\/hongguoduanju\.com\/player\/\d+\/\d+$/.test(text(link))?redEpisode(text(link)):cachedDetail(link);
+};
