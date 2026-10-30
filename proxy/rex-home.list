@@ -12,3 +12,6 @@ DOMAIN-SUFFIX,tmdb.org
 DOMAIN,module-host.xtbecdi7690.workers.dev
 # 豆瓣完整模式（填了豆瓣密钥时才会用到）
 DOMAIN,douban-bridge.baran.wang
+
+# shortdrama/ 的合集、未加密脚本与 iphone.rex 同样使用上面的 GitHub 规则。
+# 短剧来源 API／媒体 CDN 不统一强制代理；域名与功能范围见 shortdrama/README.md。

@@ -1,0 +1,54 @@
+{
+  "version": "0.4.1",
+  "rexDevice": "not verified",
+  "checks": {
+    "syntax": "passed",
+    "offlineContracts": "passed",
+    "collection": "passed",
+    "homePackage": "passed"
+  },
+  "sources": {
+    "qimao": {
+      "checkedAt": "2026-10-30T13:40:26.781Z",
+      "list": 62,
+      "title": "抚远不远",
+      "episodes": 33,
+      "mediaHTTP": 206,
+      "mediaHeader": "HLS",
+      "mediaBytes": 3779,
+      "search": 5
+    },
+    "hema": {
+      "checkedAt": "2026-10-30T13:41:04.112Z",
+      "list": 10,
+      "title": "深深吻，浅浅缠AI版",
+      "episodes": 5,
+      "mediaHTTP": 206,
+      "mediaHeader": "MP4",
+      "mediaBytes": 4096,
+      "search": 10,
+      "pagination": "distinct page 2"
+    },
+    "xingya": {
+      "checkedAt": "2026-10-30T13:41:03.904Z",
+      "list": 18,
+      "title": "医路芳华",
+      "episodes": 59,
+      "mediaHTTP": 206,
+      "mediaHeader": "MP4",
+      "mediaBytes": 4096,
+      "search": 32,
+      "pagination": "distinct page 2"
+    },
+    "haokan": {
+      "checkedAt": "2026-10-30T13:41:03.921Z",
+      "list": 9,
+      "title": "都市超级医圣",
+      "episodes": 94,
+      "mediaHTTP": 206,
+      "mediaHeader": "MP4",
+      "mediaBytes": 4096,
+      "pagination": "distinct page 2"
+    }
+  }
+}

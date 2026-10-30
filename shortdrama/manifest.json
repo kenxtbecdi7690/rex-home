@@ -1,0 +1,24 @@
+{
+  "title": "短剧聚合・柏霖",
+  "description": "九个来源入口；喜番仅分享单集。弹幕需自行配置服务。",
+  "widgets": [
+    {
+      "id": "bolin.shortdrama.original",
+      "title": "短劇聚合・柏霖",
+      "version": "0.4.1",
+      "requiredVersion": "0.0.1",
+      "description": "九個來源；喜番僅分享單集，抖音為連結入口，柚漫劇僅部分公開分集。需 Rex 真機驗收。",
+      "author": "柏霖",
+      "url": "https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/shortdrama/ShortDrama.js"
+    },
+    {
+      "id": "bolin.shortdrama.danmu",
+      "title": "短劇彈幕・自訂 API",
+      "version": "0.2.1",
+      "requiredVersion": "0.0.1",
+      "description": "先填寫相容彈彈play的服務地址，再搜尋劇名及選擇分集。來源覆蓋由服務決定。",
+      "author": "柏霖",
+      "url": "https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/main/shortdrama/ShortDrama_Danmu.js"
+    }
+  ]
+}
