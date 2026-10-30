@@ -1,5 +1,5 @@
 /*
- * ShortDrama 0.4.2 — 原創 Rex Widget，2026-10-30。
+ * ShortDrama 0.4.3 — 原創 Rex Widget，2026-10-30。
  * Sources: 紅果、河馬、七貓、星芽、好看、圍觀、柚漫劇、抖音連結、喜番分享單集。
  * 只使用來源實際提供的播放網址。公開集數/畫質以來源為準。
  * 不需要 Worker；不包含 balge 的程式碼、帳號或加密模組。
@@ -8,9 +8,9 @@ var WidgetMetadata = {
   id: 'bolin.shortdrama.original',
   title: '短劇聚合・柏霖',
   author: '柏霖',
-  version: '0.4.2',
+  version: '0.4.3',
   requiredVersion: '0.0.1',
-  description: '九個來源；喜番僅分享單集，抖音為連結入口，柚漫劇僅部分公開分集。需 Rex 真機驗收。',
+  description: '九個來源，優先來源提供的最高畫質，含本機資料快取。喜番僅分享單集；抖音為連結入口；柚漫劇僅部分公開分集。',
   detailCacheDuration: 60,
   modules: [
     {id: 'hongguo', title: '紅果短劇／漫劇', functionName: 'hongguoList', cacheDuration: 300,
@@ -52,13 +52,13 @@ var WidgetMetadata = {
         {title:'懸疑',value:'悬疑'},{title:'愛情',value:'爱情'},{title:'重生',value:'重生'},
         {title:'穿越',value:'穿越'},{title:'萌寶',value:'萌宝'},{title:'戰神',value:'战神'}]},
         {name:'page',title:'頁碼',type:'page',value:'1'}]},
-    {id:'youman',title:'柚漫劇・搜尋入口',functionName:'youmanList',cacheDuration:60,
+    {id:'youman',title:'柚漫劇・搜尋入口',functionName:'youmanList',cacheDuration:300,
       description:'按題材或關鍵字找劇。只提供搜尋回傳的公開分集入口，可能不是完整目錄。',
       params:[{name:'keyword',title:'題材／劇名',type:'input',value:'玄幻'}]},
-    {id:'douyin',title:'抖音・短劇連結',functionName:'douyinList',cacheDuration:60,
+    {id:'douyin',title:'抖音・短劇連結',functionName:'douyinList',cacheDuration:300,
       description:'貼上完整 playlet/detail 短劇連結或純數字劇集 ID。僅列來源明確免費的分集；沒有全站搜尋。',
       params:[{name:'link',title:'完整短劇連結／劇集 ID',type:'input',value:'7608061313389955115'}]},
-    {id:'xifan',title:'喜番・分享單集',functionName:'xifanList',cacheDuration:60,
+    {id:'xifan',title:'喜番・分享單集',functionName:'xifanList',cacheDuration:300,
       description:'貼上喜番官方分享連結；僅載入分享頁回傳的免費分集，不是全集、分類或搜尋。',
       params:[{name:'link',title:'喜番分享連結',type:'input',value:''}]},
     {id:'loadResource',type:'stream',title:'紅果公開分集',functionName:'loadResource',cacheDuration:60,
@@ -168,7 +168,7 @@ async function douyinEpisode(id,aweme) {
   if(v.need_set_token||x.is_preview||Number(x.is_charge_series)>0||Number(x.series_paid_info&&x.series_paid_info.item_price)>0||status.is_private||status.is_delete||status.is_prohibited)throw new Error('抖音本集目前未公開提供播放');
   var returnedVid=v.vid||v.play_addr_h264&&v.play_addr_h264.uri||v.play_addr&&v.play_addr.uri;
   if(!wanted.video||!wanted.video.vid||text(returnedVid)!==text(wanted.video.vid))throw new Error('抖音回應的影片 ID 不一致');
-  var media=douyinImage(v.play_addr_h264)||douyinImage(v.play_addr);
+  var media=bestDouyinMedia(v);
   if(!media)throw new Error('抖音沒有提供本集公開播放網址');
   return playable(media,'第 '+wanted.playlet_info.statis.current_episode+' 集',wanted.playlet_info.statis.current_episode,douyinImage(v.cover));
 }
@@ -223,11 +223,11 @@ function xifanMedia(x) {
   if(!manifest||!Array.isArray(manifest.adaptationSet)||manifest.drm||manifest.encryption)return '';
   var variants=[];
   manifest.adaptationSet.forEach(function(set){
-    if(Array.isArray(set.representation))variants=variants.concat(set.representation);
+    if(!/audio/i.test(text(set.contentType||set.mimeType))&&Array.isArray(set.representation))variants=variants.concat(set.representation);
   });
   variants=variants.filter(function(v){return !v.hidden&&!v.drm&&!v.encryption&&videoURL(v.url);});
-  variants.sort(function(a,b){return (Number(b.width)||0)*(Number(b.height)||0)-(Number(a.width)||0)*(Number(a.height)||0);});
-  var selected=variants.length?videoURL(variants[0].url):'';
+  var selected=highestMedia(variants.map(function(v){return {url:v.url,width:v.width,height:v.height,
+    bitrate:v.bitrate||v.avgBitrate||v.bandwidth,label:v.qualityLabel||v.qualityType||v.name};}));
   // The source emits HTTP URLs; this CDN also serves the same signed path over TLS.
   if(/^http:\/\/[A-Za-z0-9.-]+\.video\.yximgs\.com\//i.test(selected))selected=selected.replace(/^http:/,'https:');
   return selected;
@@ -290,6 +290,44 @@ function unique(rows) {
   var seen={};return rows.filter(function(x){if(!x||!x.id||!x.title||seen[x.id])return false;seen[x.id]=true;return true;});
 }
 function videoURL(v) {var s=text(v);return /^https?:\/\/[^\s<>]+$/i.test(s)?s:'';}
+function qualityPixels(label){
+  var s=text(label).toLowerCase(),m=/(?:^|[^0-9])(4320|2160|1440|1080|960|720|540|480|360|240)(?:p|(?:[^0-9]|$))/.exec(s);
+  if(m)return Number(m[1]);
+  if(/(?:^|\W)8k(?:\W|$)/.test(s))return 4320;
+  if(/(?:^|\W)4k(?:\W|$)/.test(s))return 2160;
+  if(/(?:^|\W)2k(?:\W|$)/.test(s))return 1440;
+  if(/蓝光|藍光/.test(s))return 1080;
+  if(/超清/.test(s))return 1080;
+  if(/高清/.test(s)||s==='hd')return 720;
+  if(/标清|標清/.test(s)||s==='sd')return 480;
+  return 0;
+}
+function highestMedia(variants){
+  var items=(variants||[]).filter(function(v){return v&&videoURL(v.url)&&!v.drm&&!v.encryption&&!v.hidden;}).map(function(v,i){
+    var w=Number(v.width)||0,h=Number(v.height)||0,side=w>0&&h>0?Math.min(w,h):0;
+    return {url:videoURL(v.url),pixels:side||qualityPixels(v.label)||qualityPixels(v.url.split('?')[0]),
+      area:w*h,bitrate:Number(v.bitrate)||0,index:i};
+  });
+  items.sort(function(a,b){return b.pixels-a.pixels||b.area-a.area||b.bitrate-a.bitrate||a.index-b.index;});
+  return items.length?items[0].url:'';
+}
+function bestDouyinMedia(video){
+  var variants=[];
+  function add(address,meta){
+    if(!address||address.need_set_token||address.drm||address.encryption||meta&&meta.need_set_token)return;
+    var u=douyinImage(address);if(!u)return;
+    variants.push({url:u,width:address.width||meta&&meta.width,height:address.height||meta&&meta.height,
+      bitrate:meta&&meta.bit_rate,label:meta&&meta.gear_name,drm:meta&&meta.drm,encryption:meta&&meta.encryption});
+  }
+  add(video.play_addr_h264,{});add(video.play_addr,{});add(video.play_addr_265,{});
+  (Array.isArray(video.bit_rate)?video.bit_rate:[]).forEach(function(v){add(v.play_addr||v.play_addr_h264,v);});
+  return highestMedia(variants);
+}
+function bestHemaMedia(video){
+  var fields={mp4:'',m3u8:'',vodMp4Url:'',mp4720p:'720p',m3u8720p:'720p',
+    mp41080p:'1080p',m3u81080p:'1080p',mp41440p:'1440p',mp42160p:'2160p',m3u82160p:'2160p'};
+  return highestMedia(Object.keys(fields).map(function(k){return {url:videoURL(video[k]),label:fields[k]};}));
+}
 function detailCard(url,title,poster,intro,tags,total,source) {
   return {id:url,type:'detail',title:text(title),posterPath:videoURL(poster),
     mediaType:'tv',link:url,genreTitle:text(tags),
@@ -382,7 +420,8 @@ async function redEpisode(url) {
   if(!media)throw new Error('本集沒有公開播放網址');
   var ids=page.seriesDetail.vid_list || [],index=ids.indexOf(text(page.vid))+1;
   var out=playable(media,'第 '+(index||1)+' 集',index||1,page.seriesDetail.series_cover);
-  out.description='紅果網頁公開畫質；不保證 1080p。';return out;
+  var w=Number(page.publicVideoSeo.width),h=Number(page.publicVideoSeo.height),res=w>0&&h>0?Math.min(w,h):0;
+  out.description='紅果公開網頁提供'+(res?' '+res+'p':'的畫質')+'；沒有另造高畫質網址。';return out;
 }
 function hemaCard(x) {
   if(!x.bookId || !x.bookName)return null;
@@ -401,7 +440,7 @@ async function hemaDetail(url) {
   var d=nextData(await request(url)),card=hemaCard(d.bookInfoVo || {});
   if(!card)throw new Error('河馬沒有這部劇的資料');
   card.episodeItems=(d.chapterList||[]).filter(function(e){return text(e.isCharge)!=='1';}).map(function(e){
-    var v=e.chapterVideoVo || {},media=videoURL(v.mp4 || v.mp4720p || v.vodMp4Url || v.m3u8);
+    var v=e.chapterVideoVo || {},media=bestHemaMedia(v);
     return media?playable(media,e.chapterName,e.chapterIndex,card.posterPath):null;
   }).filter(Boolean).sort(function(a,b){return (a.episode||0)-(b.episode||0);});
   card.description+='\n本頁提供 '+card.episodeItems.length+' 集公開播放；付費／未提供網址的集數未列入。';
@@ -636,14 +675,16 @@ async function haokanDetail(book,seed) {
   return card;
 }
 function bestHaokanMedia(video) {
-  var list=video.video_list||{},clarity=video.clarityUrl||[],order=['1080p','sc','hd','sd'];
-  for(var i=0;i<order.length;i++){
-    var selected=videoURL(list[order[i]]);if(selected)return selected;
-    for(var j=0;j<clarity.length;j++)if(clarity[j].key===order[i]){
-      selected=videoURL(clarity[j].url);if(selected)return selected;
-    }
-  }
-  return videoURL(video.video_src || video.play_url);
+  var list=video.video_list||{},clarity=video.clarityUrl||[],hw=video.video_hw||{},variants=[];
+  Object.keys(list).forEach(function(k){var size=hw[k]||{};
+    variants.push({url:videoURL(list[k]),label:k==='sc'?'720p':k,width:size.width,height:size.height});
+  });
+  clarity.forEach(function(v){var size=text(v.vodVideoHW).split(/\$\$|[xX*×]/);
+    variants.push({url:videoURL(v.url),label:v.key==='sc'?'720p':v.key||v.title,
+      width:v.width||size[0],height:v.height||size[1],bitrate:v.videoBps});
+  });
+  variants.push({url:videoURL(video.video_src)},{url:videoURL(video.play_url)});
+  return highestMedia(variants);
 }
 async function haokanEpisode(book,vid,episode) {
   var inner='method=post&vid='+numberId(vid)+'&immersive_mode=v4_5&tplname=feed_small_video&tag=playlet_talos&tab=detail&video_set_id='+numberId(book)+'&play_screen_type=1&play_volume_type=2&play_external_device_type=1';
@@ -681,12 +722,7 @@ async function weiguanList(p) {
 }
 function bestWeiguanMedia(choices) {
   if(!Array.isArray(choices))return '';
-  var candidates=choices.filter(function(x){return videoURL(x.url);}).map(function(x){
-    var name=text(x.name),resolution=/([0-9]{3,4})/.exec(name);
-    var score=resolution?Number(resolution[1]):(/超清/.test(name)?1080:/高清/.test(name)?720:0);
-    return {url:x.url,score:score};
-  });
-  candidates.sort(function(a,b){return b.score-a.score;});return candidates.length?candidates[0].url:'';
+  return highestMedia(choices.map(function(x){return {url:x.url,label:x.name,width:x.width,height:x.height,bitrate:x.bitrate||x.bitRate};}));
 }
 async function weiguanDetail(id) {
   var r=await weiguanRequest('/drama/home/shortVideoDetail',{oneId:numberId(id),page:1,pageSize:1000});
@@ -759,3 +795,76 @@ async function youmanDetail(id){
   if(!record)throw new Error('這部柚漫劇已不在目前搜尋結果，請重新搜尋');
   return Object.assign({},record.card,{episodeItems:record.episodes});
 }
+
+// Local result cache shared by all nine sources. Signed media-bearing results
+// expire sooner than lists; rejected requests and partial search failures do not
+// become cache hits. Data stays in Rex storage and is invalidated on updates.
+var SDCACHE={entries:{},pending:{},ready:null,writes:Promise.resolve(),maxEntries:60,maxChars:350000};
+function cacheArguments(value){
+  if(Array.isArray(value))return value.map(cacheArguments);
+  if(value&&typeof value==='object'){
+    var out={};Object.keys(value).sort().forEach(function(k){
+      if(value[k]!==undefined)out[k]=cacheArguments(value[k]);
+    });return out;
+  }
+  return value===undefined?null:value;
+}
+function cacheCopy(value){return JSON.parse(JSON.stringify(value));}
+async function resultCacheReady(){
+  if(!SDCACHE.ready)SDCACHE.ready=(async function(){
+    try{
+      var raw=await Widget.storage.get(SD.storePrefix+'resultCache');
+      var saved=raw?json(raw):null;
+      if(saved&&saved.version===WidgetMetadata.version&&saved.entries&&typeof saved.entries==='object'&&!Array.isArray(saved.entries))
+        SDCACHE.entries=saved.entries;
+    }catch(_){}
+  })();
+  await SDCACHE.ready;
+}
+async function saveResultCache(){
+  var now=Date.now();
+  Object.keys(SDCACHE.entries).forEach(function(k){if(!SDCACHE.entries[k]||SDCACHE.entries[k].expires<=now)delete SDCACHE.entries[k];});
+  var keys=Object.keys(SDCACHE.entries).sort(function(a,b){return SDCACHE.entries[a].created-SDCACHE.entries[b].created;});
+  while(keys.length>SDCACHE.maxEntries)delete SDCACHE.entries[keys.shift()];
+  var data=JSON.stringify({version:WidgetMetadata.version,entries:SDCACHE.entries});
+  while(data.length>SDCACHE.maxChars&&keys.length){
+    delete SDCACHE.entries[keys.shift()];data=JSON.stringify({version:WidgetMetadata.version,entries:SDCACHE.entries});
+  }
+  SDCACHE.writes=SDCACHE.writes.catch(function(){}).then(async function(){
+    try{await Widget.storage.set(SD.storePrefix+'resultCache',data);}catch(_){}
+  });
+  await SDCACHE.writes;
+}
+function withResultCache(name,fn,seconds){
+  return async function(params){
+    await resultCacheReady();
+    var key=name+':'+md5(JSON.stringify(cacheArguments(params))),now=Date.now(),entry=SDCACHE.entries[key];
+    if(entry&&entry.created<=now&&entry.expires>now&&entry.expires<=now+seconds*1000)return cacheCopy(entry.value);
+    if(SDCACHE.pending[key])return cacheCopy(await SDCACHE.pending[key]);
+    var work=(async function(){
+      var result=await fn(params);
+      var partial=Array.isArray(result)&&result.some(function(x){return x&&/未完成搜尋/.test(text(x.description));});
+      if(result!==undefined&&result!==null&&!partial){
+        var copy=cacheCopy(result),created=Date.now();
+        SDCACHE.entries[key]={created:created,expires:created+seconds*1000,value:copy};
+        await saveResultCache();
+      }
+      return result;
+    })();
+    SDCACHE.pending[key]=work;
+    try{return cacheCopy(await work);}finally{delete SDCACHE.pending[key];}
+  };
+}
+hongguoList=withResultCache('hongguoList',hongguoList,300);
+hemaList=withResultCache('hemaList',hemaList,300);
+qimaoList=withResultCache('qimaoList',qimaoList,300);
+xingyaList=withResultCache('xingyaList',xingyaList,300);
+haokanList=withResultCache('haokanList',haokanList,300);
+weiguanList=withResultCache('weiguanList',weiguanList,300);
+youmanList=withResultCache('youmanList',youmanList,300);
+douyinList=withResultCache('douyinList',douyinList,300);
+xifanList=withResultCache('xifanList',xifanList,300);
+search=withResultCache('search',search,300);
+loadDetail=withResultCache('loadDetail',loadDetail,60);
+loadResource=withResultCache('loadResource',loadResource,60);
+redEpisode=withResultCache('redEpisode',redEpisode,60);

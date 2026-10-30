@@ -1,12 +1,14 @@
 {
-  "version": "0.4.2",
+  "version": "0.4.3",
   "rexDevice": "not verified",
   "checks": {
     "syntax": "passed",
     "offlineContracts": "passed",
     "collection": "passed",
     "homePackage": "passed",
-    "redPlayerContract": "passed: inline first episode and registered per-episode stream resolver, without nested loadDetail"
+    "redPlayerContract": "passed: inline first episode and registered per-episode stream resolver, without nested loadDetail",
+    "cache": "passed: TTLs, parameter/page isolation, persistence, version invalidation, concurrency, errors, size bounds, and storage failures",
+    "quality": "passed: resolution precedence, bitrate ties, 4K returned variants, multi-quality adapters, protected/hidden exclusion, unchanged single-source URLs"
   },
   "sources": {
     "qimao": {
@@ -72,5 +74,21 @@
     "firstEpisodeMediaHeader": "MP4",
     "secondEpisodeLiveRoute": "source returned publicVideoSeo.available=false; explicitly rejected",
     "rexDevice": "pending user verification"
+  },
+  "cachePolicy": {
+    "listsSeconds": 300,
+    "searchSeconds": 300,
+    "detailsSeconds": 60,
+    "streamSeconds": 60,
+    "maxEntries": 60,
+    "maxSerializedCharacters": 350000,
+    "videoDownloads": false
+  },
+  "qualityPolicy": {
+    "resolution": "highest supplied, using dimensions when available",
+    "tieBreaker": "bitrate",
+    "urlRewritingForResolution": false,
+    "redPublicSample": "360p",
+    "rexDevice": "not verified"
   }
 }
