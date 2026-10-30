@@ -1,79 +1,107 @@
 {
-  "version": "0.4.3",
+  "version": "0.4.4",
+  "baseCommit": "1bb5c67b4a01e8493867d3dad76960fd08f85795",
+  "checkedAt": "2026-10-30T19:53:33.419386+00:00",
   "rexDevice": "not verified",
   "checks": {
     "syntax": "passed",
-    "offlineContracts": "passed",
-    "collection": "passed",
-    "homePackage": "passed",
-    "redPlayerContract": "passed: inline first episode and registered per-episode stream resolver, without nested loadDetail",
+    "collection": "passed: one plaintext widget, identical metadata ID/version/requiredVersion and URL",
+    "homePackage": "passed: ZIP CRC, three root JSON files, five rows, 13 item fields, unique IDs, handler/default parameter references; homepage format version remains 1",
+    "contracts": "passed: 10 regression/contract checks including direct red player dispatch, availability/identity refusal, preload retry, original URL expiry through stream and parent caches, guest single-flight, protected tracks, removed Youman records",
     "cache": "passed: TTLs, parameter/page isolation, persistence, version invalidation, concurrency, errors, size bounds, and storage failures",
-    "quality": "passed: resolution precedence, bitrate ties, 4K returned variants, multi-quality adapters, protected/hidden exclusion, unchanged single-source URLs"
+    "quality": "passed: resolution precedence, bitrate ties, 4K returned variants, multi-quality adapters, protected/hidden exclusion, unchanged single-source URLs",
+    "offlineSources": "passed: nine sources, 58 default/category runs, nine detail/playback parser flows, seven search modes; fixture dispatch is not Rex dispatch",
+    "checksum": "passed: MD5 matched Node crypto for ASCII, Unicode and multi-block samples"
   },
   "sources": {
-    "qimao": {
-      "checkedAt": "2026-10-30T13:40:26.781Z",
-      "list": 62,
-      "title": "抚远不远",
-      "episodes": 33,
-      "mediaHTTP": 206,
-      "mediaHeader": "HLS",
-      "mediaBytes": 3779,
-      "search": 5
-    },
-    "hema": {
-      "checkedAt": "2026-10-30T13:41:04.112Z",
-      "list": 10,
-      "title": "深深吻，浅浅缠AI版",
+    "hongguo": {
+      "list": 24,
+      "title": "一念沉沦，霍总心动了",
       "episodes": 5,
       "mediaHTTP": 206,
-      "mediaHeader": "MP4",
       "mediaBytes": 4096,
-      "search": 10,
-      "pagination": "distinct page 2"
+      "mediaHeader": "MP4",
+      "mediaVerified": true,
+      "secondEpisodeRoute": "本集未提供網頁公開播放，請使用官方 App"
+    },
+    "hema": {
+      "list": 10,
+      "title": "替妹出嫁后，我找到了真爱",
+      "episodes": 3,
+      "mediaHTTP": 206,
+      "mediaBytes": 4096,
+      "mediaHeader": "MP4",
+      "mediaVerified": true
+    },
+    "qimao": {
+      "error": "七貓回應失敗：验签失败"
     },
     "xingya": {
-      "checkedAt": "2026-10-30T13:41:03.904Z",
       "list": 18,
-      "title": "医路芳华",
-      "episodes": 59,
+      "title": "红妆半卸嫁东宫",
+      "episodes": 70,
       "mediaHTTP": 206,
-      "mediaHeader": "MP4",
       "mediaBytes": 4096,
-      "search": 32,
-      "pagination": "distinct page 2"
+      "mediaHeader": "MP4",
+      "mediaVerified": true
     },
     "haokan": {
-      "checkedAt": "2026-10-30T13:41:03.921Z",
       "list": 9,
       "title": "都市超级医圣",
       "episodes": 94,
       "mediaHTTP": 206,
-      "mediaHeader": "MP4",
       "mediaBytes": 4096,
-      "pagination": "distinct page 2"
+      "mediaHeader": "MP4",
+      "mediaVerified": true
     },
-    "hongguo": {
-      "checkedAt": "2026-10-30T13:44:18.326Z",
-      "list": 24,
-      "title": "王妈在顾家当保姆后全家只会搞笑了",
-      "episodes": 5,
+    "weiguan": {
+      "list": 30,
+      "title": "被拐二十年，我装穷回家试探全家",
+      "episodes": 80,
       "mediaHTTP": 206,
-      "mediaHeader": "MP4",
       "mediaBytes": 4096,
-      "search": 10,
-      "pagination": "distinct page 2",
-      "notes": "Earlier list/media sample; see redPlayerFlow for the 0.4.2 player-path check."
+      "mediaHeader": "MP4",
+      "mediaVerified": true
+    },
+    "youman": {
+      "list": 14,
+      "title": "玄幻穿越",
+      "episodes": 6,
+      "mediaHTTP": 206,
+      "mediaBytes": 4096,
+      "mediaHeader": "MP4",
+      "mediaVerified": true
+    },
+    "douyin": {
+      "list": 1,
+      "title": "短剧 · 少夫人来自东北",
+      "episodes": 10,
+      "mediaHTTP": 206,
+      "mediaBytes": 4096,
+      "mediaHeader": "MP4",
+      "mediaVerified": true
+    },
+    "xifan": {
+      "skipped": "requires a fresh official share link"
     }
   },
-  "redPlayerFlow": {
-    "checkedAt": "2026-10-30T14:02:20.889682+00:00",
-    "title": "枝头春意闹",
-    "firstEpisodeInlineURL": "passed",
-    "firstEpisodeMediaHTTP": 206,
-    "firstEpisodeMediaHeader": "MP4",
-    "secondEpisodeLiveRoute": "source returned publicVideoSeo.available=false; explicitly rejected",
-    "rexDevice": "pending user verification"
+  "networkCheckedAt": "2026-10-30T19:46:08.865Z",
+  "redPublicQuality": {
+    "checkedAt": "2026-10-30T19:49:55.167Z",
+    "title": "一念沉沦，霍总心动了",
+    "sourceDeclaredWidth": 360,
+    "sourceDeclaredHeight": 640,
+    "publicAvailable": true,
+    "publicVideoFields": [
+      "available",
+      "seriesId",
+      "itemId",
+      "posterUrl",
+      "durationSeconds",
+      "width",
+      "height"
+    ],
+    "playerDescription": "紅果公開網頁提供 360p；沒有另造高畫質網址。"
   },
   "cachePolicy": {
     "listsSeconds": 300,
@@ -88,7 +116,22 @@
     "resolution": "highest supplied, using dimensions when available",
     "tieBreaker": "bitrate",
     "urlRewritingForResolution": false,
-    "redPublicSample": "360p",
+    "redPublicSample": "360 x 640, declared by publicVideoSeo",
     "rexDevice": "not verified"
+  },
+  "limitations": [
+    "Rex import, host cache behavior and per-episode playback on an iPhone remain unverified.",
+    "Media checks read 4096-byte MP4 headers only; they do not verify full episodes or all returned episodes.",
+    "Qimao currently rejected the client checksum. No bypass attempted.",
+    "Xifan requires a fresh complete official share link; live check skipped.",
+    "Haokan and Douyin still use nested type:detail episodes; offline tests explicitly call loadDetail and cannot validate Rex player dispatch.",
+    "Network probes preceded the final parent-cache expiry bound; source adapters were unchanged by that final cache-only adjustment, and all offline checks were rerun afterward.",
+    "No guarantee against source account, guest identity, device or IP restrictions; no personal credentials were used."
+  ],
+  "historicalNetworkRecord": {
+    "version": "0.4.3",
+    "commit": "1bb5c67b4a01e8493867d3dad76960fd08f85795",
+    "path": "shortdrama/verification.json",
+    "note": "Earlier successes are historical; latest source results are listed above."
   }
 }

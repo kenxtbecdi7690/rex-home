@@ -5,7 +5,7 @@
     {
       "id": "bolin.shortdrama.original",
       "title": "短劇聚合・柏霖",
-      "version": "0.4.3",
+      "version": "0.4.4",
       "requiredVersion": "0.0.1",
       "description": "九個來源，優先來源提供的最高畫質，含本機資料快取。喜番僅分享單集；抖音為連結入口；柚漫劇僅部分公開分集。",
       "author": "柏霖",
