@@ -46,3 +46,14 @@
 - 豆瓣用 Rex首页模块（会自动更新），不填密钥也能用。
 - B站排行：[bilibili-rank.js](modules/bilibili-rank.js)（读 B站公开排行，配对 TMDB 海报，照排名显示；装在首页包里）。
 - 榜单照原榜排名，不做去重。
+
+---
+
+# MakkaPakka 快速版 首页
+
+照 MakkaPakka 排法、全部用 Rex首页模块（v151，读 GitHub 上的加密版，会自动更新）的 27 行 48 格首页。小方块、封面、列表每格读 20 部，全宽行读 40 部，翻页再继续读；打开首页要查的 TMDB 次数约为原本的五分之一。
+
+| 装置 | 链接 |
+|---|---|
+| iPhone、iPad | `https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/MakkaFast.rex` |
+| Mac | `https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/MakkaFast-Mac.rex` |
