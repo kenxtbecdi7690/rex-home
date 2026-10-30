@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="610" viewBox="0 0 520 610" role="img" aria-labelledby="title desc">
+<title id="title">② 调整每一行</title>
+<desc id="desc">操作示意图，非实机截图；按钮文字依 main 工具程序核对。</desc>
+<rect width="520" height="100%" rx="16" fill="#f7f4fc"/>
+<g font-family="Noto Sans CJK TC, PingFang TC, sans-serif" fill="#251d34">
+<text x="24" y="38" font-size="24" fill="#251d34" font-weight="700">② 调整每一行</text>
+<text x="24" y="68" font-size="16" fill="#6d5d80" font-weight="400">示意图 · 非实机截图</text>
+<text x="24" y="110" font-size="20" fill="#251d34" font-weight="400">开关控制显示；↑／↓ 调整顺序</text>
+<rect x="24" y="128" width="472" height="64" rx="10" fill="#fff" stroke="#cbbddd"/>
+<rect x="38" y="142" width="65" height="36" rx="18" fill="#7137ce"/><circle cx="85" cy="160" r="13" fill="#fff"/>
+<text x="118" y="168" font-size="22" fill="#251d34" font-weight="400">地区剧</text>
+<text x="295" y="168" font-size="24" fill="#251d34" font-weight="400">↑</text>
+<text x="337" y="168" font-size="24" fill="#251d34" font-weight="400">↓</text>
+<rect x="385" y="141" width="96" height="38" rx="10" fill="#fff" stroke="#cbbddd"/>
+<text x="399" y="168.0" font-size="21" fill="#251d34" font-weight="400">设置</text>
+<text x="24" y="225" font-size="17" fill="#6d5d80" font-weight="400">按「设置」后展开</text>
+<text x="24" y="263" font-size="17" fill="#6d5d80" font-weight="400">标题</text>
+<rect x="24" y="274" width="472" height="46" rx="10" fill="#fff" stroke="#cbbddd"/>
+<text x="38" y="305.0" font-size="21" fill="#251d34" font-weight="400">我的韩剧</text>
+<text x="24" y="350" font-size="17" fill="#6d5d80" font-weight="400">副标题</text>
+<rect x="24" y="361" width="472" height="46" rx="10" fill="#fff" stroke="#cbbddd"/>
+<text x="38" y="392.0" font-size="21" fill="#251d34" font-weight="400">自订说明</text>
+<text x="24" y="443" font-size="20" fill="#251d34" font-weight="400">本模组的选项：依各行不同</text>
+<rect x="24" y="464" width="472" height="44" rx="10" fill="#fff" stroke="#cbbddd"/>
+<text x="38" y="494.0" font-size="21" fill="#251d34" font-weight="400">删除这一行</text>
+<rect x="24" y="525" width="472" height="44" rx="10" fill="#7137ce" stroke="#7137ce"/>
+<text x="38" y="555.0" font-size="21" fill="#fff" font-weight="400">＋ 添加一行</text>
+<text x="24" y="595" font-size="17" fill="#6d5d80" font-weight="400">新增前先从模组菜单挑选；可重复加入。</text>
+</g></svg>

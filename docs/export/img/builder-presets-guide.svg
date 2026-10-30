@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="550" viewBox="0 0 520 550" role="img" aria-labelledby="title desc">
+<title id="title">① 选成品，再确认尺寸</title>
+<desc id="desc">操作示意图，非实机截图；按钮文字依 main 工具程序核对。</desc>
+<rect width="520" height="100%" rx="16" fill="#f7f4fc"/>
+<g font-family="Noto Sans CJK TC, PingFang TC, sans-serif" fill="#251d34">
+<text x="24" y="38" font-size="24" fill="#251d34" font-weight="700">① 选成品，再确认尺寸</text>
+<text x="24" y="68" font-size="16" fill="#6d5d80" font-weight="400">示意图 · 非实机截图</text>
+<text x="24" y="110" font-size="17" fill="#6d5d80" font-weight="400">首页名称</text>
+<rect x="24" y="122" width="472" height="46" rx="10" fill="#fff" stroke="#cbbddd"/>
+<text x="38" y="153.0" font-size="21" fill="#251d34" font-weight="400">我的首页</text>
+<rect x="24" y="182" width="472" height="46" rx="10" fill="#fff" stroke="#cbbddd"/>
+<text x="38" y="213.0" font-size="21" fill="#251d34" font-weight="400">打开 .rex／.fwd／备份</text>
+<text x="24" y="265" font-size="17" fill="#6d5d80" font-weight="400">成品首页</text>
+<rect x="24" y="278" width="472" height="156" rx="10" fill="#fff" stroke="#cbbddd"/>
+<text x="38" y="311" font-size="21" fill="#251d34" font-weight="400">四大平台：爱奇艺＋腾讯＋芒果＋优酷</text>
+<text x="38" y="359" font-size="21" fill="#251d34" font-weight="400">豆瓣＋B站榜单</text>
+<text x="38" y="407" font-size="21" fill="#251d34" font-weight="400">MakkaPakka 快速版</text>
+<text x="24" y="470" font-size="17" fill="#6d5d80" font-weight="400">版面尺寸</text>
+<rect x="24" y="483" width="472" height="46" rx="10" fill="#fff" stroke="#cbbddd"/>
+<text x="38" y="514.0" font-size="21" fill="#251d34" font-weight="400">原样（手机、iPad）</text>
+</g></svg>
