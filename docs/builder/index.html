@@ -67,7 +67,7 @@ input[type=text]:focus,select:focus,button:focus-visible{outline:2px solid var(-
 .tag{font-size:11px;color:var(--gold);border:1px solid var(--gold);border-radius:6px;padding:0 5px;margin-left:6px;vertical-align:1px}
 .add select{flex:1}
 .bar{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-body.dropping::after{content:'放开即可打开档案';position:fixed;inset:12px;z-index:100;display:grid;place-items:center;border:3px dashed var(--accent);border-radius:20px;background:var(--bg);color:var(--accent);font-size:22px;font-weight:700;pointer-events:none}
+body.dropping::after{content:'放开即可打开文件';position:fixed;inset:12px;z-index:100;display:grid;place-items:center;border:3px dashed var(--accent);border-radius:20px;background:var(--bg);color:var(--accent);font-size:22px;font-weight:700;pointer-events:none}
 .bar-in{max-width:640px;margin:0 auto;display:grid;gap:6px}
 .bar-actions{display:flex;gap:8px}
 .bar-actions .primary{flex:1;height:44px;font-size:16px}
@@ -96,7 +96,7 @@ body.dropping::after{content:'放开即可打开档案';position:fixed;inset:12p
       <label class="btn openbtn" for="fileIn">打开 .rex／.fwd／备份</label>
       <a class="btn openbtn" href="https://forward.inch.red/export/" target="_blank" rel="noopener" style="text-decoration:none">Forward 官方导出工具 ↗</a>
       <input type="file" id="fileIn" class="vh">
-      <span class="desc">可打开 Mac 导出或别人分享的 <code>.rex</code>、Forward 导出的 <code>.fwd</code>，Rex 或 Forward 的备份（工具会自己找出首页设置），或 Rex 备份里的首页设置（<code>payload/homes/configs</code> 里没有 .sync 的 <code>.json</code>）。只在本机读取，不上传。用电脑（Mac）时也可以把档案直接拖进这个网页。</span>
+      <span class="desc">可打开 Mac 导出或别人分享的 <code>.rex</code>、Forward 导出的 <code>.fwd</code>，Rex 或 Forward 的备份（工具会自己找出首页设置），或 Rex 备份里的首页设置（<code>payload/homes/configs</code> 里没有 .sync 的 <code>.json</code>）。只在本机读取，不上传。用电脑（Mac）时也可以把文件直接拖进这个网页。</span>
     </div>
     <div class="field" style="margin-top:10px"><label for="prodSel">成品首页</label><select id="prodSel"><option value="">选一个直接载入……</option><option value="PlatformHome">四大平台：爱奇艺＋腾讯＋芒果＋优酷</option><option value="DoubanBilibili">豆瓣＋B站榜单</option><option value="MakkaFast">MakkaPakka 快速版</option></select></div>
     <div class="field" style="margin-top:10px"><label for="sizeSel">版面尺寸</label><select id="sizeSel"><option value="">原样（手机、iPad）</option><option value="macMid">Mac 中尺寸（全宽行放大）</option></select></div>
@@ -562,7 +562,7 @@ $('prodSel').onchange=async function(){var v=this.value,t=this.options[this.sele
   try{var r=await fetch(PROD+v+'.rex',{cache:'no-store'});if(!r.ok)throw new Error(String(r.status));
     await openFile(new File([await r.blob()],v+'.rex'));}
   catch(e){setMsg('载入不了成品，请检查网络（国内可能要开代理），或到成品网站下载后用上方按钮打开。',true);}};
-// Mac 等电脑：把档案直接拖进网页
+// Mac 等电脑：把文件直接拖进网页
 (function(){var inp=$('fileIn'),n=0,b=document.body;
   function hasFiles(e){return e.dataTransfer&&[].indexOf.call(e.dataTransfer.types||[],'Files')>=0;}
   document.addEventListener('dragenter',function(e){if(!hasFiles(e))return;e.preventDefault();n++;b.classList.add('dropping');});

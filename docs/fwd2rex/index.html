@@ -39,7 +39,7 @@ ul.n li{margin:3px 0}
 code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace}
 footer{color:var(--muted);font-size:13px;text-align:center;margin-top:20px}
 footer a{color:var(--muted)}
-body.dropping::after{content:'放开即可打开档案';position:fixed;inset:12px;z-index:100;display:grid;place-items:center;border:3px dashed var(--accent);border-radius:20px;background:var(--bg);color:var(--accent);font-size:22px;font-weight:700;pointer-events:none}
+body.dropping::after{content:'放开即可打开文件';position:fixed;inset:12px;z-index:100;display:grid;place-items:center;border:3px dashed var(--accent);border-radius:20px;background:var(--bg);color:var(--accent);font-size:22px;font-weight:700;pointer-events:none}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -50,7 +50,7 @@ body.dropping::after{content:'放开即可打开档案';position:fixed;inset:12p
 
   <div class="card">
     <div class="step"><span class="no">1</span><div><b>选 Forward 的首页档</b><p>Forward 的 <code>.fwd</code>，或 Forward 设置里导出的备份 zip（不用解压）；用电脑（Mac）可直接拖进网页</p></div></div>
-    <label class="btn" for="fileIn">选择档案</label>
+    <label class="btn" for="fileIn">选择文件</label>
     <input type="file" id="fileIn" class="vh">
     <div class="msg" id="readMsg" hidden></div>
   </div>
@@ -64,7 +64,7 @@ body.dropping::after{content:'放开即可打开档案';position:fixed;inset:12p
   </div>
 
   <div class="card" id="saveCard" hidden>
-    <div class="step"><span class="no">3</span><div><b>导出给 Rex</b><p>得到 <code>RexHome.rex</code>，在 Rex 的「导入配置」选它（iPhone／iPad 长按打开菜单；Mac 的档案在「下载」）</p></div></div>
+    <div class="step"><span class="no">3</span><div><b>导出给 Rex</b><p>得到 <code>RexHome.rex</code>，在 Rex 的「导入配置」选它（iPhone／iPad 长按打开菜单；Mac 的文件在「下载」）</p></div></div>
     <button class="btn primary" id="saveBtn" type="button">导出 RexHome.rex</button>
     <div class="msg" id="saveMsg" hidden></div>
   </div>
@@ -160,7 +160,7 @@ $('fileIn').onchange=async function(){
   }catch(e){show('readMsg',String(e&&e.message||e).replace(/[。.]+$/,'')+'。请选 Forward 的 .fwd 或 Forward 备份 zip。','err');}
 };
 $('homeSel').onchange=function(){cur=homes[+this.value];render();};
-// Mac 等电脑：把档案直接拖进网页
+// Mac 等电脑：把文件直接拖进网页
 (function(){var inp=$('fileIn'),n=0,b=document.body;
   function hasFiles(e){return e.dataTransfer&&[].indexOf.call(e.dataTransfer.types||[],'Files')>=0;}
   document.addEventListener('dragenter',function(e){if(!hasFiles(e))return;e.preventDefault();n++;b.classList.add('dropping');});
