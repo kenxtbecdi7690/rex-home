@@ -5,7 +5,7 @@ description: "Quick syntax reference for Rex player module code: WidgetMetadata 
 
 # Rex Module Syntax
 
-A compact reference distilled from modules installed in real Rex 1.0.2 backups (147 then 164 modules; about 90 readable, the rest `REXENC`-encrypted). No new syntax, param types or `Widget` APIs appeared between the two backups. For workflow, testing, Forward differences and the rex-home repo, load `writing-rex-modules`; this skill is only the syntax.
+A compact reference distilled from modules installed in real Rex backups: beta 1.0.2 (147 then 164 modules) and Rex 1.1 (2026-11-02, 191 modules, 113 readable, the rest `REXENC`-encrypted). Param types, `WidgetMetadata` fields and handler shapes did not change in 1.1; the new `Widget` APIs seen are listed under Runtime APIs. For workflow, testing, Forward differences and the rex-home repo, load `writing-rex-modules`; this skill is only the syntax.
 
 Only build modules over public APIs, official data, or content the user is entitled to play. Don't write or repair modules that pull streams from third-party "parse" sites (解析站), bypass paid or DRM-protected platforms, or serve adult content — offer a catalog-only version (lists that match TMDB) instead.
 
@@ -16,7 +16,7 @@ var WidgetMetadata = {
   id: "author.topic.catalog",     // unique; changing it = a new module for Rex
   title: "示例片单",
   version: "1.0.0",               // bump to make Rex update
-  requiredVersion: "0.0.1",       // 0.0.1 in most modules, some 0.0.2
+  requiredVersion: "0.0.1",       // 0.0.1 in most modules; 0.0.2 (official danmu); 0.0.5 seen on Rex 1.1
   description: "…",
   author: "…",
   site: "https://…",              // optional
@@ -32,6 +32,7 @@ Module entry: `{ id, title, functionName, type?, cacheDuration?, params }`.
 - `type`: omit for lists (Rex stores it as `video`); `stream`, `danmu`, `subtitle`; `list` is rare.
 - `cacheDuration` seconds: 600, 300, 86400, 1800, 3600 are common; 0 disables.
 - `search`: same shape as a module entry (`id`, `title`, `functionName`, `params`, `cacheDuration`).
+- `i18n` (optional, used by every official module): `{ "en": { "中文原文": "English" }, "ko": {…}, "es": {…}, "pt-BR": {…} }` — keys are the exact Chinese strings used in `title`, `description`, param titles and option titles. Rex stores the module title's translations in `script_module.titleTranslationsJSON`.
 
 ## Params
 
@@ -94,17 +95,33 @@ All handlers are top-level `async function`s named in `functionName`.
 
 ```javascript
 const r = await Widget.http.get(url, { headers: {…}, params: {…}, timeout: 15 }); // body in r.data
-const p = await Widget.http.post(url, bodyString, { headers: {…} });
+const p = await Widget.http.post(url, bodyString, { headers: {…} }); // official nlsearch passes an object body with Content-Type: application/json
+const q = await Widget.http.request({ url, method: "POST", data: {…}, headers: {…}, timeout: 25 }); // q.statusCode, q.data
 const t = await Widget.tmdb.get("search/tv", { params: { query, language: "zh-CN" } }); // no leading slash; returns the body
 const $ = Widget.html.load(html);           // cheerio-style
 await Widget.storage.get(k); await Widget.storage.set(k, v); await Widget.storage.remove(k); // also clear
 ```
 
-- Frequency in real modules: `http.get` 74, `storage` 24, `tmdb.get` 23, `http.post` 16, `html.load` 11. `Widget.dom.*` and `storage.getItem/setItem` appear once or twice — avoid.
+- Frequency (Rex 1.1 backup, 113 readable): `http.get` 95, `storage.get/set` ~40, `tmdb.get` 27, `http.post` 24, `html.load` 14, `http.request` 8. `Widget.dom.*` and `storage.getItem/setItem` appear once or twice — avoid.
+- `Widget.http.request(options)` (new in our notes, used by the official `rex.danmu` 1.0.3): generic request with `url`, `method`, `data` or `body`, `headers`, `timeout`; returns `{ statusCode, data }`. Check `statusCode` yourself (2xx). Guard it when supporting older Rex: `Widget.http && typeof Widget.http.request === "function"`.
+- `Widget.callAsync("request", options)`: the lower-level bridge behind it. The official danmu module notes its errors arrive as plain `Error`s whose message starts with `HTTP 404`; parse the status from the message. Prefer `http.request`.
+- Seen once each, unconfirmed: `Widget.http.head(url, opts)` (check an image exists), `Widget.sharedCache.get(…)` (data shared between modules). Don't rely on them.
 - `r.data` may be a string: `if (typeof body === "string") body = JSON.parse(body)` in try/catch.
 - No `fetch`, `URLSearchParams` or Node APIs.
 - `Widget.storage` is copied into backups (`payload/modules/store/`): no cookies, keys or passwords there.
 - Throw on failure instead of caching an empty result.
+
+## Official Rex Modules (Rex 1.1)
+
+| Module | id / version | Notes |
+|---|---|---|
+| Rex TMDB | `rex.tmdb` 1.2.4 | 12 list modules; `Widget.tmdb.get`, `http.get`, `html.load`; raw poster paths |
+| 动漫数据 | `rex.bangumi` 1.0.1 | 5 list modules, `http.get` only |
+| AI 搜索 | `rex.nlsearch` 1.0.1 | one list `nlSearch` with params `input` (keyword), `language`, `userId`, plus `search`; posts `{query, userId, language}` and returns the service's items as-is; throws a Chinese error on failure |
+| 自定义弹幕 | `rex.danmu` 1.0.3, requiredVersion 0.0.2 | global param `server` (input); handlers `searchDanmu`, `getDetailById`, `getCommentsById`, `getCommentsWithSegmentTime`; uses `http.request` |
+| 豆瓣榜单 | `douban.bridge` 0.6.1 (unpkg `@rexnow/douban`) | global params `sk` (input) and `userId` (type `userId`) |
+
+All official modules ship `i18n` and set `type` on every module entry.
 
 ## How Real Modules Are Structured (94 readable modules, Rex 1.0.2 backup)
 

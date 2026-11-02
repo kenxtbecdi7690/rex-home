@@ -105,7 +105,7 @@ Field names follow `writing-forward-widgets`. Rex notes:
 ```javascript
 const res  = await Widget.http.get(url, { headers, params });   // body wrapped in .data
 const res2 = await Widget.http.post(url, body, { headers });
-// options seen: headers, params, timeout. Widget.http.request also exists
+// options seen: headers, params, timeout. Widget.http.request({url, method, data, headers, timeout}) returns {statusCode, data} (official rex.danmu uses it; see rex-module-syntax)
 const body = await Widget.tmdb.get("movie/popular", { params }); // no leading slash; returns the body (body.results)
 const $ = Widget.html.load(html);                                 // cheerio
 await Widget.storage.get(k); await Widget.storage.set(k, v); await Widget.storage.remove(k); // also keys, clear
@@ -171,6 +171,7 @@ Full rules live in rex-home's `导入导出规则.md` (the repo also has `.claud
 - Backups come as split 7z (`.7z.001`, `.7z.002`; files inside a `rex-backup-…/` folder) or as a zip with files at the top level; handle both, and paths may contain spaces (e.g. `rex-backup-iPad Pro 1030/`).
 - With iCloud sync on, homepages and modules sync across devices: iPhone and iPad Pro backups had the same `script_module.id`, version and `file://{id}.js`. Importing or deleting on one device changes the other; a locally installed module stays local on every device.
 
+- Rex 1.1 (2026-11-02 backup): same backup format; `appVersion` is `1.1`; environments can be `shared` (`environment.scopeOwner`), with `mergedIntoEnvironmentID` and `syncDeviceClasses` columns; home rows still have exactly 13 item fields and no new styles.
 - Beta 1.0.2: `manifest.json` has `format` `video.rex.local-backup`, `version` 2, and `files` with each file's size and sha256. Users may re-pack it as split 7z (`.7z.001`, `.7z.002`); `py7zr` can extract only the parts you need.
 - Homepage rows: `payload/homes/configs/{id}.json` (empty homepage = `[]`). File names: lowercase UUID = homepages you made or imported from `.rex`; `import-{hash}` = auto-created media-library homepages (Emby etc., rows `[]`, `libraryAvatar`); uppercase UUID = the 「Rex 预设发现页」 each new environment gets; `default` = the default environment's 「首页」; `.sync.json` files are just sync markers; custom avatars are `home-avatar-*.png` (512×512). Deleted homepages leave stale files behind.
 - **Homepage names, avatars, order and environments** are in `payload/kernel/rex-kernel.db`: `home_document` (`id` = the config file name, `title`, `avatarName`, `avatarFileName`, `sort`, `environmentID`, `rowsJSON`, `deletedAt` set = deleted) and `environment` (Rex "environments"; the default one has `id` `default`). `payload/data/rex.db` has no homepages.
