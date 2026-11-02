@@ -1,11 +1,13 @@
 ---
-name: "writing-rex-modules"
-description: "Use when writing, editing, testing, encrypting or packaging Rex player modules, .rex homepage packages or Rex subscriptions (rex-home repo, js/rex); reading Rex or Forward backups; converting Forward homes to Rex; Mac layouts; and diagnosing Rex import failures or empty rows."
+name: "rex-modules"
+description: "Everything for Rex player modules: writing, editing, fixing, testing, encrypting and packaging Rex modules (WidgetMetadata, params, list/search/detail/loadResource/danmu/subtitle handlers, VideoItem fields, Widget APIs), bundling them into .rex homepage packages or subscriptions, the rex-home repo, reading Rex or Forward backups, converting Forward homes, Mac layouts, and diagnosing import failures or empty rows."
 ---
 
 # Writing Rex Modules and Homepage Packages
 
 ## Overview
+
+**Files in this skill:** `syntax.md` — exact field / param / handler / `Widget` API reference (checked against Rex's official typings); `scripts/build_rex.py` — build phone and Mac `.rex` packages from module files; `templates/catalog-module.js` — catalog-only starting point. Read `syntax.md` before writing or fixing module code.
 
 A Rex module, like a ForwardWidget, is a single JS file: one global `WidgetMetadata` object describing modules and params, plus the async handler functions it names. Rex calls handlers by `functionName` with one `params` object.
 
@@ -14,7 +16,7 @@ A Rex module, like a ForwardWidget, is a single JS file: one global `WidgetMetad
 **Sources of truth (most to least reliable):**
 1. Behavior on a real device (iPhone / iPad / Mac)
 2. `.rex` files exported by Mac Rex and real Rex backups
-   - Official type definitions: `baranwang/rex-widget-libs` (`packages/libs/src/env/*.ts`) — the authority for fields and APIs; see `rex-module-syntax`
+   - Official type definitions: `baranwang/rex-widget-libs` (`packages/libs/src/env/*.ts`) — the authority for fields and APIs; summarized in `syntax.md`
 3. Real scripts in the rex-home repo (draft branch `rex-home-v130`, e.g. v151) and its `导入导出规则.md`
 4. `baranwang/rex-widget-libs` type definitions (`packages/libs/src/env/`: `metadata.ts`, `widget.ts`, `video.ts`, `common.ts`; community-maintained)
 5. Forward's official docs
@@ -106,7 +108,7 @@ Field names follow `writing-forward-widgets`. Rex notes:
 ```javascript
 const res  = await Widget.http.get(url, { headers, params });   // body wrapped in .data
 const res2 = await Widget.http.post(url, body, { headers });
-// options seen: headers, params, timeout. Widget.http.request({url, method, data, headers, timeout}) returns {statusCode, data} (official rex.danmu uses it; see rex-module-syntax)
+// options seen: headers, params, timeout. Widget.http.request({url, method, data, headers, timeout}) returns {statusCode, data} (official rex.danmu uses it; see syntax.md)
 const body = await Widget.tmdb.get("movie/popular", { params }); // no leading slash; returns the body (body.results)
 const $ = Widget.html.load(html);                                 // cheerio
 await Widget.storage.get(k); await Widget.storage.set(k, v); await Widget.storage.remove(k); // also keys, clear

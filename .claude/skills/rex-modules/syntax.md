@@ -1,13 +1,8 @@
----
-name: "rex-module-syntax"
-description: "Quick syntax reference for Rex player module code: WidgetMetadata fields, param types, handler signatures (list, search, loadDetail, loadResource, danmu, subtitle), return item fields and Widget runtime APIs, plus bundling one or more modules into a .rex homepage package. Use when writing or fixing the JavaScript of a Rex module, or packing modules into a homepage."
----
-
-# Rex Module Syntax
+# Rex Module Syntax Reference
 
 **Authoritative source:** Rex's own type definitions in [`baranwang/rex-widget-libs`](https://github.com/baranwang/rex-widget-libs) (`packages/libs/src/env/*.ts`, `widget-adaptor.ts`; MIT, `@rexnow/libs` 3.1.3, checked 2026-11-02). Where this file and those typings disagree, the typings win. The notes below combine them with what real installed modules do.
 
-A compact reference distilled from modules installed in real Rex backups: beta 1.0.2 (147 then 164 modules) and Rex 1.1 (2026-11-02, 191 modules, 113 readable, the rest `REXENC`-encrypted). Param types, `WidgetMetadata` fields and handler shapes did not change in 1.1; the new `Widget` APIs seen are listed under Runtime APIs. For workflow, testing, Forward differences and the rex-home repo, load `writing-rex-modules`; this skill is only the syntax.
+A compact reference distilled from modules installed in real Rex backups: beta 1.0.2 (147 then 164 modules) and Rex 1.1 (2026-11-02, 191 modules, 113 readable, the rest `REXENC`-encrypted). Param types, `WidgetMetadata` fields and handler shapes did not change in 1.1; the new `Widget` APIs seen are listed under Runtime APIs. Workflow, testing, Forward differences and the rex-home repo are in `SKILL.md`; this file is only the syntax.
 
 Only build modules over public APIs, official data, or content the user is entitled to play. Don't write or repair modules that pull streams from third-party "parse" sites (解析站), bypass paid or DRM-protected platforms, or serve adult content — offer a catalog-only version (lists that match TMDB) instead.
 
@@ -157,7 +152,7 @@ Errors: most modules `return []` on failure (83/94), which shows an empty row wi
 - For auto-update, host the module (e.g. GitHub raw) and use that URL instead of `rex-scripts/`.
 - Every item needs all 13 fields: `style, count, gridSize, id, title, subtitle, iconUrl, functionId, params, widgetBundleId, widgetId, widgetURL, name`.
 - Typical sizes: `fullWidthPoster [-1,2.3]` (Mac 3.2), `banner [-1,3]` (Mac 3.8), `fullWidthBackdrop [-1,1.5]`, `fullWidthWatchProgress [-1,2]` (Mac 2.8). `count: 0` = module default.
-- `scripts/build_rex.py` builds phone and Mac packages from module files; `templates/catalog-module.js` is a catalog-only starting point.
+- `scripts/build_rex.py` (in this skill) builds phone and Mac packages from module files; `templates/catalog-module.js` is a catalog-only starting point.
 
 ```bash
 python3 scripts/build_rex.py "我的首页" out/ path/to/a.js path/to/b.js
