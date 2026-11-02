@@ -14,6 +14,7 @@ A Rex module, like a ForwardWidget, is a single JS file: one global `WidgetMetad
 **Sources of truth (most to least reliable):**
 1. Behavior on a real device (iPhone / iPad / Mac)
 2. `.rex` files exported by Mac Rex and real Rex backups
+   - Official type definitions: `baranwang/rex-widget-libs` (`packages/libs/src/env/*.ts`) — the authority for fields and APIs; see `rex-module-syntax`
 3. Real scripts in the rex-home repo (draft branch `rex-home-v130`, e.g. v151) and its `导入导出规则.md`
 4. `baranwang/rex-widget-libs` type definitions (`packages/libs/src/env/`: `metadata.ts`, `widget.ts`, `video.ts`, `common.ts`; community-maintained)
 5. Forward's official docs
