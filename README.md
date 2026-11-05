@@ -13,7 +13,7 @@
 | iPhone、iPad | `https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/PlatformHome.rex` |
 | Mac | `https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/PlatformHome-Mac.rex` |
 
-四个模块已装在首页里，不用另外导入 `.js`。更新前先删旧首页，以及模块列表里旧的「爱奇艺片单」「腾讯视频片单」「芒果TV片单」「优酷片单」。
+首页的每一行都指向 GitHub 上的模块链接，模块会自动更新，不用另外导入 `.js`。导入前先删旧首页，以及模块列表里旧的本机版「爱奇艺片单」「腾讯视频片单」「芒果TV片单」「优酷片单」。
 
 ## 合集（一次装好全部模块）
 
@@ -26,7 +26,7 @@ https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/RexColle
 内含 6 个模块：Rex首页、爱奇艺片单、腾讯视频片单、芒果TV片单、优酷片单、B站排行，全部用 GitHub 链接安装，会自动更新。
 
 - 模块列表里如果已经有同名模块（例如从首页包装的本机版），先删掉再加合集；同一个模块编号只能有一个。
-- 用合集装的模块是链接版；从首页包（`.rex`）装进来的是本机版，不会自动更新。
+- 合集和首页包都用 GitHub 链接，装进来的都是链接版，会自动更新；两个一起用也不会冲突。
 - 优酷片单要在模块设置里填自己的 Worker 网址。
 - 合集只装模块，不会建首页；首页还是用上面的链接导入。
 
@@ -44,7 +44,7 @@ https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/RexColle
 
 - 平台接口是网页版自己用的，平台改版时那个平台的行可能变空。
 - 第一次打开每行较慢（最久约 25 秒），之后有缓存。
-- 模块装在首页包里，不会自动更新；有新版要重新导入。
+- 模块用 GitHub 链接，会自动更新，首页不用重新导入。
 
 ---
 
@@ -58,7 +58,7 @@ https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/RexColle
 | Mac | `https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/DoubanBilibili-Mac.rex` |
 
 - 豆瓣用 Rex首页模块（会自动更新），不填密钥也能用。
-- B站排行：[bilibili-rank.js](modules/bilibili-rank.js)（读 B站公开排行，配对 TMDB 海报，照排名显示；装在首页包里）。
+- B站排行：[bilibili-rank.js](modules/bilibili-rank.js)（读 B站公开排行，配对 TMDB 海报，照排名显示；首页用 GitHub 链接，会自动更新）。
 - 榜单照原榜排名，不做去重。
 
 ---
