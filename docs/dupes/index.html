@@ -41,6 +41,7 @@ section{background:var(--panel);border:1px solid var(--line);border-radius:16px;
 .item code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}
 .meta{color:var(--muted);font-size:13px}
 .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.plan{white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:14px;line-height:1.6;background:var(--card,transparent);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
 .tabs button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
 ul{padding-left:1.3em;margin:6px 0}li{margin:4px 0}
@@ -49,7 +50,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 </head>
 <body>
 <main>
-<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v13</small></h1>
+<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v14</small></h1>
 <p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>：看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」再导出清单。文件只在本机读取，不上传；备份只读模块、订阅、首页三张表，不读账号、Cookie 和观看记录。作者：Bolinxxlin</p>
 
 <section>
@@ -68,6 +69,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
     <div class="stat"><b id="sDrop">0</b><span>标了「不留」</span></div>
   </div>
   <div class="tabs" role="group" aria-label="显示">
+    <button class="btn ghost sm" data-f="plan" aria-pressed="false" type="button" id="planTab" hidden>整理清单</button>
     <button class="btn ghost sm" data-f="all" aria-pressed="false" type="button">全部模块</button>
     <button class="btn ghost sm" data-f="src" aria-pressed="false" type="button">按订阅</button>
     <button class="btn ghost sm" data-f="dup" aria-pressed="true" type="button">重复</button>
@@ -294,7 +296,9 @@ function render(){
   $('libTab').hidden=!libs.length;$('libTab').textContent='资源库'+(libs.length?'（'+libView().length+'）':'');
   var dropN=mods.filter(function(m){return !kept(m);}).length+homes.filter(function(h){return !hKept(h);}).length+libs.filter(function(l){return !lKept(l);}).length;
   if(filter==='home'){renderHomes(box);$('sDrop').textContent=dropN;return;}
+  $('planTab').hidden=!envList.length;
   if(filter==='lib'){renderLibs(box);$('sDrop').textContent=dropN;return;}
+  if(filter==='plan'){renderPlan(box);$('sDrop').textContent=dropN;return;}
   $('sAll').textContent=mods.length;$('sDup').textContent=gs.length;
   $('sDrop').textContent=dropN;
   var checked=mods.some(function(m){return m.vs;});$('sNew').textContent=checked?mods.filter(function(m){return m.vs==='new';}).length:'–';
@@ -365,6 +369,62 @@ function renderLibs(box){
     w.append(it);
   });
   box.append(w);
+}
+// ===== 整理清单：从备份算出确定可以做的事 =====
+function nid(x){return String(x||'').toLowerCase().replace(/^(rex|forward)\./,'').replace(/\.(rex|copy)$/,'');}
+function plan(){
+  var es=ENV?[ENV]:envList.slice().sort(function(a,b){return (a==='默认环境'?-1:0)-(b==='默认环境'?-1:0)||zh(a,b);}),out={del:[],decide:[],gone:[],ties:[],libdup:[],subEmpty:[],subDup:[]};
+  es.forEach(function(e){
+    var by={};mods.forEach(function(m){if(m.from!=='备份'||m.envs.indexOf(e)<0)return;var t=m.title.trim();(by[t]=by[t]||[]).push(m);});
+    Object.keys(by).sort(function(a,b){return zh(a,b);}).forEach(function(t){var g=by[t];if(g.length<2)return;
+      function rank(m){return (m.sub?4:0)+(m.local?0:2)+(m.disabled?0:1);}
+      var best=g.slice().sort(function(a,b){return rank(b)-rank(a)||cmpVer(b.version||0,a.version||0);})[0],sure=[],unsure=[];
+      g.forEach(function(x){if(x===best)return;var c=cmpVer(best.version||0,x.version||0);
+        // 确定：这个没有首页在用、不是订阅装的，留下的那个版本不比它旧，而且是订阅装的（会更新）或编号其实是同一个
+        var ok=!x.homes.length&&!x.sub&&c>=0&&(best.sub||nid(best.id)===nid(x.id));(ok?sure:unsure).push(x);});
+      if(sure.length)out.del.push({env:e,title:t,keep:best,drop:sure});
+      if(unsure.length)out.decide.push({env:e,title:t,items:[best].concat(unsure)});
+    });
+    var dset=[];out.del.forEach(function(x){if(x.env===e)dset=dset.concat(x.drop);});
+    mods.forEach(function(m){if(m.from==='备份'&&m.srcGone&&m.envs.indexOf(e)>=0&&dset.indexOf(m)<0)out.gone.push({env:e,m:m});});
+    var ls=libs.filter(function(l){return l.envs.indexOf(e)>=0;}),bs={},bn={};
+    ls.forEach(function(l){if(l.sort!=null)(bs[l.sort]=bs[l.sort]||[]).push(l);(bn[l.name.trim()]=bn[l.name.trim()]||[]).push(l);});
+    Object.keys(bs).forEach(function(k){if(bs[k].length>1)out.ties.push({env:e,sort:k,items:bs[k]});});
+    Object.keys(bn).forEach(function(k){if(bn[k].length>1)out.libdup.push({env:e,name:k,items:bn[k]});});
+    var se=subs.filter(function(x){return x.envs&&x.envs.indexOf(e)>=0;}),sn={};
+    se.forEach(function(x){(sn[x.title]=sn[x.title]||[]).push(x);if(!mods.some(function(m){return m.sub===x.title&&m.envs.indexOf(e)>=0;}))out.subEmpty.push({env:e,s:x});});
+    Object.keys(sn).forEach(function(k){if(sn[k].length>1)out.subDup.push({env:e,title:k,n:sn[k].length});});
+  });
+  return out;
+}
+function mdesc(m){return m.title+(m.version?' '+m.version:'')+'（'+(m.sub?'订阅 '+m.sub:m.local?'导入的本机版':'链接版')+(m.disabled?'，已停用':'')+'）编号 '+m.id;}
+function planText(P){
+  var L=['Rex 整理清单（模块版本检查自动产生）','做之前先导出一次本机备份，再用首页导出工具「全部首页一次导出」。',''],ev=function(e){return ENV||envList.length<2?'':'〔'+e+'〕';};
+  L.push('一、确定可以删的模块（'+P.del.reduce(function(a,x){return a+x.drop.length;},0)+' 个）','都没有首页在用，留下的那个版本相同或更新。在 Rex「模组」页删：');
+  P.del.forEach(function(x){x.drop.forEach(function(m){L.push('  - '+ev(x.env)+'删 '+mdesc(m),'      留 '+mdesc(x.keep));});});
+  if(!P.del.length)L.push('  （没有）');
+  L.push('','二、资源库排序号重复（'+P.ties.length+' 组）','Rex「资源库」→「编辑」→ 照顺序拖一遍，Rex 会重新编号：');
+  P.ties.forEach(function(x){L.push('  - '+ev(x.env)+'#'+x.sort+'：'+x.items.map(function(l){return l.name;}).join('、'));});if(!P.ties.length)L.push('  （没有）');
+  L.push('','三、订阅');
+  P.subDup.forEach(function(x){L.push('  - '+ev(x.env)+x.title+' 加了 '+x.n+' 次，删掉多的');});
+  P.subEmpty.forEach(function(x){L.push('  - '+ev(x.env)+x.s.title+'：一个模块都没装，不用就删这个订阅');});
+  if(!P.subDup.length&&!P.subEmpty.length)L.push('  （没有）');
+  L.push('','四、要你决定的（先别删）');
+  P.libdup.forEach(function(x){L.push('  - '+ev(x.env)+'资源库「'+x.name+'」有 '+x.items.length+' 个：'+x.items.map(function(l){return '#'+(l.sort==null?'–':l.sort)+' '+l.host;}).join('、')+'。网域不同就是不同服务器，改名分清楚');});
+  P.decide.forEach(function(x){L.push('  - '+ev(x.env)+'「'+x.title+'」：'+x.items.map(mdesc).join('；')+(x.items.some(function(m){return m.homes.length;})?'（有首页在用）':''));});
+  if(P.gone.length)L.push('  - 订阅已删除、模块还留着 '+P.gone.length+' 个：'+P.gone.map(function(x){return ev(x.env)+x.m.title+(x.m.homes.length?'（首页在用）':'');}).join('、')+'。有在用就留，不用就删');
+  if(!P.libdup.length&&!P.decide.length&&!P.gone.length)L.push('  （没有）');
+  L.push('','做完：再导出一次本机备份，用模块版本检查打开确认。');
+  return L.join('\n');
+}
+function renderPlan(box){
+  var P=plan(),n=P.del.reduce(function(a,x){return a+x.drop.length;},0);
+  box.append(el('p','muted','照'+(ENV?'「'+ENV+'」':'每个环境')+'算出来的。「确定」的规则：名称一样、没有首页在用、不是订阅装的，而且留下的那个是订阅装的或编号其实相同、版本不比它旧。'));
+  var acts=el('div','acts'),b1=el('button','btn','确定的 '+n+' 个全部标「不留」'),b2=el('button','btn ghost','导出整理清单');b1.type=b2.type='button';
+  b1.disabled=!n;b1.onclick=function(){P.del.forEach(function(x){x.drop.forEach(function(m){setKeep(m,false);});});render();};
+  b2.onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([planText(P)],{type:'text/plain'}));a.download='Rex整理清单.txt';document.body.append(a);a.click();a.remove();};
+  acts.append(b1,b2);box.append(acts);
+  var pre=el('pre','plan',planText(P));box.append(pre);
 }
 function dropList(){
   var list=mods.filter(function(m){return !kept(m);}),hl=homes.filter(function(h){return !hKept(h);}),ll=libs.filter(function(l){return !lKept(l);});
