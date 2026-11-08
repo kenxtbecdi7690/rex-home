@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>模块改名工具</title>
+<meta name="description" content="打开 Rex 模块 .js，改编号（id）、名称（title）、版本（version）后另存，只在本机处理。">
+<style>
+:root{--bg:#f6f4fa;--panel:#fff;--ink:#211b2c;--muted:#665c76;--line:#e4ddec;--accent:#7137ce;--accent-ink:#fff;--warn:#9a5b00;--warn-bg:#fff4dd;--bad:#b3261e;--bad-bg:#fde8e7;--ok:#1d7a3a;--ok-bg:#e5f5ea;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#151019;--panel:#221a2b;--ink:#f1eafa;--muted:#b7aac7;--line:#40324f;--accent:#bd95ff;--accent-ink:#211433;--warn:#f3c26b;--warn-bg:#3a2c12;--bad:#ff9a92;--bad-bg:#3d1b1a;--ok:#8fd9a6;--ok-bg:#16301f;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Noto Sans CJK SC",system-ui,sans-serif}
+main{max-width:640px;margin:auto;padding:28px max(16px,env(safe-area-inset-left)) calc(40px + env(safe-area-inset-bottom))}
+h1{font-size:28px;margin:0 0 6px}p{margin:0 0 12px}.muted{color:var(--muted);font-size:14px}
+a{color:var(--accent)}
+section{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin:0 0 14px}
+.btn{display:inline-block;border:0;border-radius:12px;padding:11px 16px;font:inherit;font-weight:600;background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:center}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+label.f{display:block;font-size:14px;color:var(--muted);margin:12px 0 4px}
+.row{display:flex;gap:8px;align-items:center}
+.row input{flex:1;min-width:0}
+input[type=text]{width:100%;font:15px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.small{font-size:13px;padding:8px 10px;white-space:nowrap}
+.note{border-radius:10px;padding:10px 12px;font-size:14px;margin-top:12px}
+.note.warn{background:var(--warn-bg);color:var(--warn)}.note.bad{background:var(--bad-bg);color:var(--bad)}.note.ok{background:var(--ok-bg);color:var(--ok)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:1px 4px;overflow-wrap:anywhere}
+ul{padding-left:1.3em;margin:6px 0}li{margin:4px 0}
+footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
+</style>
+</head>
+<body>
+<main>
+<h1>模块改名工具</h1>
+<p class="muted">打开 Rex 模块 <code>.js</code>，改编号（id）、名称（title）、版本（version）后另存。文件只在本机读取，不上传。作者：Bolinxxlin</p>
+
+<section>
+  <label class="btn" for="fileIn">选择模块 .js</label>
+  <input type="file" id="fileIn" class="vh" accept=".js,application/javascript,text/javascript,text/plain">
+  <p class="muted" style="margin-top:10px">在 Rex 的模块页点开模块 →「导出」存到「文件」，再从这里选它。</p>
+  <div id="msg"></div>
+</section>
+
+<section id="editor" hidden>
+  <p><b id="fname"></b></p>
+  <label class="f" for="fId">编号 id（Rex 靠它认模块；一样就会覆盖，不一样才能两个并存）</label>
+  <div class="row"><input type="text" id="fId" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn ghost small" id="addCopy" type="button">加 .copy</button></div>
+  <label class="f" for="fTitle">名称 title（只是显示用）</label>
+  <div class="row"><input type="text" id="fTitle" autocomplete="off" spellcheck="false"><button class="btn ghost small" id="addSpare" type="button">加（备用）</button></div>
+  <label class="f" for="fVer">版本 version</label>
+  <input type="text" id="fVer" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <div id="hint"></div>
+  <div class="actions">
+    <button class="btn" id="save" type="button">下载新的 .js</button>
+    <button class="btn ghost" id="share" type="button" hidden>存到「文件」</button>
+    <button class="btn ghost" id="reset" type="button">还原</button>
+  </div>
+</section>
+
+<section>
+  <b>怎么选</b>
+  <ul>
+    <li><b>只想改名字</b>：改名称，编号不动 → 导入后覆盖原本那个，名字换掉。</li>
+    <li><b>想两个同时留着</b>：编号按「加 .copy」，名称按「加（备用）」→ 导入后列表里有两个。</li>
+    <li>改过的模块是本机版，不会自动更新；链接版一更新，名字会被改回去。</li>
+    <li>首页的行记的是模块网址和功能名，改名称不影响首页；改了编号的副本，首页要另外加行才会用到。</li>
+    <li>第一行是 <code>REXENC</code> 的是加密模块，改不了。</li>
+  </ul>
+</section>
+<footer><a href="../">← Rex首页工具</a></footer>
+</main>
+<script>
+(function(){
+var $=function(id){return document.getElementById(id);};
+var src='',name='',meta=null,orig={};
+var KEYS=['id','title','version'];
+var FIELD={id:'fId',title:'fTitle',version:'fVer'};
+
+function note(el,cls,text){el.innerHTML='';if(!text)return;var d=document.createElement('div');d.className='note '+cls;d.textContent=text;el.append(d);}
+
+// 找 WidgetMetadata 对象，扫第一层的 id / title / version 字符串（跳过字符串与注释，深度只算 {[( ）
+function findMeta(s){
+  var m=/WidgetMetadata\s*=\s*\{/.exec(s);if(!m)return null;
+  var i=m.index+m[0].length,depth=1,found={},n=s.length;
+  while(i<n&&depth>0){
+    var c=s[i];
+    if(c==='/'&&s[i+1]==='/'){var e=s.indexOf('\n',i);i=e<0?n:e;continue;}
+    if(c==='/'&&s[i+1]==='*'){var e2=s.indexOf('*/',i+2);i=e2<0?n:e2+2;continue;}
+    if(depth===1&&/[A-Za-z_"']/.test(c)){
+      var r=/^(?:"(id|title|version)"|'(id|title|version)'|(id|title|version)\b)\s*:\s*(["'`])/.exec(s.slice(i,i+40));
+      if(r){var key=r[1]||r[2]||r[3],q=r[4],vs=i+r[0].length,j=vs;
+        while(j<n&&s[j]!==q){if(s[j]==='\\')j++;j++;}
+        if(!found[key]&&!(q==='`'&&s.slice(vs,j).indexOf('${')>=0))found[key]={start:vs,end:j,q:q};
+        i=j+1;continue;}
+    }
+    if(c==='"'||c==="'"||c==='`'){var k=i+1;while(k<n&&s[k]!==c){if(s[k]==='\\')k++;k++;}i=k+1;continue;}
+    if(c==='{'||c==='['||c==='(')depth++;else if(c==='}'||c===']'||c===')')depth--;
+    i++;
+  }
+  return found;
+}
+function dec(t){return t.replace(/\\(u[0-9a-fA-F]{4}|.)/g,function(_,x){if(x[0]==='u'&&x.length===5)return String.fromCharCode(parseInt(x.slice(1),16));return x==='n'?'\n':x==='t'?'\t':x;});}
+function enc(t,q){return t.replace(/\\/g,'\\\\').replace(new RegExp(q==='`'?'`|\\$\\{':q,'g'),function(x){return '\\'+x;}).replace(/\n/g,'\\n');}
+
+function load(text,fname){
+  src=text;name=fname;meta=null;$('editor').hidden=true;note($('msg'),'','');
+  if(/^\s*REXENC/.test(text)){note($('msg'),'bad','这是加密模块（第一行是 REXENC），内容看不到，改不了。');return;}
+  var f=findMeta(text);
+  if(!f||!f.id){note($('msg'),'bad','找不到模块的编号（WidgetMetadata 里的 id），这可能不是 Rex／Forward 模块。');return;}
+  meta=f;orig={};KEYS.forEach(function(k){orig[k]=f[k]?dec(text.slice(f[k].start,f[k].end)):'';});
+  $('fname').textContent=fname;KEYS.forEach(function(k){var el=$(FIELD[k]);el.value=orig[k];el.disabled=!f[k];});
+  $('editor').hidden=false;check();
+}
+function cur(){return {id:$('fId').value.trim(),title:$('fTitle').value,version:$('fVer').value.trim()};}
+function check(){
+  var v=cur(),h=$('hint');
+  if(!v.id)return note(h,'bad','编号不能空白。');
+  if(/\s/.test(v.id))return note(h,'bad','编号不能有空格。');
+  if(!v.title.trim()&&meta.title)return note(h,'bad','名称不能空白。');
+  if(v.id===orig.id&&v.title===orig.title&&v.version===orig.version)return note(h,'warn','还没改任何东西。');
+  if(v.id===orig.id)return note(h,'ok','编号没变：导入后会覆盖 Rex 里原本的「'+orig.title+'」，名称换成「'+v.title+'」。');
+  note(h,'ok','编号改了：导入后是新模块「'+v.title+'」，原本的「'+orig.title+'」会留着，两个并存。');
+}
+function build(){
+  var v=cur(),parts=[],pos=0;
+  KEYS.map(function(k){return meta[k]?{k:k,r:meta[k]}:null;}).filter(Boolean).sort(function(a,b){return a.r.start-b.r.start;})
+    .forEach(function(x){parts.push(src.slice(pos,x.r.start),enc(v[x.k],x.r.q));pos=x.r.end;});
+  parts.push(src.slice(pos));return parts.join('');
+}
+function outName(){var base=name.replace(/\.js$/i,'');return base+(cur().id!==orig.id?'-copy':'-renamed')+'.js';}
+function ok(){var v=cur();return v.id&&!/\s/.test(v.id)&&(!meta.title||v.title.trim())&&!(v.id===orig.id&&v.title===orig.title&&v.version===orig.version);}
+
+$('fileIn').onchange=function(){var f=this.files[0];this.value='';if(!f)return;f.text().then(function(t){load(t,f.name);});};
+['fId','fTitle','fVer'].forEach(function(id){$(id).oninput=check;});
+$('addCopy').onclick=function(){var el=$('fId');if(!/\.copy\d*$/.test(el.value))el.value=el.value.trim()+'.copy';check();};
+$('addSpare').onclick=function(){var el=$('fTitle');if(el.value.indexOf('（备用）')<0)el.value=el.value+'（备用）';check();};
+$('reset').onclick=function(){$('fId').value=orig.id;$('fTitle').value=orig.title;$('fVer').value=orig.version;check();};
+$('save').onclick=function(){
+  if(!ok()){check();return;}
+  var blob=new Blob([build()],{type:'application/javascript'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=outName();document.body.append(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+};
+try{if(navigator.canShare&&navigator.canShare({files:[new File(['x'],'t.js',{type:'text/plain'})]}))$('share').hidden=false;}catch(e){}
+$('share').onclick=function(){
+  if(!ok()){check();return;}
+  var f=new File([build()],outName(),{type:'text/plain'});
+  navigator.share({files:[f]}).catch(function(){});
+};
+window.__rename={findMeta:findMeta,load:load,build:build};
+})();
+</script>
+</body>
+</html>
