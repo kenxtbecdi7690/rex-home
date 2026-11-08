@@ -50,7 +50,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 </head>
 <body>
 <main>
-<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v15</small></h1>
+<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v16</small></h1>
 <p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>：看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」再导出清单。文件只在本机读取，不上传；备份只读模块、订阅、首页三张表，不读账号、Cookie 和观看记录。作者：Bolinxxlin</p>
 
 <section>
@@ -69,7 +69,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
     <div class="stat"><b id="sDrop">0</b><span>标了「不留」</span></div>
   </div>
   <div class="tabs" role="group" aria-label="显示">
-    <button class="btn ghost sm" data-f="plan" aria-pressed="false" type="button" id="planTab" hidden>整理清单</button>
+    <button class="btn ghost sm" data-f="plan" aria-pressed="false" type="button" id="planTab" hidden>整理名单</button>
     <button class="btn ghost sm" data-f="all" aria-pressed="false" type="button">全部模块</button>
     <button class="btn ghost sm" data-f="src" aria-pressed="false" type="button">按订阅</button>
     <button class="btn ghost sm" data-f="dup" aria-pressed="true" type="button">重复</button>
@@ -370,7 +370,7 @@ function renderLibs(box){
   });
   box.append(w);
 }
-// ===== 整理清单：从备份算出确定可以做的事 =====
+// ===== 整理名单：从备份算出确定可以做的事 =====
 function plan(){
   var es=ENV?[ENV]:envList.slice().sort(function(a,b){return (a==='默认环境'?-1:0)-(b==='默认环境'?-1:0)||zh(a,b);}),out={del:[],decide:[],gone:[],ties:[],libdup:[],subEmpty:[],subDup:[]};
   es.forEach(function(e){
@@ -399,7 +399,7 @@ function plan(){
 }
 function mdesc(m){return m.title+(m.version?' '+m.version:'')+'（'+(m.sub?'订阅 '+m.sub:m.local?'导入的本机版':'链接版')+(m.disabled?'，已停用':'')+'）编号 '+m.id;}
 function planText(P){
-  var L=['Rex 整理清单（模块版本检查自动产生）','做之前先导出一次本机备份，再用首页导出工具「全部首页一次导出」。',''],ev=function(e){return ENV||envList.length<2?'':'〔'+e+'〕';};
+  var L=['Rex 整理名单（模块版本检查自动产生）','做之前先导出一次本机备份，再用首页导出工具「全部首页一次导出」。',''],ev=function(e){return ENV||envList.length<2?'':'〔'+e+'〕';};
   L.push('一、确定可以删的模块（'+P.del.reduce(function(a,x){return a+x.drop.length;},0)+' 个）','都没有首页在用，留下的那个版本相同或更新。在 Rex「模组」页删：');
   P.del.forEach(function(x){x.drop.forEach(function(m){L.push('  - '+ev(x.env)+'删 '+mdesc(m),'      留 '+mdesc(x.keep));});});
   if(!P.del.length)L.push('  （没有）');
@@ -420,9 +420,9 @@ function planText(P){
 function renderPlan(box){
   var P=plan(),n=P.del.reduce(function(a,x){return a+x.drop.length;},0);
   box.append(el('p','muted','照'+(ENV?'「'+ENV+'」':'每个环境')+'算出来的。「确定」的规则：名称一样、没有首页在用、不是订阅装的，而且留下的那个是订阅装的或编号完全一样、版本不比它旧。编号不同的版本号不能比（可能是别的作者或 Forward 版），放在「要你决定」。'));
-  var acts=el('div','acts'),b1=el('button','btn','确定的 '+n+' 个全部标「不留」'),b2=el('button','btn ghost','导出整理清单');b1.type=b2.type='button';
+  var acts=el('div','acts'),b1=el('button','btn','确定的 '+n+' 个全部标「不留」'),b2=el('button','btn ghost','导出整理名单');b1.type=b2.type='button';
   b1.disabled=!n;b1.onclick=function(){P.del.forEach(function(x){x.drop.forEach(function(m){setKeep(m,false);});});render();};
-  b2.onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([planText(P)],{type:'text/plain'}));a.download='Rex整理清单.txt';document.body.append(a);a.click();a.remove();};
+  b2.onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([planText(P)],{type:'text/plain'}));a.download='Rex整理名单.txt';document.body.append(a);a.click();a.remove();};
   acts.append(b1,b2);box.append(acts);
   var pre=el('pre','plan',planText(P));box.append(pre);
 }
