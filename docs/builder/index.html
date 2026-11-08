@@ -83,7 +83,7 @@ body.dropping::after{content:'放开即可打开文件';position:fixed;inset:12p
 </style>
 
 <div class="wrap">
-  <h1>Rex首页导出工具<span class="badge" title="工具版本">2026.10.30</span><span class="badge" id="ver" title="模块版本"></span></h1>
+  <h1>Rex首页导出工具<span class="badge" title="工具版本">2026.11.09</span><span class="badge" id="ver" title="模块版本"></span></h1>
   <p class="sub">作者：Bolinxxlin</p>
   <p class="sub">iPhone 的 Rex 没有导出，用这里从备份导出首页；也能把 Forward 的首页（<code>.fwd</code> 或 Forward 备份）转成 Rex 的。也可以打开别人的首页，或从默认首页开始，勾选行、调整顺序和设置，再导出分享。导出的首页读取 GitHub 上的加密脚本，不含明文。</p>
 
@@ -416,7 +416,28 @@ async function openRexBackup(z,all,cfgs,fname){
       var lb=document.createElement('label');lb.textContent='备份里有 '+list.length+' 个首页，选一个'+(Object.keys(names).length?'：':'（名称读不到，先看行数和行名）：');
       var sel=document.createElement('select');list.forEach(function(x,j){var o=document.createElement('option');o.value=j;o.textContent=x.label;if(x===h)o.selected=true;sel.append(o);});
       sel.onchange=function(){pick(list[+this.value]).catch(function(e){setMsg(String(e&&e.message||e),true);});};
-      w.append(lb,sel);$('importNote').append(w);}}
+      var all1=document.createElement('button');all1.type='button';all1.className='btn';all1.style.marginTop='8px';all1.textContent='全部 '+list.length+' 个首页一次导出（存档用）';
+      all1.onclick=function(){exportAll(h).catch(function(e){busy=false;setMsg('全部导出失败：'+String(e&&e.message||e),true);});};
+      w.append(lb,sel,all1);$('importNote').append(w);}}
+  var busy=false;
+  async function exportAll(back){
+    if(busy)return;busy=true;var out=new JSZip(),used={},n=0,skip=[],idx=['Rex 首页存档（'+fname+'）','','要还原：解压后在 Rex「导入配置」选那个 .rex。',''];
+    for(var j=0;j<list.length;j++){
+      setMsg('正在导出第 '+(j+1)+' / '+list.length+' 个首页……');
+      await pick(list[j]);
+      if(!hasActive()){skip.push(list[j].label);continue;}
+      var env=(list[j].k&&list[j].k.env)||'',nm=(outName()||('首页'+(j+1))).replace(/[\\\/:*?"<>|]/g,'_'),path=(env?env.replace(/[\\\/:*?"<>|]/g,'_')+'/':'')+nm,p=path,c=2;
+      while(used[p+'.rex'])p=path+'（'+(c++)+'）';used[p+'.rex']=1;
+      out.file(p+'.rex',await packHome(),{unixPermissions:0o100644});idx.push(p+'.rex  ←  '+list[j].label);n++;
+    }
+    if(skip.length)idx.push('','没有开启的行、没导出：',...skip);
+    out.file('说明.txt',idx.join('\n'));
+    await pick(back);
+    var d=new Date(),stamp=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+    var blob=await out.generateAsync({type:'blob',compression:'DEFLATE',platform:'UNIX'});
+    var ok=await saveBlob(blob,'Rex首页存档-'+stamp,'.zip');busy=false;
+    setMsg(ok?'已导出 '+n+' 个首页（Rex首页存档-'+stamp+'.zip），每个都是 .rex，按环境分资料夹。':'这个页面目前不能存档。请改用 GitHub 上的网页工具。',!ok);
+  }
   await pick(list[0]);return true;}
 function isHomeRows(x){return isLayout(x)&&usedRows(x)>0&&x.every(function(r){return r.items.every(function(it){return it&&typeof it==='object'&&('style' in it)&&('widgetId' in it||'widgetURL' in it);});});}
 function isLayout(x){return Array.isArray(x)&&x.length>0&&x.every(function(r){return r&&Array.isArray(r.items);});}
@@ -524,8 +545,22 @@ function macJson(x){return JSON.stringify(x).replace(/\//g,'\\/');}
 var MACF={unixPermissions:0o100644};
 function outName(){var t=String(state.title||'').replace(/[\\\/:*?"<>|\u0000-\u001f]/g,'').trim()||'RexHome';return t+($('sizeSel').value==='macMid'?'-Mac':'');}
 function macHome(avatar,data,indep,title){var h={avatar:avatar||'avatar-22'};if(data)h.avatarData=data;h.isIndependent=!!indep;h.title=title;return h;}
+function hasActive(){return state.rows.some(function(r){return r.active||(r.raw&&Array.isArray(r.raw.serverPage)&&r.raw.serverPage.length);});}
+async function packHome(){
+    var z=new JSZip();
+    z.file('rex-manifest.json',macJson({format:'video.fika.rex.home-package',version:1}),MACF);
+    z.file('rex-layout.json',macJson(sizeRows(buildLayout(),$('sizeSel').value)),MACF);
+    var av=await rexAvatar(homeMeta.avatar,homeMeta.avatarData);
+    z.file('rex-home.json',macJson(macHome(av.avatar,av.data,homeMeta.isIndependent,state.title)),MACF);
+    Object.keys(extraFiles).forEach(function(n){z.file(n,unb64(extraFiles[n]),{unixPermissions:0o100644,createFolders:false});});
+    return z.generateAsync({type:'uint8array',compression:'DEFLATE',platform:'UNIX',streamFiles:true});
+}
+async function saveBlob(blob,nm,ext){
+    if(!IN_CLAUDE){var url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=nm+ext;document.body.append(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},60000);return true;}
+    var dl=await window.claude.use('downloads');if(!dl)return false;await dl.save({filename:nm+'.zip',data:blob});return true;
+}
 $('saveBtn').onclick=async function(){
-  if(!state.rows.some(function(r){return r.active||(r.raw&&Array.isArray(r.raw.serverPage)&&r.raw.serverPage.length);})){setMsg('至少要开启一行。',true);return;}
+  if(!hasActive()){setMsg('至少要开启一行。',true);return;}
   if(typeof JSZip==='undefined'){setMsg('打包工具没有载入，请重新打开这个页面。',true);return;}
   var b=this;b.disabled=true;setMsg('正在打包……');
   try{
