@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>重复模块检查</title>
-<meta name="description" content="打开 Rex 备份或多个模块 .js，找出编号相同（会互相覆盖）和名称相同（分不清）的模块；只在本机处理。">
+<meta name="description" content="打开 Rex 备份或多个模块 .js，找出编号相同（会互相覆盖）和名称相同（分不清）的模块，查有没有新版；只在本机处理。">
 <style>
 :root{--bg:#f6f4fa;--panel:#fff;--ink:#211b2c;--muted:#665c76;--line:#e4ddec;--accent:#7137ce;--accent-ink:#fff;--warn:#9a5b00;--warn-bg:#fff4dd;--bad:#b3261e;--bad-bg:#fde8e7;--ok:#1d7a3a;--ok-bg:#e5f5ea;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#151019;--panel:#221a2b;--ink:#f1eafa;--muted:#b7aac7;--line:#40324f;--accent:#bd95ff;--accent-ink:#211433;--warn:#f3c26b;--warn-bg:#3a2c12;--bad:#ff9a92;--bad-bg:#3d1b1a;--ok:#8fd9a6;--ok-bg:#16301f;color-scheme:dark}}
@@ -66,6 +66,19 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
   <div class="acts" style="margin-top:12px"><button class="btn ghost" id="csv" type="button">导出清单（CSV，可用 Excel 打开）</button></div>
 </section>
 
+<section id="verBox" hidden>
+  <h2>版本检查</h2>
+  <p class="muted">到模块网址、订阅清单和 Bolinxxlin 的 GitHub 合集查最新版本号，和现在装的比。要连网；只读模块网址和订阅清单，备份不会传出去。</p>
+  <button class="btn" id="verBtn" type="button">检查新版</button>
+  <div id="verMsg"></div>
+  <div class="stats" id="verStats" hidden>
+    <div class="stat"><b id="vNew">0</b><span>🔵 有新版</span></div>
+    <div class="stat"><b id="vOk">0</b><span>🟢 已是最新</span></div>
+    <div class="stat"><b id="vNo">0</b><span>⚪ 查不到</span></div>
+  </div>
+  <div id="verList"></div>
+</section>
+
 <section>
   <h2>怎么看</h2>
   <ul>
@@ -83,7 +96,8 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 (function(){
 var $=function(id){return document.getElementById(id);};
 var SQLJS='https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/';
-var mods=[],filter='all';
+var mods=[],subs=[],filter='all';
+var OWN={title:'Bolinxxlin GitHub 合集',url:'https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/RexCollection.rex'};
 
 function note(cls,text){var m=$('msg');m.innerHTML='';if(!text)return;var d=document.createElement('div');d.className='note '+cls;d.textContent=text;m.append(d);}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}
@@ -129,13 +143,13 @@ async function readBackup(file){
   var d=new SQL.Database(await z.file(k).async('uint8array')),out=[];
   try{
     var q=function(s){var r=d.exec(s);return r[0]?r[0].values:[];};
-    var src={};q("select id,title,url from script_source where deletedAt is null").forEach(function(v){src[v[0]]=v[1]||host(v[2]);});
+    var src={};q("select id,title,url from script_source where deletedAt is null").forEach(function(v){src[v[0]]=v[1]||host(v[2]);if(/^https?:/.test(v[2]||''))subs.push({title:String(v[1]||host(v[2])),url:String(v[2])});});
     var use={};q("select title,rowsJSON from home_document where deletedAt is null").forEach(function(v){
       try{JSON.parse(v[1]||'[]').forEach(function(r){(r.items||[]).forEach(function(it){var u=it.widgetURL;if(u){(use[u]=use[u]||{})[v[0]]=1;}});});}catch(e){}
     });
     q("select id,widgetID,title,version,url,location,isDisabled,sourceID from script_module where deletedAt is null").forEach(function(v){
       var u=String(v[4]||''),h=Object.assign({},use[u]||{},use['file://'+v[0]+'.js']||{});
-      out.push({from:'备份',id:String(v[1]||''),title:String(v[2]||''),version:String(v[3]||''),local:v[5]==='local',disabled:!!v[6],
+      out.push({from:'备份',id:String(v[1]||''),title:String(v[2]||''),version:String(v[3]||''),local:v[5]==='local',disabled:!!v[6],url:/^https?:/.test(u)?u:'',
         origin:v[7]&&src[v[7]]?'订阅 '+src[v[7]]:(host(u)||'本机'),homes:Object.keys(h)});
     });
   }finally{d.close();}
@@ -193,30 +207,65 @@ function render(){
     box.append(w);
   });
 }
+// ===== 版本检查 =====
+function cmpVer(a,b){var x=String(a).split(/[^0-9]+/).filter(Boolean).map(Number),y=String(b).split(/[^0-9]+/).filter(Boolean).map(Number);
+  for(var i=0;i<Math.max(x.length,y.length);i++){var d=(x[i]||0)-(y[i]||0);if(d)return d;}return 0;}
+async function get(u,ms){var c=new AbortController(),t=setTimeout(function(){c.abort();},ms||15000);
+  try{var r=await fetch(u,{signal:c.signal,cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return await r.text();}finally{clearTimeout(t);}}
+async function pool(list,n,fn){var i=0;async function w(){while(i<list.length){var k=i++;await fn(list[k]);}}var ws=[];for(var j=0;j<Math.min(n,list.length);j++)ws.push(w());await Promise.all(ws);}
+function widgetsOf(j){if(!j)return [];if(Array.isArray(j))return j;return j.widgets||j.modules||j.items||[];}
+async function checkVersions(){
+  var btn=$('verBtn');btn.disabled=true;var vm=$('verMsg');vm.innerHTML='';
+  var latest={},seen={},sources=[OWN].concat(subs).filter(function(x){if(seen[x.url])return false;seen[x.url]=1;return true;}),done=0,total=0;
+  function put(id,ver,from){if(!id||!ver)return;var cur=latest[id];if(!cur||cmpVer(ver,cur.version)>0)latest[id]={version:String(ver),from:from};}
+  var direct=mods.filter(function(m){return m.url;});total=sources.length+direct.length;
+  function prog(){vm.innerHTML='';vm.append(el('div','note warn','查询中…… '+done+' / '+total));}
+  prog();
+  await pool(sources,4,async function(sv){try{var j=JSON.parse(await get(sv.url));widgetsOf(j).forEach(function(w){put(w.id||w.widgetID,w.version,'订阅 '+sv.title);});}catch(e){}done++;prog();});
+  await pool(direct,6,async function(m){try{var t=await get(m.url);if(!/^\s*REXENC/.test(t)){var f=findMeta(t);if(f&&f.version&&f.id){var v=dec(t.slice(f.version.start,f.version.end)),id=dec(t.slice(f.id.start,f.id.end));if(id===m.id)put(id,v,'模块网址');}}}catch(e){}done++;prog();});
+  var n=0,ok=0,no=0;
+  mods.forEach(function(m){var L=latest[m.id];
+    if(!L){m.vs='no';m.latest='';no++;}
+    else if(cmpVer(L.version,m.version)>0){m.vs='new';m.latest=L.version;m.latestFrom=L.from;n++;}
+    else{m.vs='ok';m.latest=L.version;m.latestFrom=L.from;ok++;}});
+  $('vNew').textContent=n;$('vOk').textContent=ok;$('vNo').textContent=no;$('verStats').hidden=false;
+  vm.innerHTML='';vm.append(el('div','note ok','查完了：'+n+' 个有新版。链接版在 Rex 模块页「刷新」就会更新；本机版要用链接重装或重新导入。'));
+  var box=$('verList');box.innerHTML='';
+  var news=mods.filter(function(m){return m.vs==='new';}).sort(function(a,b){return a.title.localeCompare(b.title);});
+  if(news.length){var g=el('div','group');g.append(el('h3',null,'🔵 有新版'));
+    news.forEach(function(m){var it=el('div','item');var t=el('div');t.append(el('b',null,m.title),document.createTextNode(' '+(m.version||'?')+' → '+m.latest));it.append(t);
+      it.append(el('div','meta',[m.from==='备份'?(m.local?'本机版：要用链接重装或重新导入':'链接版：在 Rex 模块页按「刷新」'):'文件',m.latestFrom].join(' · ')));g.append(it);});
+    box.append(g);}
+  var nos=mods.filter(function(m){return m.vs==='no';});
+  if(nos.length){var d=document.createElement('details');d.append(el('summary',null,'⚪ 查不到的 '+nos.length+' 个（本机版找不到来源，或网站不让网页读取）'));
+    nos.forEach(function(m){d.append(el('div','item',m.title+' '+(m.version||'')+' · '+(m.origin||'')));});box.append(d);}
+  btn.disabled=false;
+}
 function csv(){
-  var gs=groups(),rows=[['类型','重复的值','名称','编号','版本','安装方式','来源','停用','用在哪些首页']];
+  var gs=groups(),rows=[['类型','重复的值','名称','编号','版本','最新版本','安装方式','来源','停用','用在哪些首页']];
   gs.forEach(function(g){g.items.forEach(function(i){var m=mods[i];
-    rows.push([g.kind==='id'?'编号相同':'名称相同',g.key,m.title,m.id,m.version,m.from==='备份'?(m.local?'本机':'链接'):'文件',m.origin||'',m.disabled?'是':'',m.homes.join('、')]);});});
+    rows.push([g.kind==='id'?'编号相同':'名称相同',g.key,m.title,m.id,m.version,m.latest||'',m.from==='备份'?(m.local?'本机':'链接'):'文件',m.origin||'',m.disabled?'是':'',m.homes.join('、')]);});});
   var text='﻿'+rows.map(function(r){return r.map(function(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(',');}).join('\n');
   var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv'}));a.download='重复模块清单.csv';document.body.append(a);a.click();a.remove();
 }
 
 $('fileIn').onchange=async function(){
   var files=Array.prototype.slice.call(this.files);this.value='';if(!files.length)return;
-  note('warn','读取中……');var all=[],errs=[],enc=0;
+  note('warn','读取中……');subs=[];var all=[],errs=[],enc=0;
   for(var i=0;i<files.length;i++){
     try{var list=/\.zip$/i.test(files[i].name)?await readBackup(files[i]):await readJs(files[i]);
       list.forEach(function(m){if(m.enc)enc++;else all.push(m);});}
     catch(e){errs.push(String(e&&e.message||e));}
   }
   mods=all;
-  var tip=['读到 '+all.length+' 个模块'];if(enc)tip.push(enc+' 个是加密模块，读不到编号，已跳过');if(errs.length)tip.push(errs.join('；'));
+  var tip=['读到 '+all.length+' 个模块'];$('verBox').hidden=!all.length;$('verStats').hidden=true;$('verList').innerHTML='';$('verMsg').innerHTML='';if(enc)tip.push(enc+' 个是加密模块，读不到编号，已跳过');if(errs.length)tip.push(errs.join('；'));
   note(errs.length?'bad':'ok',tip.join('；')+'。');
   $('result').hidden=!all.length;if(all.length)render();
 };
 Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(b){b.onclick=function(){filter=b.dataset.f;Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(x){x.setAttribute('aria-pressed',String(x===b));});render();};});
 $('csv').onclick=csv;
-window.__dupes={findMeta:findMeta,patch:patch,get mods(){return mods;},groups:groups};
+$('verBtn').onclick=function(){checkVersions().catch(function(e){$('verBtn').disabled=false;$('verMsg').innerHTML='';$('verMsg').append(el('div','note bad',String(e&&e.message||e)));});};
+window.__dupes={findMeta:findMeta,patch:patch,get mods(){return mods;},get subs(){return subs;},groups:groups,cmpVer:cmpVer};
 })();
 </script>
 </body>
