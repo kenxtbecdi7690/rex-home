@@ -18,7 +18,7 @@ Mac 版实际截图（`RexHome-Mac.rex`）：
 
 想制作自己的首页：用 [Rex 首页导出工具](https://kenxtbecdi7690.github.io/rex-home/builder/)（作者：Bolinxxlin，[图文教学](https://kenxtbecdi7690.github.io/rex-home/export/)、[说明](Rex首页导出工具说明.md)）。可在「成品首页」选四大平台、豆瓣＋B站榜单或 MakkaPakka 快速版，也能打开 `.rex`、Forward `.fwd`、Rex／Forward 备份 zip（不用解压），编辑后导出「首页名称.rex」；Mac 中尺寸为「首页名称-Mac.rex」。仓库上方已发布的 `RexHome.rex`、`RexHome-Mac.rex` 文件名不变；独立的 [Forward转Rex](https://kenxtbecdi7690.github.io/rex-home/fwd2rex/) 工具仍固定输出 `RexHome.rex`。
 
-第一次用请看 [新手教学](新手教学.md)；想把自己的首页分享出去，看 [首页导出教学](首页导出教学.md)。代理设置见 [代理规则](代理规则.md)；`.rex` 格式与自动更新的原理见 [导入导出规则](导入导出规则.md)。
+第一次用请看 [新手教学](新手教学.md)；想把自己的首页分享出去，看 [首页导出教学](首页导出教学.md)。整理 Rex 里重复的模块、改模块名称或复制一份并存，看 [模块工具教学](模块工具教学.md)（[重复模块检查](https://kenxtbecdi7690.github.io/rex-home/dupes/)、[模块改名工具](https://kenxtbecdi7690.github.io/rex-home/rename/)）。代理设置见 [代理规则](代理规则.md)；`.rex` 格式与自动更新的原理见 [导入导出规则](导入导出规则.md)。
 
 ### 豆瓣密钥（可选）
 
