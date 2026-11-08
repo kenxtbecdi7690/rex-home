@@ -76,7 +76,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
     <li>备份里的模块不能在这里直接改：先在 Rex 模块页「导出」那个模块，再把 .js 选进来改。</li>
   </ul>
 </section>
-<footer><a href="https://github.com/kenxtbecdi7690/rex-home/blob/main/%E6%A8%A1%E5%9D%97%E5%B7%A5%E5%85%B7%E6%95%99%E5%AD%A6.md">使用教学</a> · <a href="../rename/">模块改名工具</a> · <a href="../">← Rex首页工具</a></footer>
+<footer><a href="https://github.com/kenxtbecdi7690/rex-home/blob/main/%E6%A8%A1%E5%9D%97%E5%B7%A5%E5%85%B7%E6%95%99%E5%AD%A6.md">使用教学</a> · <a href="../rename/">模块 JS 改名工具</a> · <a href="../">← Rex首页工具</a></footer>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
@@ -88,7 +88,7 @@ var mods=[],filter='all';
 function note(cls,text){var m=$('msg');m.innerHTML='';if(!text)return;var d=document.createElement('div');d.className='note '+cls;d.textContent=text;m.append(d);}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}
 
-// 与模块改名工具同一套：找 WidgetMetadata 第一层的 id / title / version
+// 与模块 JS 改名工具同一套：找 WidgetMetadata 第一层的 id / title / version
 function findMeta(s){
   var m=/WidgetMetadata\s*=\s*\{/.exec(s);if(!m)return null;
   var i=m.index+m[0].length,depth=1,found={},n=s.length;
