@@ -33,6 +33,7 @@ section{background:var(--panel);border:1px solid var(--line);border-radius:16px;
 .group h3{font-size:16px;margin:0 0 6px;overflow-wrap:anywhere}
 .tag{display:inline-block;font-size:12px;border-radius:20px;padding:1px 8px;margin-right:6px;vertical-align:2px}
 .tag.bad{background:var(--bad-bg);color:var(--bad)}.tag.warn{background:var(--warn-bg);color:var(--warn)}
+.tag.ok-tag{background:var(--ok-bg);color:var(--ok);margin-left:6px;margin-right:0}
 .item{border-top:1px solid var(--line);padding:8px 0;font-size:14px}
 .item:first-of-type{border-top:0}
 .item code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}
@@ -73,7 +74,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
   <input class="search" id="q" type="search" placeholder="搜名称或编号" aria-label="搜名称或编号">
   <p class="muted" style="margin:8px 0 0">每个模块右边按一下切换「留／不留」，只是做记号，不会改到 Rex；记号存在这台装置的浏览器里。</p>
   <div id="groups"></div>
-  <div class="acts" style="margin-top:12px"><button class="btn ghost" id="csv" type="button">导出清单（CSV，可用 Excel 打开）</button><button class="btn ghost" id="dropList" type="button">导出「不留」清单</button></div>
+  <div class="acts" style="margin-top:12px"><button class="btn ghost" id="sugAll" type="button">重复的全部照建议标记</button><button class="btn ghost" id="csv" type="button">导出清单（CSV，可用 Excel 打开）</button><button class="btn ghost" id="dropList" type="button">导出「不留」清单</button></div>
 </section>
 
 <section id="verBox" hidden>
@@ -96,6 +97,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
     <li><b>编号相同</b>：Rex 只会留一个，后装的盖掉先装的。两个都要留，就把其中一个「改编号」。</li>
     <li><b>名称相同、编号不同</b>：两个本来就并存，只是列表里分不清。想分清就「名称加来源」，或删掉不用的那个。</li>
     <li>删之前看「首页」：正在被首页用的，删掉那几行会空白。</li>
+    <li><b>建议留</b>：每组重复会标一个绿色「建议留」，顺序是 首页在用 → 没停用 → 链接版 → 版本高。可以按「照建议标记这一组」或「重复的全部照建议标记」，再自己调整。</li>
     <li><b>留／不留</b>：只是记号，帮你决定；按「导出『不留』清单」得到一份要在 Rex 删除的列表，照着删。工具不会删任何模块。</li>
     <li><b>有新版</b>：先按「检查新版」。链接版到 Rex 模块页「刷新」；本机版用链接重装或重新导入首页包。</li>
     <li>链接版改名后会被更新改回去；只有本机版改名会一直有效。</li>
@@ -206,11 +208,16 @@ function groups(){
   return gs;
 }
 function download(name,text){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/javascript'}));a.download=name;document.body.append(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},4000);}
+function score(m){return [m.homes.length?1:0,m.disabled?0:1,(m.from==='备份'&&!m.local)?1:0];}
+function suggest(g){var best=null;g.items.forEach(function(i){var m=mods[i];if(best===null){best=i;return;}
+  var a=score(m),b=score(mods[best]);for(var k=0;k<a.length;k++){if(a[k]!==b[k]){if(a[k]>b[k])best=i;return;}}
+  if(cmpVer(m.version,mods[best].version)>0)best=i;});return best;}
+function applySuggest(gs){gs.forEach(function(g){var b=suggest(g);g.items.forEach(function(i){setKeep(mods[i],i===b);});});render();}
 function info(m){return [m.from==='备份'?(m.local?'本机版':'链接版'):'',m.origin,m.disabled?'已停用':'',m.from!=='文件'?(m.homes.length?'首页：'+m.homes.join('、'):'没有首页用到'):''].filter(Boolean).join(' · ');}
 function match(m){if(!query)return true;var q=query.toLowerCase();return (m.title+' '+m.id).toLowerCase().indexOf(q)>=0;}
-function itemEl(m){
+function itemEl(m,best){
   var it=el('div','item'+(kept(m)?'':' drop')),head=el('div','head'),txt=el('div');
-  var t=el('div');t.append(el('b',null,m.title),document.createTextNode(m.version?' v'+m.version:''));
+  var t=el('div');t.append(el('b',null,m.title),document.createTextNode(m.version?' v'+m.version:''));if(best)t.append(el('span','tag ok-tag','建议留'));
   if(m.vs==='new')t.append(el('span','newver',' → '+m.latest));
   else if(m.vs==='ok')t.append(el('span','meta',' 🟢 最新'));
   txt.append(t,el('code',null,m.id));head.append(txt);
@@ -239,7 +246,8 @@ function render(){
     shown.forEach(function(g){
       var w=el('div','group'),h=el('h3');
       h.append(el('span','tag '+(g.kind==='id'?'bad':'warn'),g.kind==='id'?'编号相同':'名称相同'),document.createTextNode(g.kind==='id'?g.key:'「'+g.key+'」'));
-      w.append(h);g.items.forEach(function(i){w.append(itemEl(mods[i]));});
+      w.append(h);var bi=suggest(g);g.items.forEach(function(i){w.append(itemEl(mods[i],i===bi));});
+      var sb=el('button','btn ghost sm','照建议标记这一组');sb.type='button';sb.style.marginTop='6px';sb.onclick=function(){applySuggest([g]);};w.append(sb);
       w.append(el('div','meta',g.kind==='id'?'Rex 里只会留下其中一个；要两个都留，把其中一个改编号。':'两个都在 Rex 里；留首页在用的、链接版、版本高的，或把名称改得分得清。'));
       box.append(w);
     });
@@ -310,6 +318,7 @@ $('fileIn').onchange=async function(){
 Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(b){b.onclick=function(){filter=b.dataset.f;Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(x){x.setAttribute('aria-pressed',String(x===b));});render();};});
 $('csv').onclick=csv;
 $('dropList').onclick=dropList;
+$('sugAll').onclick=function(){var gs=groups();if(!gs.length)return;if(confirm('每组重复留「建议留」那个，其他标「不留」？（只是记号，可以再改）'))applySuggest(gs);};
 $('q').oninput=function(){query=this.value.trim();render();};
 $('verBtn').onclick=function(){checkVersions().catch(function(e){$('verBtn').disabled=false;$('verMsg').innerHTML='';$('verMsg').append(el('div','note bad',String(e&&e.message||e)));});};
 window.__dupes={findMeta:findMeta,patch:patch,get mods(){return mods;},get subs(){return subs;},groups:groups,cmpVer:cmpVer};
