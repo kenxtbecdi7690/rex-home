@@ -23,6 +23,7 @@ section{background:var(--panel);border:1px solid var(--line);border-radius:16px;
 .note.warn{background:var(--warn-bg);color:var(--warn)}.note.bad{background:var(--bad-bg);color:var(--bad)}.note.ok{background:var(--ok-bg);color:var(--ok)}
 .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
 @media(min-width:560px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.sortrow{display:flex;gap:8px;align-items:center}.sortrow #q{flex:1;min-width:0}.sortrow #sort{width:auto;flex:none}
 .search{width:100%;font:15px/1.5 inherit;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);margin-top:10px}
 .keep{margin-left:auto}.keep[aria-pressed=false]{background:var(--bad-bg);color:var(--bad);border-color:transparent}
 .head{display:flex;gap:8px;align-items:flex-start}.head>div{min-width:0}
@@ -48,7 +49,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 </head>
 <body>
 <main>
-<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v10</small></h1>
+<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v11</small></h1>
 <p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>：看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」再导出清单。文件只在本机读取，不上传；备份只读模块、订阅、首页三张表，不读账号、Cookie 和观看记录。作者：Bolinxxlin</p>
 
 <section>
@@ -74,7 +75,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
     <button class="btn ghost sm" data-f="home" aria-pressed="false" type="button" id="homeTab" hidden>首页</button>
     <button class="btn ghost sm" data-f="drop" aria-pressed="false" type="button">不留</button>
   </div>
-  <input class="search" id="q" type="search" placeholder="搜名称或编号" aria-label="搜名称或编号">
+  <div class="sortrow"><input class="search" id="q" type="search" placeholder="搜名称或编号" aria-label="搜名称或编号"><select class="search" id="sort" aria-label="排序"><option value="title">按名称</option><option value="id">按编号</option><option value="ver">按版本（新→旧）</option><option value="src">按来源</option></select></div>
   <p class="muted" style="margin:8px 0 0">每个模块右边按一下切换「留／不留」，只是做记号，不会改到 Rex；记号存在这台装置的浏览器里。</p>
   <div id="groups"></div>
   <div class="acts" style="margin-top:12px"><button class="btn ghost" id="sugAll" type="button">重复的全部照建议标记</button><button class="btn ghost" id="csv" type="button">导出清单（CSV，可用 Excel 打开）</button><button class="btn ghost" id="dropList" type="button">导出「不留」清单</button></div>
@@ -119,6 +120,10 @@ var SQLJS='https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/';
 var mods=[],subs=[],homes=[],filter='dup',query='';
 var KEEP={};try{KEEP=JSON.parse(localStorage.getItem('rex-module-keep')||'{}')||{};}catch(e){}
 function keyOf(m){return [m.from,m.id,m.title,m.version,m.origin||''].join('|');}
+var SORT='title';try{SORT=localStorage.getItem('rex-module-sort')||'title';}catch(e){}
+function zh(a,b){return String(a||'').localeCompare(String(b||''),'zh');}
+function cmpM(a,b){return (SORT==='id'?zh(a.id,b.id):SORT==='ver'?cmpVer(b.version||0,a.version||0):SORT==='src'?zh(a.origin,b.origin):0)||zh(a.title,b.title)||zh(a.id,b.id);}
+function cmpH(a,b){return (SORT==='id'?zh(a.hid,b.hid):SORT==='src'?zh(a.env,b.env):0)||zh(a.title,b.title);}
 function kept(m){return KEEP[keyOf(m)]!==false;}
 function setKeep(m,v){if(v)delete KEEP[keyOf(m)];else KEEP[keyOf(m)]=false;try{localStorage.setItem('rex-module-keep',JSON.stringify(KEEP));}catch(e){}}
 var OWN={title:'Bolinxxlin GitHub 合集',url:'https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/RexCollection.rex'};
@@ -260,7 +265,7 @@ function homeEl(h,best,same){
   t.append(el('b',null,h.title||'（没有名称）'));if(best)t.append(el('span','tag ok-tag','建议留'));if(same)t.append(el('span','tag warn','内容完全一样'));
   txt.append(t);head.append(txt);
   var k=el('button','btn ghost sm keep',hKept(h)?'留':'不留');k.type='button';k.setAttribute('aria-pressed',String(hKept(h)));k.onclick=function(){hSet(h,!hKept(h));render();};head.append(k);
-  it.append(head,el('div','meta',[h.env?'环境：'+h.env:'',h.kind,h.rows+' 行',h.mods?'用 '+h.mods+' 个模块':'',h.show?'显示在首页列表':'不显示在首页列表'].filter(Boolean).join(' · ')));
+  it.append(head,el('div','meta',[h.env?'环境：'+h.env:'',h.kind,h.rows+' 行',h.mods?'用 '+h.mods+' 个模块':'',h.show?'显示在首页列表':'不显示在首页列表','编号 '+h.hid].filter(Boolean).join(' · ')));
   return it;
 }
 function renderHomes(box){
@@ -273,7 +278,7 @@ function renderHomes(box){
     var sb=el('button','btn ghost sm','照建议标记这一组');sb.type='button';sb.style.marginTop='6px';sb.onclick=function(){g.items.forEach(function(i){hSet(homes[i],i===b);});render();};w.append(sb);
     w.append(el('div','meta','预设发现页、资源库首页是 Rex 自动建的，每个环境、每个资源库各一个，名称一样是正常的；改名比删掉好。'));box.append(w);});
   var d=document.createElement('details');d.append(el('summary',null,'全部首页（'+homes.length+' 个）'));
-  homes.slice().sort(function(a,b){return a.title.localeCompare(b.title,'zh');}).forEach(function(h){d.append(homeEl(h));});box.append(d);
+  homes.slice().sort(cmpH).forEach(function(h){d.append(homeEl(h));});box.append(d);
 }
 function render(){
   var gs=groups(),box=$('groups');box.innerHTML='';
@@ -288,7 +293,7 @@ function render(){
     shown.forEach(function(g){
       var w=el('div','group'),h=el('h3');
       h.append(el('span','tag '+(g.kind==='id'?'bad':'warn'),g.kind==='id'?'编号相同':'名称相同'),document.createTextNode(g.kind==='id'?g.key:'「'+g.key+'」'));
-      w.append(h);var bi=suggest(g);g.items.forEach(function(i){w.append(itemEl(mods[i],i===bi));});
+      w.append(h);var bi=suggest(g);g.items.slice().sort(function(x,y){return cmpM(mods[x],mods[y]);}).forEach(function(i){w.append(itemEl(mods[i],i===bi));});
       var sb=el('button','btn ghost sm','照建议标记这一组');sb.type='button';sb.style.marginTop='6px';sb.onclick=function(){applySuggest([g]);};w.append(sb);
       w.append(el('div','meta',g.kind==='id'?'Rex 里只会留下其中一个；要两个都留，把其中一个改编号。':'两个都在 Rex 里；留首页在用的、链接版、版本高的，或把名称改得分得清。'));
       box.append(w);
@@ -297,7 +302,7 @@ function render(){
   }
   if(filter==='src'){renderSrc(box,checked);return;}
   var list=mods.filter(function(m){return match(m)&&(filter==='all'||(filter==='new'&&m.vs==='new')||(filter==='drop'&&!kept(m)));})
-    .sort(function(a,b){return a.title.localeCompare(b.title,'zh');});
+    .sort(cmpM);
   var hd=filter==='drop'?homes.filter(function(h){return !hKept(h);}):[];
   if(!list.length&&!hd.length){box.append(el('div','note '+(filter==='new'&&!checked?'warn':'ok'),filter==='new'&&!checked?'还没检查新版：按下面「版本检查」的「检查新版」。':filter==='drop'?'还没有标「不留」的模块或首页。':'没有符合的模块。'));return;}
   if(list.length){var w=el('div','group');list.forEach(function(m){w.append(itemEl(m));});box.append(w);}
@@ -311,7 +316,7 @@ function renderSrc(box,checked){
   order.sort(function(a,b){var la=/^本机版/.test(a),lb=/^本机版/.test(b);return la!==lb?(la?1:-1):g[b].length-g[a].length||a.localeCompare(b,'zh');});
   if(!order.length){box.append(el('div','note ok','没有符合的模块。'));return;}
   order.forEach(function(k){
-    var list=g[k].sort(function(a,b){return a.title.localeCompare(b.title,'zh');}),w=el('details','group'),sm=el('summary'),h=el('h3');if(query||order.length===1||SOPEN[k])w.open=true;w.ontoggle=function(){SOPEN[k]=w.open;};
+    var list=g[k].sort(cmpM),w=el('details','group'),sm=el('summary'),h=el('h3');if(query||order.length===1||SOPEN[k])w.open=true;w.ontoggle=function(){SOPEN[k]=w.open;};
     h.append(document.createTextNode(k+' '),el('span','tag',list.length+' 个模块'));
     if(sc[k]>1)h.append(document.createTextNode(' '),el('span','tag warn','订阅加了 '+sc[k]+' 次'));
     var nw=list.filter(function(m){return m.vs==='new';}).length;if(checked&&nw)h.append(document.createTextNode(' '),el('span','tag','🔵 '+nw+' 个有新版'));
@@ -363,7 +368,7 @@ async function checkVersions(){
 function csv(){
   var gs=groups(),dupOf={};gs.forEach(function(g){g.items.forEach(function(i){dupOf[i]=(dupOf[i]?dupOf[i]+'、':'')+(g.kind==='id'?'编号相同':'名称相同');});});
   var rows=[['留／不留','名称','编号','版本','最新版本','重复','安装方式','来源','停用','用在哪些首页']];
-  mods.map(function(m,i){return [m,i];}).sort(function(a,b){return a[0].title.localeCompare(b[0].title,'zh');}).forEach(function(x){var m=x[0];
+  mods.map(function(m,i){return [m,i];}).sort(function(a,b){return cmpM(a[0],b[0]);}).forEach(function(x){var m=x[0];
     rows.push([kept(m)?'留':'不留',m.title,m.id,m.version,m.latest||'',dupOf[x[1]]||'',m.from==='备份'?(m.local?'本机':'链接'):'文件',m.origin||'',m.disabled?'是':'',m.homes.join('、')]);});
   var text='﻿'+rows.map(function(r){return r.map(function(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(',');}).join('\n');
   var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv'}));a.download='模块清单.csv';document.body.append(a);a.click();a.remove();
@@ -387,6 +392,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(
 $('csv').onclick=csv;
 $('dropList').onclick=dropList;
 $('sugAll').onclick=function(){var gs=groups();if(!gs.length)return;if(confirm('每组重复留「建议留」那个，其他标「不留」？（只是记号，可以再改）'))applySuggest(gs);};
+$('sort').value=SORT;$('sort').onchange=function(){SORT=this.value;try{localStorage.setItem('rex-module-sort',SORT);}catch(e){}render();};
 $('q').oninput=function(){query=this.value.trim();render();};
 $('verBtn').onclick=function(){checkVersions().catch(function(e){$('verBtn').disabled=false;$('verMsg').innerHTML='';$('verMsg').append(el('div','note bad',String(e&&e.message||e)));});};
 window.__dupes={findMeta:findMeta,patch:patch,get mods(){return mods;},get subs(){return subs;},groups:groups,cmpVer:cmpVer};
