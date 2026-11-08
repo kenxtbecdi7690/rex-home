@@ -30,8 +30,9 @@ section{background:var(--panel);border:1px solid var(--line);border-radius:16px;
 .item.drop{opacity:.55}
 .stat{background:var(--bg);border-radius:10px;padding:8px 10px}.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:var(--muted)}
 .group{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0}
+.group summary{cursor:pointer;list-style-position:outside;margin-left:16px}.group summary h3{display:inline}.group[open] summary{margin-bottom:6px}
 .group h3{font-size:16px;margin:0 0 6px;overflow-wrap:anywhere}
-.tag{display:inline-block;font-size:12px;border-radius:20px;padding:1px 8px;margin-right:6px;vertical-align:2px}
+.tag{display:inline-block;font-size:12px;border-radius:20px;padding:1px 8px;margin-right:6px;vertical-align:2px;border:1px solid var(--line)}
 .tag.bad{background:var(--bad-bg);color:var(--bad)}.tag.warn{background:var(--warn-bg);color:var(--warn)}
 .tag.ok-tag{background:var(--ok-bg);color:var(--ok);margin-left:6px;margin-right:0}
 .item{border-top:1px solid var(--line);padding:8px 0;font-size:14px}
@@ -47,7 +48,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 </head>
 <body>
 <main>
-<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 2026.11.08</small></h1>
+<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 2026.11.09</small></h1>
 <p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>：看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」再导出清单。文件只在本机读取，不上传；备份只读模块、订阅、首页三张表，不读账号、Cookie 和观看记录。作者：Bolinxxlin</p>
 
 <section>
@@ -67,6 +68,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
   </div>
   <div class="tabs" role="group" aria-label="显示">
     <button class="btn ghost sm" data-f="all" aria-pressed="false" type="button">全部模块</button>
+    <button class="btn ghost sm" data-f="src" aria-pressed="false" type="button">按订阅</button>
     <button class="btn ghost sm" data-f="dup" aria-pressed="true" type="button">重复</button>
     <button class="btn ghost sm" data-f="new" aria-pressed="false" type="button">有新版</button>
     <button class="btn ghost sm" data-f="home" aria-pressed="false" type="button" id="homeTab" hidden>首页</button>
@@ -293,12 +295,34 @@ function render(){
     });
     return;
   }
+  if(filter==='src'){renderSrc(box,checked);return;}
   var list=mods.filter(function(m){return match(m)&&(filter==='all'||(filter==='new'&&m.vs==='new')||(filter==='drop'&&!kept(m)));})
     .sort(function(a,b){return a.title.localeCompare(b.title,'zh');});
   var hd=filter==='drop'?homes.filter(function(h){return !hKept(h);}):[];
   if(!list.length&&!hd.length){box.append(el('div','note '+(filter==='new'&&!checked?'warn':'ok'),filter==='new'&&!checked?'还没检查新版：按下面「版本检查」的「检查新版」。':filter==='drop'?'还没有标「不留」的模块或首页。':'没有符合的模块。'));return;}
   if(list.length){var w=el('div','group');list.forEach(function(m){w.append(itemEl(m));});box.append(w);}
   if(hd.length){var w2=el('div','group');w2.append(el('h3',null,'首页'));hd.forEach(function(h){w2.append(homeEl(h));});box.append(w2);}
+}
+function srcName(m){var o=m.origin||'';if(m.from==='备份')return /^订阅 /.test(o)?o.slice(3):m.local?'本机版（不是从订阅装的）':'链接版 · '+o;return o;}
+var SOPEN={};
+function renderSrc(box,checked){
+  var g={},order=[],sc={};subs.forEach(function(s){sc[s.title]=(sc[s.title]||0)+1;});
+  mods.filter(match).forEach(function(m){var k=srcName(m);if(!g[k]){g[k]=[];order.push(k);}g[k].push(m);});
+  order.sort(function(a,b){var la=/^本机版/.test(a),lb=/^本机版/.test(b);return la!==lb?(la?1:-1):g[b].length-g[a].length||a.localeCompare(b,'zh');});
+  if(!order.length){box.append(el('div','note ok','没有符合的模块。'));return;}
+  order.forEach(function(k){
+    var list=g[k].sort(function(a,b){return a.title.localeCompare(b.title,'zh');}),w=el('details','group'),sm=el('summary'),h=el('h3');if(query||order.length===1||SOPEN[k])w.open=true;w.ontoggle=function(){SOPEN[k]=w.open;};
+    h.append(document.createTextNode(k+' '),el('span','tag',list.length+' 个模块'));
+    if(sc[k]>1)h.append(document.createTextNode(' '),el('span','tag warn','订阅加了 '+sc[k]+' 次'));
+    var nw=list.filter(function(m){return m.vs==='new';}).length;if(checked&&nw)h.append(document.createTextNode(' '),el('span','tag','🔵 '+nw+' 个有新版'));
+    var dr=list.filter(function(m){return !kept(m);}).length;if(dr)h.append(document.createTextNode(' '),el('span','tag bad',dr+' 个不留'));
+    sm.append(h);w.append(sm);list.forEach(function(m){w.append(itemEl(m));});
+    var acts=el('div','acts');acts.style.marginTop='6px';
+    [['这组全部留',true],['这组全部不留',false]].forEach(function(x){var b=el('button','btn ghost sm',x[0]);b.type='button';b.onclick=function(){list.forEach(function(m){setKeep(m,x[1]);});render();};acts.append(b);});
+    w.append(acts);box.append(w);
+  });
+  var empty=Object.keys(sc).filter(function(t){return !g[t];});
+  if(empty.length&&!query)box.append(el('div','note warn','这些订阅加了，但一个模块都没装：'+empty.join('、')+'。不用的话可以在 Rex 订阅页删掉。'));
 }
 function dropList(){
   var list=mods.filter(function(m){return !kept(m);}),hl=homes.filter(function(h){return !hKept(h);});
