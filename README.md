@@ -18,7 +18,7 @@ Mac 版实际截图（`RexHome-Mac.rex`）：
 
 想制作自己的首页：用 [Rex 首页导出工具](https://kenxtbecdi7690.github.io/rex-home/builder/)（作者：Bolinxxlin，[图文教学](https://kenxtbecdi7690.github.io/rex-home/export/)、[说明](Rex首页导出工具说明.md)）。可在「成品首页」选四大平台、豆瓣＋B站榜单或 MakkaPakka 快速版，也能打开 `.rex`、Forward `.fwd`、Rex／Forward 备份 zip（不用解压），编辑后导出「首页名称.rex」；Mac 中尺寸为「首页名称-Mac.rex」。仓库上方已发布的 `RexHome.rex`、`RexHome-Mac.rex` 文件名不变；独立的 [Forward转Rex](https://kenxtbecdi7690.github.io/rex-home/fwd2rex/) 工具仍固定输出 `RexHome.rex`。
 
-第一次用请看 [新手教学](新手教学.md)；想把自己的首页分享出去，看 [首页导出教学](首页导出教学.md)。整理 Rex 里重复的模块、改模块名称或复制一份并存，看 [模块工具教学](模块工具教学.md)（[重复模块检查](https://kenxtbecdi7690.github.io/rex-home/dupes/)、[模块 JS 改名工具](https://kenxtbecdi7690.github.io/rex-home/rename/)）。代理设置见 [代理规则](代理规则.md)；`.rex` 格式与自动更新的原理见 [导入导出规则](导入导出规则.md)。
+第一次用请看 [新手教学](新手教学.md)；想把自己的首页分享出去，看 [首页导出教学](首页导出教学.md)。整理 Rex 里重复的模块、改模块名称或复制一份并存，看 [模块工具教学](模块工具教学.md)（[模块版本检查](https://kenxtbecdi7690.github.io/rex-home/dupes/)、[模块 JS 改名工具](https://kenxtbecdi7690.github.io/rex-home/rename/)）。代理设置见 [代理规则](代理规则.md)；`.rex` 格式与自动更新的原理见 [导入导出规则](导入导出规则.md)。
 
 ### 豆瓣密钥（可选）
 
@@ -62,8 +62,9 @@ Mac 版实际截图（`RexHome-Mac.rex`）：
 | 教学 2026.10.31 | 同步主工具依首页名称导出的规则、三种成品首页、编辑及 iPhone／iPad／Mac 导入步骤；补充 Forward `.fwd`／备份转换与独立工具固定文件名的差异，区分示意图、程序核对与未完成的 App 实机验证 |
 | 导出工具 2026.10.30 | 新增「成品首页」选单，一键载入四大平台、豆瓣＋B站来改；导出的文件改用首页名称（Mac 中尺寸加 `-Mac`）；包里的模块照 Mac 写法打包，不再多一个空文件夹 |
 | 首页包 2026.10.27 | 新增 Mac 版首页 `RexHome-Mac.rex`（全宽行加高）；`RexHome.rex` 改照 Mac 版 Rex 的写法打包，内容不变；模块仍是 v151 |
-| 版本检查 2026.11.08 | 重复模块检查加「检查新版」：到模块网址、订阅清单和 GitHub 合集查最新版本号，列出有新版的模块（链接版按「刷新」，本机版用链接重装） |
-| 重复模块检查 2026.11.08 | 新增[重复模块检查](https://kenxtbecdi7690.github.io/rex-home/dupes/)：打开 Rex 备份 `.zip` 或多个 `.js`，列出编号相同、名称相同的模块（版本、本机／链接、来源、用在哪些首页），可导出 CSV，`.js` 可一键改编号并存 |
+| 模块版本检查 2026.11.08 | 「重复模块检查」改名为「模块版本检查」：全部模块列出编号与版本，可搜索；逐个标「留／不留」（存在本机），导出全部清单 CSV 与「不留」清单 |
+| 版本检查 2026.11.08 | 模块版本检查加「检查新版」：到模块网址、订阅清单和 GitHub 合集查最新版本号，列出有新版的模块（链接版按「刷新」，本机版用链接重装） |
+| 模块版本检查 2026.11.08 | 新增[模块版本检查](https://kenxtbecdi7690.github.io/rex-home/dupes/)：打开 Rex 备份 `.zip` 或多个 `.js`，列出编号相同、名称相同的模块（版本、本机／链接、来源、用在哪些首页），可导出 CSV，`.js` 可一键改编号并存 |
 | 模块 JS 改名工具 2026.11.08 | 新增[模块 JS 改名工具](https://kenxtbecdi7690.github.io/rex-home/rename/)：打开模块 `.js` 改编号、名称、版本后另存，可复制一份和原本的并存；加密模块不能改 |
 | v152 | 某一行因网络失败读不到片时，沿用这一行上次成功的第一页，不再整行消失；模块的「网站」改成本仓库的 GitHub |
 | v151 | 豆瓣榜单的「榜单模式」改名「片单模式」，所有行同一个名称 |

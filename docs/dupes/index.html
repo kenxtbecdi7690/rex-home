@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>重复模块检查</title>
-<meta name="description" content="打开 Rex 备份或多个模块 .js，找出编号相同（会互相覆盖）和名称相同（分不清）的模块，查有没有新版；只在本机处理。">
+<title>模块版本检查</title>
+<meta name="description" content="打开 Rex 备份或多个模块 .js，看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」并导出清单；只在本机处理。">
 <style>
 :root{--bg:#f6f4fa;--panel:#fff;--ink:#211b2c;--muted:#665c76;--line:#e4ddec;--accent:#7137ce;--accent-ink:#fff;--warn:#9a5b00;--warn-bg:#fff4dd;--bad:#b3261e;--bad-bg:#fde8e7;--ok:#1d7a3a;--ok-bg:#e5f5ea;color-scheme:light}
 @media(prefers-color-scheme:dark){:root{--bg:#151019;--panel:#221a2b;--ink:#f1eafa;--muted:#b7aac7;--line:#40324f;--accent:#bd95ff;--accent-ink:#211433;--warn:#f3c26b;--warn-bg:#3a2c12;--bad:#ff9a92;--bad-bg:#3d1b1a;--ok:#8fd9a6;--ok-bg:#16301f;color-scheme:dark}}
@@ -21,7 +21,13 @@ section{background:var(--panel);border:1px solid var(--line);border-radius:16px;
 .vh{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .note{border-radius:10px;padding:10px 12px;font-size:14px;margin-top:10px}
 .note.warn{background:var(--warn-bg);color:var(--warn)}.note.bad{background:var(--bad-bg);color:var(--bad)}.note.ok{background:var(--ok-bg);color:var(--ok)}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+@media(min-width:560px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.search{width:100%;font:15px/1.5 inherit;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);margin-top:10px}
+.keep{margin-left:auto}.keep[aria-pressed=false]{background:var(--bad-bg);color:var(--bad);border-color:transparent}
+.head{display:flex;gap:8px;align-items:flex-start}.head>div{min-width:0}
+.newver{color:var(--accent);font-weight:600}
+.item.drop{opacity:.55}
 .stat{background:var(--bg);border-radius:10px;padding:8px 10px}.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:var(--muted)}
 .group{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0}
 .group h3{font-size:16px;margin:0 0 6px;overflow-wrap:anywhere}
@@ -40,8 +46,8 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 </head>
 <body>
 <main>
-<h1>重复模块检查</h1>
-<p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>，找出重复的模块。文件只在本机读取，不上传；备份只读模块、订阅、首页三张表，不读账号、Cookie 和观看记录。作者：Bolinxxlin</p>
+<h1>模块版本检查</h1>
+<p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>：看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」再导出清单。文件只在本机读取，不上传；备份只读模块、订阅、首页三张表，不读账号、Cookie 和观看记录。作者：Bolinxxlin</p>
 
 <section>
   <label class="btn" for="fileIn">选择备份 .zip 或模块 .js（可多选）</label>
@@ -51,19 +57,23 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 </section>
 
 <section id="result" hidden>
-  <h2>检查结果</h2>
+  <h2>模块整理</h2>
   <div class="stats">
     <div class="stat"><b id="sAll">0</b><span>模块</span></div>
-    <div class="stat"><b id="sId">0</b><span>编号相同（会覆盖）</span></div>
-    <div class="stat"><b id="sTitle">0</b><span>名称相同（分不清）</span></div>
+    <div class="stat"><b id="sDup">0</b><span>重复（组）</span></div>
+    <div class="stat"><b id="sNew">–</b><span>🔵 有新版</span></div>
+    <div class="stat"><b id="sDrop">0</b><span>标了「不留」</span></div>
   </div>
   <div class="tabs" role="group" aria-label="显示">
-    <button class="btn ghost sm" data-f="all" aria-pressed="true" type="button">全部重复</button>
-    <button class="btn ghost sm" data-f="id" aria-pressed="false" type="button">编号相同</button>
-    <button class="btn ghost sm" data-f="title" aria-pressed="false" type="button">名称相同</button>
+    <button class="btn ghost sm" data-f="all" aria-pressed="false" type="button">全部模块</button>
+    <button class="btn ghost sm" data-f="dup" aria-pressed="true" type="button">重复</button>
+    <button class="btn ghost sm" data-f="new" aria-pressed="false" type="button">有新版</button>
+    <button class="btn ghost sm" data-f="drop" aria-pressed="false" type="button">不留</button>
   </div>
+  <input class="search" id="q" type="search" placeholder="搜名称或编号" aria-label="搜名称或编号">
+  <p class="muted" style="margin:8px 0 0">每个模块右边按一下切换「留／不留」，只是做记号，不会改到 Rex；记号存在这台装置的浏览器里。</p>
   <div id="groups"></div>
-  <div class="acts" style="margin-top:12px"><button class="btn ghost" id="csv" type="button">导出清单（CSV，可用 Excel 打开）</button></div>
+  <div class="acts" style="margin-top:12px"><button class="btn ghost" id="csv" type="button">导出清单（CSV，可用 Excel 打开）</button><button class="btn ghost" id="dropList" type="button">导出「不留」清单</button></div>
 </section>
 
 <section id="verBox" hidden>
@@ -76,15 +86,18 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
     <div class="stat"><b id="vOk">0</b><span>🟢 已是最新</span></div>
     <div class="stat"><b id="vNo">0</b><span>⚪ 查不到</span></div>
   </div>
+  <p class="muted" id="verTip" hidden style="margin-top:8px">查完后，上面「有新版」那一栏会列出来，每个模块也会写「→ 新版本」。</p>
   <div id="verList"></div>
 </section>
 
 <section>
-  <h2>怎么看</h2>
+  <h2>怎么用</h2>
   <ul>
     <li><b>编号相同</b>：Rex 只会留一个，后装的盖掉先装的。两个都要留，就把其中一个「改编号」。</li>
     <li><b>名称相同、编号不同</b>：两个本来就并存，只是列表里分不清。想分清就「名称加来源」，或删掉不用的那个。</li>
     <li>删之前看「首页」：正在被首页用的，删掉那几行会空白。</li>
+    <li><b>留／不留</b>：只是记号，帮你决定；按「导出『不留』清单」得到一份要在 Rex 删除的列表，照着删。工具不会删任何模块。</li>
+    <li><b>有新版</b>：先按「检查新版」。链接版到 Rex 模块页「刷新」；本机版用链接重装或重新导入首页包。</li>
     <li>链接版改名后会被更新改回去；只有本机版改名会一直有效。</li>
     <li>备份里的模块不能在这里直接改：先在 Rex 模块页「导出」那个模块，再把 .js 选进来改。</li>
   </ul>
@@ -96,7 +109,11 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 (function(){
 var $=function(id){return document.getElementById(id);};
 var SQLJS='https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/';
-var mods=[],subs=[],filter='all';
+var mods=[],subs=[],filter='dup',query='';
+var KEEP={};try{KEEP=JSON.parse(localStorage.getItem('rex-module-keep')||'{}')||{};}catch(e){}
+function keyOf(m){return [m.from,m.id,m.title,m.version,m.origin||''].join('|');}
+function kept(m){return KEEP[keyOf(m)]!==false;}
+function setKeep(m,v){if(v)delete KEEP[keyOf(m)];else KEEP[keyOf(m)]=false;try{localStorage.setItem('rex-module-keep',JSON.stringify(KEEP));}catch(e){}}
 var OWN={title:'Bolinxxlin GitHub 合集',url:'https://raw.githubusercontent.com/kenxtbecdi7690/rex-home/platform-home/RexCollection.rex'};
 
 function note(cls,text){var m=$('msg');m.innerHTML='';if(!text)return;var d=document.createElement('div');d.className='note '+cls;d.textContent=text;m.append(d);}
@@ -175,37 +192,57 @@ function groups(){
   return gs;
 }
 function download(name,text){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/javascript'}));a.download=name;document.body.append(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},4000);}
+function info(m){return [m.from==='备份'?(m.local?'本机版':'链接版'):'',m.origin,m.disabled?'已停用':'',m.from==='备份'?(m.homes.length?'首页：'+m.homes.join('、'):'没有首页用到'):''].filter(Boolean).join(' · ');}
+function match(m){if(!query)return true;var q=query.toLowerCase();return (m.title+' '+m.id).toLowerCase().indexOf(q)>=0;}
+function itemEl(m){
+  var it=el('div','item'+(kept(m)?'':' drop')),head=el('div','head'),txt=el('div');
+  var t=el('div');t.append(el('b',null,m.title),document.createTextNode(m.version?' v'+m.version:''));
+  if(m.vs==='new')t.append(el('span','newver',' → '+m.latest));
+  else if(m.vs==='ok')t.append(el('span','meta',' 🟢 最新'));
+  txt.append(t,el('code',null,m.id));head.append(txt);
+  var k=el('button','btn ghost sm keep',kept(m)?'留':'不留');k.type='button';k.setAttribute('aria-pressed',String(kept(m)));
+  k.setAttribute('aria-label',m.title+'：'+(kept(m)?'留':'不留'));
+  k.onclick=function(){setKeep(m,!kept(m));render();};
+  head.append(k);it.append(head,el('div','meta',info(m)+(m.vs==='new'&&m.latestFrom?' · 新版来自 '+m.latestFrom:'')));
+  if(m.src){
+    var acts=el('div','acts');
+    var b1=el('button','btn sm','改编号（两个并存）');b1.type='button';
+    b1.onclick=function(){download(m.file.replace(/\.js$/i,'')+'-copy.js',patch(m.src,m.meta,{id:m.id+'.copy',title:m.title+'（备用）'}));};
+    var b2=el('button','btn ghost sm','名称加来源');b2.type='button';
+    b2.onclick=function(){var tag=(m.file||'').replace(/\.js$/i,'');download(m.file.replace(/\.js$/i,'')+'-renamed.js',patch(m.src,m.meta,{title:m.title+'（'+tag+'）'}));};
+    acts.append(b1,b2);it.append(acts);
+  }
+  return it;
+}
 function render(){
   var gs=groups(),box=$('groups');box.innerHTML='';
-  $('sAll').textContent=mods.length;
-  $('sId').textContent=gs.filter(function(g){return g.kind==='id';}).length;
-  $('sTitle').textContent=gs.filter(function(g){return g.kind==='title';}).length;
-  var shown=gs.filter(function(g){return filter==='all'||g.kind===filter;});
-  if(!shown.length){var e=el('div','note ok',filter==='all'?'没有重复的模块。':'这一类没有重复。');box.append(e);}
-  shown.forEach(function(g){
-    var w=el('div','group'),h=el('h3');
-    h.append(el('span','tag '+(g.kind==='id'?'bad':'warn'),g.kind==='id'?'编号相同':'名称相同'),document.createTextNode(g.kind==='id'?g.key:'「'+g.key+'」'));
-    w.append(h);
-    g.items.forEach(function(i){
-      var m=mods[i],it=el('div','item');
-      var t=el('div');t.append(el('b',null,m.title),document.createTextNode(m.version?' v'+m.version:''));it.append(t);
-      var c=el('code',null,m.id);it.append(c);
-      var info=[m.from==='备份'?(m.local?'本机版':'链接版'):'',m.origin,m.disabled?'已停用':'',m.from==='备份'?(m.homes.length?'首页：'+m.homes.join('、'):'没有首页用到'):''].filter(Boolean).join(' · ');
-      it.append(el('div','meta',info));
-      if(m.src){
-        var acts=el('div','acts');
-        var b1=el('button','btn sm','改编号（两个并存）');b1.type='button';
-        b1.onclick=function(){download(m.file.replace(/\.js$/i,'')+'-copy.js',patch(m.src,m.meta,{id:m.id+'.copy',title:m.title+'（备用）'}));};
-        var b2=el('button','btn ghost sm','名称加来源');b2.type='button';
-        b2.onclick=function(){var tag=(m.file||'').replace(/\.js$/i,'');download(m.file.replace(/\.js$/i,'')+'-renamed.js',patch(m.src,m.meta,{title:m.title+'（'+tag+'）'}));};
-        acts.append(b1,b2);it.append(acts);
-      }
-      w.append(it);
+  $('sAll').textContent=mods.length;$('sDup').textContent=gs.length;
+  $('sDrop').textContent=mods.filter(function(m){return !kept(m);}).length;
+  var checked=mods.some(function(m){return m.vs;});$('sNew').textContent=checked?mods.filter(function(m){return m.vs==='new';}).length:'–';
+  if(filter==='dup'){
+    var shown=gs.filter(function(g){return g.items.some(function(i){return match(mods[i]);});});
+    if(!shown.length)box.append(el('div','note ok',query?'没有符合的重复模块。':'没有重复的模块。'));
+    shown.forEach(function(g){
+      var w=el('div','group'),h=el('h3');
+      h.append(el('span','tag '+(g.kind==='id'?'bad':'warn'),g.kind==='id'?'编号相同':'名称相同'),document.createTextNode(g.kind==='id'?g.key:'「'+g.key+'」'));
+      w.append(h);g.items.forEach(function(i){w.append(itemEl(mods[i]));});
+      w.append(el('div','meta',g.kind==='id'?'Rex 里只会留下其中一个；要两个都留，把其中一个改编号。':'两个都在 Rex 里；留首页在用的、链接版、版本高的，或把名称改得分得清。'));
+      box.append(w);
     });
-    if(g.kind==='id')w.append(el('div','meta','Rex 里只会留下其中一个；要两个都留，把其中一个改编号。'));
-    else w.append(el('div','meta','两个都在 Rex 里；留首页在用的、链接版、版本高的，或把名称改得分得清。'));
-    box.append(w);
-  });
+    return;
+  }
+  var list=mods.filter(function(m){return match(m)&&(filter==='all'||(filter==='new'&&m.vs==='new')||(filter==='drop'&&!kept(m)));})
+    .sort(function(a,b){return a.title.localeCompare(b.title,'zh');});
+  if(!list.length){box.append(el('div','note '+(filter==='new'&&!checked?'warn':'ok'),filter==='new'&&!checked?'还没检查新版：按下面「版本检查」的「检查新版」。':filter==='drop'?'还没有标「不留」的模块。':'没有符合的模块。'));return;}
+  var w=el('div','group');list.forEach(function(m){w.append(itemEl(m));});box.append(w);
+}
+function dropList(){
+  var list=mods.filter(function(m){return !kept(m);});
+  if(!list.length){alert('还没有标「不留」的模块。');return;}
+  var lines=['在 Rex 模块页要删除的模块（'+list.length+' 个）',''];
+  list.forEach(function(m,i){lines.push((i+1)+'. '+m.title+(m.version?' v'+m.version:'')+' · '+(m.from==='备份'?(m.local?'本机版':'链接版'):'文件')+' · '+(m.origin||'')+' · 编号 '+m.id+(m.homes.length?' · ⚠️ 首页在用：'+m.homes.join('、'):''));});
+  lines.push('','删之前先在 Rex 备份一次；名称一样的，点进去对版本和来源再删。');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain'}));a.download='不留清单.txt';document.body.append(a);a.click();a.remove();
 }
 // ===== 版本检查 =====
 function cmpVer(a,b){var x=String(a).split(/[^0-9]+/).filter(Boolean).map(Number),y=String(b).split(/[^0-9]+/).filter(Boolean).map(Number);
@@ -230,24 +267,18 @@ async function checkVersions(){
     else{m.vs='ok';m.latest=L.version;m.latestFrom=L.from;ok++;}});
   $('vNew').textContent=n;$('vOk').textContent=ok;$('vNo').textContent=no;$('verStats').hidden=false;
   vm.innerHTML='';vm.append(el('div','note ok','查完了：'+n+' 个有新版。链接版在 Rex 模块页「刷新」就会更新；本机版要用链接重装或重新导入。'));
-  var box=$('verList');box.innerHTML='';
-  var news=mods.filter(function(m){return m.vs==='new';}).sort(function(a,b){return a.title.localeCompare(b.title);});
-  if(news.length){var g=el('div','group');g.append(el('h3',null,'🔵 有新版'));
-    news.forEach(function(m){var it=el('div','item');var t=el('div');t.append(el('b',null,m.title),document.createTextNode(' '+(m.version||'?')+' → '+m.latest));it.append(t);
-      it.append(el('div','meta',[m.from==='备份'?(m.local?'本机版：要用链接重装或重新导入':'链接版：在 Rex 模块页按「刷新」'):'文件',m.latestFrom].join(' · ')));g.append(it);});
-    box.append(g);}
-  var nos=mods.filter(function(m){return m.vs==='no';});
-  if(nos.length){var d=document.createElement('details');d.append(el('summary',null,'⚪ 查不到的 '+nos.length+' 个（本机版找不到来源，或网站不让网页读取）'));
-    nos.forEach(function(m){d.append(el('div','item',m.title+' '+(m.version||'')+' · '+(m.origin||'')));});box.append(d);}
+  $('verList').innerHTML='';$('verTip').hidden=false;render();
   btn.disabled=false;
 }
 function csv(){
-  var gs=groups(),rows=[['类型','重复的值','名称','编号','版本','最新版本','安装方式','来源','停用','用在哪些首页']];
-  gs.forEach(function(g){g.items.forEach(function(i){var m=mods[i];
-    rows.push([g.kind==='id'?'编号相同':'名称相同',g.key,m.title,m.id,m.version,m.latest||'',m.from==='备份'?(m.local?'本机':'链接'):'文件',m.origin||'',m.disabled?'是':'',m.homes.join('、')]);});});
+  var gs=groups(),dupOf={};gs.forEach(function(g){g.items.forEach(function(i){dupOf[i]=(dupOf[i]?dupOf[i]+'、':'')+(g.kind==='id'?'编号相同':'名称相同');});});
+  var rows=[['留／不留','名称','编号','版本','最新版本','重复','安装方式','来源','停用','用在哪些首页']];
+  mods.map(function(m,i){return [m,i];}).sort(function(a,b){return a[0].title.localeCompare(b[0].title,'zh');}).forEach(function(x){var m=x[0];
+    rows.push([kept(m)?'留':'不留',m.title,m.id,m.version,m.latest||'',dupOf[x[1]]||'',m.from==='备份'?(m.local?'本机':'链接'):'文件',m.origin||'',m.disabled?'是':'',m.homes.join('、')]);});
   var text='﻿'+rows.map(function(r){return r.map(function(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(',');}).join('\n');
-  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv'}));a.download='重复模块清单.csv';document.body.append(a);a.click();a.remove();
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv'}));a.download='模块清单.csv';document.body.append(a);a.click();a.remove();
 }
+
 
 $('fileIn').onchange=async function(){
   var files=Array.prototype.slice.call(this.files);this.value='';if(!files.length)return;
@@ -258,12 +289,14 @@ $('fileIn').onchange=async function(){
     catch(e){errs.push(String(e&&e.message||e));}
   }
   mods=all;
-  var tip=['读到 '+all.length+' 个模块'];$('verBox').hidden=!all.length;$('verStats').hidden=true;$('verList').innerHTML='';$('verMsg').innerHTML='';if(enc)tip.push(enc+' 个是加密模块，读不到编号，已跳过');if(errs.length)tip.push(errs.join('；'));
+  var tip=['读到 '+all.length+' 个模块'];$('verBox').hidden=!all.length;$('verStats').hidden=true;$('verTip').hidden=true;$('verList').innerHTML='';$('verMsg').innerHTML='';if(enc)tip.push(enc+' 个是加密模块，读不到编号，已跳过');if(errs.length)tip.push(errs.join('；'));
   note(errs.length?'bad':'ok',tip.join('；')+'。');
   $('result').hidden=!all.length;if(all.length)render();
 };
 Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(b){b.onclick=function(){filter=b.dataset.f;Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(x){x.setAttribute('aria-pressed',String(x===b));});render();};});
 $('csv').onclick=csv;
+$('dropList').onclick=dropList;
+$('q').oninput=function(){query=this.value.trim();render();};
 $('verBtn').onclick=function(){checkVersions().catch(function(e){$('verBtn').disabled=false;$('verMsg').innerHTML='';$('verMsg').append(el('div','note bad',String(e&&e.message||e)));});};
 window.__dupes={findMeta:findMeta,patch:patch,get mods(){return mods;},get subs(){return subs;},groups:groups,cmpVer:cmpVer};
 })();
