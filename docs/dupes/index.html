@@ -50,7 +50,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 </head>
 <body>
 <main>
-<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v14</small></h1>
+<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v15</small></h1>
 <p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>：看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」再导出清单。文件只在本机读取，不上传；备份只读模块、订阅、首页三张表，不读账号、Cookie 和观看记录。作者：Bolinxxlin</p>
 
 <section>
@@ -371,7 +371,6 @@ function renderLibs(box){
   box.append(w);
 }
 // ===== 整理清单：从备份算出确定可以做的事 =====
-function nid(x){return String(x||'').toLowerCase().replace(/^(rex|forward)\./,'').replace(/\.(rex|copy)$/,'');}
 function plan(){
   var es=ENV?[ENV]:envList.slice().sort(function(a,b){return (a==='默认环境'?-1:0)-(b==='默认环境'?-1:0)||zh(a,b);}),out={del:[],decide:[],gone:[],ties:[],libdup:[],subEmpty:[],subDup:[]};
   es.forEach(function(e){
@@ -380,8 +379,9 @@ function plan(){
       function rank(m){return (m.sub?4:0)+(m.local?0:2)+(m.disabled?0:1);}
       var best=g.slice().sort(function(a,b){return rank(b)-rank(a)||cmpVer(b.version||0,a.version||0);})[0],sure=[],unsure=[];
       g.forEach(function(x){if(x===best)return;var c=cmpVer(best.version||0,x.version||0);
-        // 确定：这个没有首页在用、不是订阅装的，留下的那个版本不比它旧，而且是订阅装的（会更新）或编号其实是同一个
-        var ok=!x.homes.length&&!x.sub&&c>=0&&(best.sub||nid(best.id)===nid(x.id));(ok?sure:unsure).push(x);});
+        // 确定：这个没有首页在用、不是订阅装的，留下的那个是订阅装的（会更新）或编号完全一样，而且版本不比它旧。
+        // 编号不同又都不是订阅（例如 Rex.subhd.subtitle 和 Forward 的 subhd.subtitle）可能是不同作者或不同 App 的版本，版本号不能比，交给用户决定
+        var ok=!x.homes.length&&!x.sub&&c>=0&&(best.sub||best.id===x.id);(ok?sure:unsure).push(x);});
       if(sure.length)out.del.push({env:e,title:t,keep:best,drop:sure});
       if(unsure.length)out.decide.push({env:e,title:t,items:[best].concat(unsure)});
     });
@@ -419,7 +419,7 @@ function planText(P){
 }
 function renderPlan(box){
   var P=plan(),n=P.del.reduce(function(a,x){return a+x.drop.length;},0);
-  box.append(el('p','muted','照'+(ENV?'「'+ENV+'」':'每个环境')+'算出来的。「确定」的规则：名称一样、没有首页在用、不是订阅装的，而且留下的那个是订阅装的或编号其实相同、版本不比它旧。'));
+  box.append(el('p','muted','照'+(ENV?'「'+ENV+'」':'每个环境')+'算出来的。「确定」的规则：名称一样、没有首页在用、不是订阅装的，而且留下的那个是订阅装的或编号完全一样、版本不比它旧。编号不同的版本号不能比（可能是别的作者或 Forward 版），放在「要你决定」。'));
   var acts=el('div','acts'),b1=el('button','btn','确定的 '+n+' 个全部标「不留」'),b2=el('button','btn ghost','导出整理清单');b1.type=b2.type='button';
   b1.disabled=!n;b1.onclick=function(){P.del.forEach(function(x){x.drop.forEach(function(m){setKeep(m,false);});});render();};
   b2.onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([planText(P)],{type:'text/plain'}));a.download='Rex整理清单.txt';document.body.append(a);a.click();a.remove();};
