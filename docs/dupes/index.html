@@ -23,7 +23,7 @@ section{background:var(--panel);border:1px solid var(--line);border-radius:16px;
 .note.warn{background:var(--warn-bg);color:var(--warn)}.note.bad{background:var(--bad-bg);color:var(--bad)}.note.ok{background:var(--ok-bg);color:var(--ok)}
 .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
 @media(min-width:560px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
-.sortrow{display:flex;gap:8px;align-items:center}.sortrow #q{flex:1;min-width:0}.sortrow #sort{width:auto;flex:none}
+.sortrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.sortrow #q{flex:1 1 100%;min-width:0}.sortrow #sort,.sortrow #env{flex:1 1 0;min-width:0;margin-top:0}
 .search{width:100%;font:15px/1.5 inherit;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);margin-top:10px}
 .keep{margin-left:auto}.keep[aria-pressed=false]{background:var(--bad-bg);color:var(--bad);border-color:transparent}
 .head{display:flex;gap:8px;align-items:flex-start}.head>div{min-width:0}
@@ -49,7 +49,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 </head>
 <body>
 <main>
-<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v11</small></h1>
+<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v12</small></h1>
 <p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>：看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」再导出清单。文件只在本机读取，不上传；备份只读模块、订阅、首页三张表，不读账号、Cookie 和观看记录。作者：Bolinxxlin</p>
 
 <section>
@@ -73,9 +73,10 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
     <button class="btn ghost sm" data-f="dup" aria-pressed="true" type="button">重复</button>
     <button class="btn ghost sm" data-f="new" aria-pressed="false" type="button">有新版</button>
     <button class="btn ghost sm" data-f="home" aria-pressed="false" type="button" id="homeTab" hidden>首页</button>
+    <button class="btn ghost sm" data-f="lib" aria-pressed="false" type="button" id="libTab" hidden>资源库</button>
     <button class="btn ghost sm" data-f="drop" aria-pressed="false" type="button">不留</button>
   </div>
-  <div class="sortrow"><input class="search" id="q" type="search" placeholder="搜名称或编号" aria-label="搜名称或编号"><select class="search" id="sort" aria-label="排序"><option value="title">按名称</option><option value="id">按编号</option><option value="ver">按版本（新→旧）</option><option value="src">按来源</option></select></div>
+  <div class="sortrow"><input class="search" id="q" type="search" placeholder="搜名称或编号" aria-label="搜名称或编号"><select class="search" id="env" aria-label="环境" hidden><option value="">全部环境</option></select><select class="search" id="sort" aria-label="排序"><option value="title">按名称</option><option value="id">按编号</option><option value="ver">按版本（新→旧）</option><option value="src">按来源</option></select></div>
   <p class="muted" style="margin:8px 0 0">每个模块右边按一下切换「留／不留」，只是做记号，不会改到 Rex；记号存在这台装置的浏览器里。</p>
   <div id="groups"></div>
   <div class="acts" style="margin-top:12px"><button class="btn ghost" id="sugAll" type="button">重复的全部照建议标记</button><button class="btn ghost" id="csv" type="button">导出清单（CSV，可用 Excel 打开）</button><button class="btn ghost" id="dropList" type="button">导出「不留」清单</button></div>
@@ -117,7 +118,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 (function(){
 var $=function(id){return document.getElementById(id);};
 var SQLJS='https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/';
-var mods=[],subs=[],homes=[],filter='dup',query='';
+var mods=[],subs=[],homes=[],libs=[],envList=[],ENV='',filter='dup',query='';
 var KEEP={};try{KEEP=JSON.parse(localStorage.getItem('rex-module-keep')||'{}')||{};}catch(e){}
 function keyOf(m){return [m.from,m.id,m.title,m.version,m.origin||''].join('|');}
 var SORT='title';try{SORT=localStorage.getItem('rex-module-sort')||'title';}catch(e){}
@@ -185,12 +186,18 @@ async function readBackup(file){
     var use={};q("select title,rowsJSON from home_document where deletedAt is null").forEach(function(v){
       try{JSON.parse(v[1]||'[]').forEach(function(r){(r.items||[]).forEach(function(it){var u=it.widgetURL;if(u){(use[u]=use[u]||{})[v[0]]=1;}});});}catch(e){}
     });
+    var menv={};try{q("select targetID,environmentID from environment_script_module where deletedAt is null").forEach(function(v){if(envs[v[1]]!=null)(menv[v[0]]=menv[v[0]]||[]).push(envs[v[1]]);});}catch(e){}
+    var senv={};try{q("select targetID,environmentID from environment_script_source where deletedAt is null").forEach(function(v){if(envs[v[1]]!=null)(senv[v[0]]=senv[v[0]]||[]).push(envs[v[1]]);});}catch(e){}
+    envList=Object.keys(envs).map(function(k){return envs[k];});
+    try{var lenv={};q("select targetID,environmentID from environment_library where deletedAt is null").forEach(function(v){if(envs[v[1]]!=null)(lenv[v[0]]=lenv[v[0]]||[]).push(envs[v[1]]);});
+      // 只读名称、类型、排序和服务器网域，不读账号、密码
+      q("select id,name,sourceType,sort,serverURL from catalog where deletedAt is null").forEach(function(v){libs.push({lid:String(v[0]),name:String(v[1]||''),type:String(v[2]||''),sort:v[3]==null?null:+v[3],host:host(String(v[4]||'')).replace(/:443$/,''),envs:lenv[v[0]]||[]});});}catch(e){}
     q("select id,widgetID,title,version,url,location,isDisabled,sourceID from script_module where deletedAt is null").forEach(function(v){
       var u=String(v[4]||''),h=Object.assign({},use[u]||{},use['file://'+v[0]+'.js']||{});
       var mid=String(v[0]),mp=Object.keys(z.files).filter(function(n){return /(^|\/)payload\/modules\/managed\//.test(n)&&n.slice(-(mid.length+4))==='/'+mid+'.js';})[0];
       out.push({from:'备份',id:String(v[1]||''),title:String(v[2]||''),version:String(v[3]||''),local:v[5]==='local',disabled:!!v[6],url:/^https?:/.test(u)?u:'',
         load:mp?function(){return z.file(mp).async('string');}:(/^https?:/.test(u)?function(){return get(u);}:null),
-        origin:v[7]&&src[v[7]]?'订阅 '+src[v[7]]:(host(u)||'本机'),homes:Object.keys(h)});
+        origin:v[7]&&src[v[7]]?'订阅 '+src[v[7]]:(host(u)||'本机'),sub:v[7]&&src[v[7]]?String(src[v[7]]):'',srcGone:!!(v[7]&&!src[v[7]]),envs:(menv[mid]||[]).concat(v[7]&&src[v[7]]?senv[v[7]]||[]:[]).filter(function(x,i,a){return a.indexOf(x)===i;}),homes:Object.keys(h)});
     });
   }finally{d.close();}
   return out;
@@ -232,8 +239,8 @@ function suggest(g){var best=null;g.items.forEach(function(i){var m=mods[i];if(b
   var a=score(m),b=score(mods[best]);for(var k=0;k<a.length;k++){if(a[k]!==b[k]){if(a[k]>b[k])best=i;return;}}
   if(cmpVer(m.version,mods[best].version)>0)best=i;});return best;}
 function applySuggest(gs){gs.forEach(function(g){var b=suggest(g);g.items.forEach(function(i){setKeep(mods[i],i===b);});});render();}
-function info(m){return [m.from==='备份'?(m.local?'本机版':'链接版'):'',m.origin,m.disabled?'已停用':'',m.from!=='文件'?(m.homes.length?'首页：'+m.homes.join('、'):'没有首页用到'):''].filter(Boolean).join(' · ');}
-function match(m){if(!query)return true;var q=query.toLowerCase();return (m.title+' '+m.id).toLowerCase().indexOf(q)>=0;}
+function info(m){return [m.from==='备份'?(m.local?'本机版':'链接版'):'',m.origin,m.from==='备份'?(m.envs.length?'环境：'+m.envs.join('、'):'不在任何环境'):'',m.disabled?'已停用':'',m.from!=='文件'?(m.homes.length?'首页：'+m.homes.join('、'):'没有首页用到'):''].filter(Boolean).join(' · ');}
+function match(m){if(ENV&&m.from==='备份'&&m.envs.indexOf(ENV)<0)return false;if(!query)return true;var q=query.toLowerCase();return (m.title+' '+m.id).toLowerCase().indexOf(q)>=0;}
 function itemEl(m,best){
   var it=el('div','item'+(kept(m)?'':' drop')),head=el('div','head'),txt=el('div');
   var t=el('div');t.append(el('b',null,m.title),document.createTextNode(m.version?' v'+m.version:''));if(best)t.append(el('span','tag ok-tag','建议留'));
@@ -283,9 +290,12 @@ function renderHomes(box){
 function render(){
   var gs=groups(),box=$('groups');box.innerHTML='';
   $('homeTab').hidden=!homes.length;$('homeTab').textContent='首页'+(homes.length?'（重复 '+homeGroups().length+' 组）':'');
-  if(filter==='home'){renderHomes(box);$('sDrop').textContent=mods.filter(function(m){return !kept(m);}).length+homes.filter(function(h){return !hKept(h);}).length;return;}
+  $('libTab').hidden=!libs.length;$('libTab').textContent='资源库'+(libs.length?'（'+libView().length+'）':'');
+  var dropN=mods.filter(function(m){return !kept(m);}).length+homes.filter(function(h){return !hKept(h);}).length+libs.filter(function(l){return !lKept(l);}).length;
+  if(filter==='home'){renderHomes(box);$('sDrop').textContent=dropN;return;}
+  if(filter==='lib'){renderLibs(box);$('sDrop').textContent=dropN;return;}
   $('sAll').textContent=mods.length;$('sDup').textContent=gs.length;
-  $('sDrop').textContent=mods.filter(function(m){return !kept(m);}).length+homes.filter(function(h){return !hKept(h);}).length;
+  $('sDrop').textContent=dropN;
   var checked=mods.some(function(m){return m.vs;});$('sNew').textContent=checked?mods.filter(function(m){return m.vs==='new';}).length:'–';
   if(filter==='dup'){
     var shown=gs.filter(function(g){return g.items.some(function(i){return match(mods[i]);});});
@@ -308,12 +318,13 @@ function render(){
   if(list.length){var w=el('div','group');list.forEach(function(m){w.append(itemEl(m));});box.append(w);}
   if(hd.length){var w2=el('div','group');w2.append(el('h3',null,'首页'));hd.forEach(function(h){w2.append(homeEl(h));});box.append(w2);}
 }
-function srcName(m){var o=m.origin||'';if(m.from==='备份')return /^订阅 /.test(o)?o.slice(3):m.local?'本机版（不是从订阅装的）':'链接版 · '+o;return o;}
+function srcName(m){if(m.from==='备份'){if(!m.envs.length)return '不在任何环境（Rex 里看不到，可删）';if(m.srcGone)return '订阅已删除，模块还留着';return m.sub||'导入的模块（手动管理）';}return m.origin||'';}
 var SOPEN={};
 function renderSrc(box,checked){
   var g={},order=[],sc={};subs.forEach(function(s){sc[s.title]=(sc[s.title]||0)+1;});
   mods.filter(match).forEach(function(m){var k=srcName(m);if(!g[k]){g[k]=[];order.push(k);}g[k].push(m);});
-  order.sort(function(a,b){var la=/^本机版/.test(a),lb=/^本机版/.test(b);return la!==lb?(la?1:-1):g[b].length-g[a].length||a.localeCompare(b,'zh');});
+  function rk(k){return /^不在任何环境/.test(k)?3:/^订阅已删除/.test(k)?2:/^导入的模块/.test(k)?1:0;}
+  order.sort(function(a,b){return rk(a)-rk(b)||g[b].length-g[a].length||a.localeCompare(b,'zh');});
   if(!order.length){box.append(el('div','note ok','没有符合的模块。'));return;}
   order.forEach(function(k){
     var list=g[k].sort(cmpM),w=el('details','group'),sm=el('summary'),h=el('h3');if(query||order.length===1||SOPEN[k])w.open=true;w.ontoggle=function(){SOPEN[k]=w.open;};
@@ -329,10 +340,35 @@ function renderSrc(box,checked){
   var empty=Object.keys(sc).filter(function(t){return !g[t];});
   if(empty.length&&!query)box.append(el('div','note warn','这些订阅加了，但一个模块都没装：'+empty.join('、')+'。不用的话可以在 Rex 订阅页删掉。'));
 }
+function lkey(l){return 'lib|'+l.lid;}
+function lKept(l){return KEEP[lkey(l)]!==false;}
+function lSet(l,v){if(v)delete KEEP[lkey(l)];else KEEP[lkey(l)]=false;try{localStorage.setItem('rex-module-keep',JSON.stringify(KEEP));}catch(e){}}
+function libView(){return libs.filter(function(l){return (!ENV||l.envs.indexOf(ENV)>=0)&&(!query||(l.name+' '+l.host).toLowerCase().indexOf(query.toLowerCase())>=0);});}
+function renderLibs(box){
+  var list=libView().sort(function(a,b){return SORT==='title'?zh(a.name,b.name):SORT==='src'?zh(a.host,b.host)||zh(a.name,b.name):((a.sort==null?1e9:a.sort)-(b.sort==null?1e9:b.sort))||zh(a.name,b.name);});
+  var byName={},bySort={};libs.forEach(function(l){var n=l.name.trim();(byName[n]=byName[n]||[]).push(l);if(l.sort!=null)(bySort[l.sort]=bySort[l.sort]||[]).push(l);});
+  var dn=Object.keys(byName).filter(function(k){return byName[k].length>1;}),ds=Object.keys(bySort).filter(function(k){return bySort[k].length>1;});
+  box.append(el('p','muted','共 '+libs.length+' 个媒体服务器'+(dn.length?'，名称重复 '+dn.length+' 组':'')+(ds.length?'，排序号重复 '+ds.length+' 组（所以 Rex 里的顺序看起来乱）':'')+'。「按编号」就是 Rex 资源库里的顺序。'));
+  if(ds.length)box.append(el('div','note warn','要排整齐：Rex「资源库」→ 右上「编辑」→ 照你要的顺序拖一遍，Rex 会重新编号。'));
+  if(!list.length){box.append(el('div','note ok','没有符合的媒体服务器。'));return;}
+  var w=el('div','group');
+  list.forEach(function(l){
+    var it=el('div','item'+(lKept(l)?'':' drop')),head=el('div','head'),txt=el('div'),t=el('div');
+    t.append(el('span','tag',l.sort==null?'#–':'#'+l.sort),el('b',null,l.name||'（没有名称）'));
+    if(byName[l.name.trim()].length>1)t.append(el('span','tag warn','名称重复'));
+    if(l.sort!=null&&bySort[l.sort].length>1)t.append(el('span','tag warn','排序号和 '+bySort[l.sort].filter(function(x){return x!==l;}).map(function(x){return x.name;}).join('、')+' 一样'));
+    txt.append(t);head.append(txt);
+    var k=el('button','btn ghost sm keep',lKept(l)?'留':'不留');k.type='button';k.setAttribute('aria-pressed',String(lKept(l)));k.onclick=function(){lSet(l,!lKept(l));render();};head.append(k);
+    it.append(head,el('div','meta',[l.type?l.type.replace(/^emby$/,'Emby').replace(/^jellyfin$/,'Jellyfin'):'',l.host,l.envs.length?'环境：'+l.envs.join('、'):'不在任何环境'].filter(Boolean).join(' · ')));
+    w.append(it);
+  });
+  box.append(w);
+}
 function dropList(){
-  var list=mods.filter(function(m){return !kept(m);}),hl=homes.filter(function(h){return !hKept(h);});
-  if(!list.length&&!hl.length){alert('还没有标「不留」的模块或首页。');return;}
+  var list=mods.filter(function(m){return !kept(m);}),hl=homes.filter(function(h){return !hKept(h);}),ll=libs.filter(function(l){return !lKept(l);});
+  if(!list.length&&!hl.length&&!ll.length){alert('还没有标「不留」的模块、首页或资源库。');return;}
   var lines=[];
+  if(ll.length){lines.push('在 Rex「资源库」要删除的媒体服务器（'+ll.length+' 个）','');ll.forEach(function(l,i){lines.push((i+1)+'. '+l.name+' · '+l.host+(l.envs.length?' · 环境：'+l.envs.join('、'):''));});lines.push('');}
   if(hl.length){lines.push('在 Rex「切换配置」要删除的首页（'+hl.length+' 个）','');hl.forEach(function(h,i){lines.push((i+1)+'. '+h.title+(h.env?' · 环境：'+h.env:'')+' · '+h.kind+' · '+h.rows+' 行');});lines.push('');}
   lines.push('在 Rex 模块页要删除的模块（'+list.length+' 个）','');
   list.forEach(function(m,i){lines.push((i+1)+'. '+m.title+(m.version?' v'+m.version:'')+' · '+(m.from==='备份'?(m.local?'本机版':'链接版'):'文件')+' · '+(m.origin||'')+' · 编号 '+m.id+(m.homes.length?' · ⚠️ 首页在用：'+m.homes.join('、'):''));});
@@ -377,13 +413,15 @@ function csv(){
 
 $('fileIn').onchange=async function(){
   var files=Array.prototype.slice.call(this.files);this.value='';if(!files.length)return;
-  note('warn','读取中……');subs=[];homes=[];var all=[],errs=[],enc=0;
+  note('warn','读取中……');subs=[];homes=[];libs=[];envList=[];var all=[],errs=[],enc=0;
   for(var i=0;i<files.length;i++){
     try{var list=/\.(zip|rex)$/i.test(files[i].name)?await readBackup(files[i]):await readJs(files[i]);
       list.forEach(function(m){if(m.enc)enc++;else all.push(m);});}
     catch(e){errs.push(String(e&&e.message||e));}
   }
   mods=all;
+  var es=$('env');es.innerHTML='<option value="">全部环境</option>';envList.slice().sort(function(a,b){return (a==='默认环境'?-1:0)-(b==='默认环境'?-1:0)||zh(a,b);}).forEach(function(t){var o=document.createElement('option');o.value=o.textContent=t;es.append(o);});
+  es.hidden=!envList.length;if(envList.indexOf(ENV)<0)ENV='';es.value=ENV;
   var tip=['读到 '+all.length+' 个模块'];$('verBox').hidden=!all.length;$('verStats').hidden=true;$('verTip').hidden=true;$('verList').innerHTML='';$('verMsg').innerHTML='';if(enc)tip.push(enc+' 个是加密模块，读不到编号，已跳过');if(errs.length)tip.push(errs.join('；'));
   note(errs.length?'bad':'ok',tip.join('；')+'。');
   $('result').hidden=!all.length;if(all.length)render();
@@ -392,10 +430,11 @@ Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(
 $('csv').onclick=csv;
 $('dropList').onclick=dropList;
 $('sugAll').onclick=function(){var gs=groups();if(!gs.length)return;if(confirm('每组重复留「建议留」那个，其他标「不留」？（只是记号，可以再改）'))applySuggest(gs);};
+$('env').onchange=function(){ENV=this.value;render();};
 $('sort').value=SORT;$('sort').onchange=function(){SORT=this.value;try{localStorage.setItem('rex-module-sort',SORT);}catch(e){}render();};
 $('q').oninput=function(){query=this.value.trim();render();};
 $('verBtn').onclick=function(){checkVersions().catch(function(e){$('verBtn').disabled=false;$('verMsg').innerHTML='';$('verMsg').append(el('div','note bad',String(e&&e.message||e)));});};
-window.__dupes={findMeta:findMeta,patch:patch,get mods(){return mods;},get subs(){return subs;},groups:groups,cmpVer:cmpVer};
+window.__dupes={findMeta:findMeta,patch:patch,get mods(){return mods;},get subs(){return subs;},get libs(){return libs;},groups:groups,cmpVer:cmpVer};
 })();
 </script>
 </body>
