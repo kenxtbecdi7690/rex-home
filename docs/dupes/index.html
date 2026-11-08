@@ -69,6 +69,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
     <button class="btn ghost sm" data-f="all" aria-pressed="false" type="button">全部模块</button>
     <button class="btn ghost sm" data-f="dup" aria-pressed="true" type="button">重复</button>
     <button class="btn ghost sm" data-f="new" aria-pressed="false" type="button">有新版</button>
+    <button class="btn ghost sm" data-f="home" aria-pressed="false" type="button" id="homeTab" hidden>首页</button>
     <button class="btn ghost sm" data-f="drop" aria-pressed="false" type="button">不留</button>
   </div>
   <input class="search" id="q" type="search" placeholder="搜名称或编号" aria-label="搜名称或编号">
@@ -112,7 +113,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 (function(){
 var $=function(id){return document.getElementById(id);};
 var SQLJS='https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/';
-var mods=[],subs=[],filter='dup',query='';
+var mods=[],subs=[],homes=[],filter='dup',query='';
 var KEEP={};try{KEEP=JSON.parse(localStorage.getItem('rex-module-keep')||'{}')||{};}catch(e){}
 function keyOf(m){return [m.from,m.id,m.title,m.version,m.origin||''].join('|');}
 function kept(m){return KEEP[keyOf(m)]!==false;}
@@ -165,6 +166,14 @@ async function readBackup(file){
   try{
     var q=function(s){var r=d.exec(s);return r[0]?r[0].values:[];};
     var src={};q("select id,title,url from script_source where deletedAt is null").forEach(function(v){src[v[0]]=v[1]||host(v[2]);if(/^https?:/.test(v[2]||''))subs.push({title:String(v[1]||host(v[2])),url:String(v[2])});});
+    var envs={};try{q("select id,title from environment where deletedAt is null").forEach(function(v){envs[v[0]]=String(v[1]||'');});}catch(e){}
+    q("select id,title,environmentID,showInHome,rowsJSON from home_document where deletedAt is null").forEach(function(v){
+      var id=String(v[0]),rows=[];try{rows=JSON.parse(v[4]||'[]');}catch(e){}
+      var used=rows.filter(function(r){return (r.items||[]).length||(r.serverPage||[]).length;}).length,mset={};
+      rows.forEach(function(r){(r.items||[]).forEach(function(it){if(it.widgetId)mset[it.widgetId]=1;});});
+      var kind=/^import-/.test(id)?'资源库首页（Rex 自动建的）':id==='default'?'内建首页':/^[0-9A-F]{8}-/.test(id)?'预设发现页（每个环境自动建的）':'自己建或导入的';
+      homes.push({hid:id,title:String(v[1]||''),env:envs[v[2]]||'',show:!!v[3],rows:used,mods:Object.keys(mset).length,kind:kind,sig:String(v[4]||'')});
+    });
     var use={};q("select title,rowsJSON from home_document where deletedAt is null").forEach(function(v){
       try{JSON.parse(v[1]||'[]').forEach(function(r){(r.items||[]).forEach(function(it){var u=it.widgetURL;if(u){(use[u]=use[u]||{})[v[0]]=1;}});});}catch(e){}
     });
@@ -235,10 +244,37 @@ function itemEl(m,best){
   }
   return it;
 }
+function hkey(h){return 'home|'+h.hid;}
+function hKept(h){return KEEP[hkey(h)]!==false;}
+function hSet(h,v){if(v)delete KEEP[hkey(h)];else KEEP[hkey(h)]=false;try{localStorage.setItem('rex-module-keep',JSON.stringify(KEEP));}catch(e){}}
+function homeGroups(){var by={};homes.forEach(function(h,i){var t=h.title.trim();(by[t]=by[t]||[]).push(i);});return Object.keys(by).filter(function(k){return by[k].length>1;}).map(function(k){return {key:k,items:by[k]};});}
+function homeBest(g){return g.items.slice().sort(function(a,b){var x=homes[a],y=homes[b];return (y.show-x.show)||((/^自己/.test(y.kind))-(/^自己/.test(x.kind)))||(y.rows-x.rows);})[0];}
+function homeEl(h,best,same){
+  var it=el('div','item'+(hKept(h)?'':' drop')),head=el('div','head'),txt=el('div'),t=el('div');
+  t.append(el('b',null,h.title||'（没有名称）'));if(best)t.append(el('span','tag ok-tag','建议留'));if(same)t.append(el('span','tag warn','内容完全一样'));
+  txt.append(t);head.append(txt);
+  var k=el('button','btn ghost sm keep',hKept(h)?'留':'不留');k.type='button';k.setAttribute('aria-pressed',String(hKept(h)));k.onclick=function(){hSet(h,!hKept(h));render();};head.append(k);
+  it.append(head,el('div','meta',[h.env?'环境：'+h.env:'',h.kind,h.rows+' 行',h.mods?'用 '+h.mods+' 个模块':'',h.show?'显示在首页列表':'不显示在首页列表'].filter(Boolean).join(' · ')));
+  return it;
+}
+function renderHomes(box){
+  var gs=homeGroups().filter(function(g){return !query||g.key.toLowerCase().indexOf(query.toLowerCase())>=0;});
+  box.append(el('p','muted','共 '+homes.length+' 个首页，名称重复 '+homeGroups().length+' 组。删首页在 Rex 的「切换配置」里长按那个首页。'));
+  if(!gs.length)box.append(el('div','note ok','没有名称重复的首页。'));
+  gs.forEach(function(g){var w=el('div','group'),h=el('h3');h.append(el('span','tag warn','名称相同'),document.createTextNode('「'+g.key+'」'));w.append(h);
+    var b=homeBest(g),cnt={};g.items.forEach(function(i){cnt[homes[i].sig]=(cnt[homes[i].sig]||0)+1;});
+    g.items.forEach(function(i){w.append(homeEl(homes[i],i===b,cnt[homes[i].sig]>1&&homes[i].rows>0));});
+    var sb=el('button','btn ghost sm','照建议标记这一组');sb.type='button';sb.style.marginTop='6px';sb.onclick=function(){g.items.forEach(function(i){hSet(homes[i],i===b);});render();};w.append(sb);
+    w.append(el('div','meta','预设发现页、资源库首页是 Rex 自动建的，每个环境、每个资源库各一个，名称一样是正常的；改名比删掉好。'));box.append(w);});
+  var d=document.createElement('details');d.append(el('summary',null,'全部首页（'+homes.length+' 个）'));
+  homes.slice().sort(function(a,b){return a.title.localeCompare(b.title,'zh');}).forEach(function(h){d.append(homeEl(h));});box.append(d);
+}
 function render(){
   var gs=groups(),box=$('groups');box.innerHTML='';
+  $('homeTab').hidden=!homes.length;$('homeTab').textContent='首页'+(homes.length?'（重复 '+homeGroups().length+' 组）':'');
+  if(filter==='home'){renderHomes(box);$('sDrop').textContent=mods.filter(function(m){return !kept(m);}).length+homes.filter(function(h){return !hKept(h);}).length;return;}
   $('sAll').textContent=mods.length;$('sDup').textContent=gs.length;
-  $('sDrop').textContent=mods.filter(function(m){return !kept(m);}).length;
+  $('sDrop').textContent=mods.filter(function(m){return !kept(m);}).length+homes.filter(function(h){return !hKept(h);}).length;
   var checked=mods.some(function(m){return m.vs;});$('sNew').textContent=checked?mods.filter(function(m){return m.vs==='new';}).length:'–';
   if(filter==='dup'){
     var shown=gs.filter(function(g){return g.items.some(function(i){return match(mods[i]);});});
@@ -255,13 +291,17 @@ function render(){
   }
   var list=mods.filter(function(m){return match(m)&&(filter==='all'||(filter==='new'&&m.vs==='new')||(filter==='drop'&&!kept(m)));})
     .sort(function(a,b){return a.title.localeCompare(b.title,'zh');});
-  if(!list.length){box.append(el('div','note '+(filter==='new'&&!checked?'warn':'ok'),filter==='new'&&!checked?'还没检查新版：按下面「版本检查」的「检查新版」。':filter==='drop'?'还没有标「不留」的模块。':'没有符合的模块。'));return;}
-  var w=el('div','group');list.forEach(function(m){w.append(itemEl(m));});box.append(w);
+  var hd=filter==='drop'?homes.filter(function(h){return !hKept(h);}):[];
+  if(!list.length&&!hd.length){box.append(el('div','note '+(filter==='new'&&!checked?'warn':'ok'),filter==='new'&&!checked?'还没检查新版：按下面「版本检查」的「检查新版」。':filter==='drop'?'还没有标「不留」的模块或首页。':'没有符合的模块。'));return;}
+  if(list.length){var w=el('div','group');list.forEach(function(m){w.append(itemEl(m));});box.append(w);}
+  if(hd.length){var w2=el('div','group');w2.append(el('h3',null,'首页'));hd.forEach(function(h){w2.append(homeEl(h));});box.append(w2);}
 }
 function dropList(){
-  var list=mods.filter(function(m){return !kept(m);});
-  if(!list.length){alert('还没有标「不留」的模块。');return;}
-  var lines=['在 Rex 模块页要删除的模块（'+list.length+' 个）',''];
+  var list=mods.filter(function(m){return !kept(m);}),hl=homes.filter(function(h){return !hKept(h);});
+  if(!list.length&&!hl.length){alert('还没有标「不留」的模块或首页。');return;}
+  var lines=[];
+  if(hl.length){lines.push('在 Rex「切换配置」要删除的首页（'+hl.length+' 个）','');hl.forEach(function(h,i){lines.push((i+1)+'. '+h.title+(h.env?' · 环境：'+h.env:'')+' · '+h.kind+' · '+h.rows+' 行');});lines.push('');}
+  lines.push('在 Rex 模块页要删除的模块（'+list.length+' 个）','');
   list.forEach(function(m,i){lines.push((i+1)+'. '+m.title+(m.version?' v'+m.version:'')+' · '+(m.from==='备份'?(m.local?'本机版':'链接版'):'文件')+' · '+(m.origin||'')+' · 编号 '+m.id+(m.homes.length?' · ⚠️ 首页在用：'+m.homes.join('、'):''));});
   lines.push('','删之前先在 Rex 备份一次；名称一样的，点进去对版本和来源再删。');
   var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain'}));a.download='不留清单.txt';document.body.append(a);a.click();a.remove();
@@ -304,7 +344,7 @@ function csv(){
 
 $('fileIn').onchange=async function(){
   var files=Array.prototype.slice.call(this.files);this.value='';if(!files.length)return;
-  note('warn','读取中……');subs=[];var all=[],errs=[],enc=0;
+  note('warn','读取中……');subs=[];homes=[];var all=[],errs=[],enc=0;
   for(var i=0;i<files.length;i++){
     try{var list=/\.(zip|rex)$/i.test(files[i].name)?await readBackup(files[i]):await readJs(files[i]);
       list.forEach(function(m){if(m.enc)enc++;else all.push(m);});}
