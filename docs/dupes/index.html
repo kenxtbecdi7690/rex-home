@@ -49,7 +49,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 </head>
 <body>
 <main>
-<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v12</small></h1>
+<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v13</small></h1>
 <p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>：看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」再导出清单。文件只在本机读取，不上传；备份只读模块、订阅、首页三张表，不读账号、Cookie 和观看记录。作者：Bolinxxlin</p>
 
 <section>
@@ -174,7 +174,7 @@ async function readBackup(file){
   var d=new SQL.Database(await z.file(k).async('uint8array')),out=[];
   try{
     var q=function(s){var r=d.exec(s);return r[0]?r[0].values:[];};
-    var src={};q("select id,title,url from script_source where deletedAt is null").forEach(function(v){src[v[0]]=v[1]||host(v[2]);if(/^https?:/.test(v[2]||''))subs.push({title:String(v[1]||host(v[2])),url:String(v[2])});});
+    var src={};q("select id,title,url from script_source where deletedAt is null").forEach(function(v){src[v[0]]=v[1]||host(v[2]);if(/^https?:/.test(v[2]||''))subs.push({sid:String(v[0]),title:String(v[1]||host(v[2])),url:String(v[2]),envs:null});});
     var envs={};try{q("select id,title from environment where deletedAt is null").forEach(function(v){envs[v[0]]=String(v[1]||'');});}catch(e){}
     q("select id,title,environmentID,showInHome,rowsJSON from home_document where deletedAt is null").forEach(function(v){
       var id=String(v[0]),rows=[];try{rows=JSON.parse(v[4]||'[]');}catch(e){}
@@ -188,6 +188,7 @@ async function readBackup(file){
     });
     var menv={};try{q("select targetID,environmentID from environment_script_module where deletedAt is null").forEach(function(v){if(envs[v[1]]!=null)(menv[v[0]]=menv[v[0]]||[]).push(envs[v[1]]);});}catch(e){}
     var senv={};try{q("select targetID,environmentID from environment_script_source where deletedAt is null").forEach(function(v){if(envs[v[1]]!=null)(senv[v[0]]=senv[v[0]]||[]).push(envs[v[1]]);});}catch(e){}
+    subs.forEach(function(x){if(x.sid&&x.envs===null)x.envs=senv[x.sid]||[];});
     envList=Object.keys(envs).map(function(k){return envs[k];});
     try{var lenv={};q("select targetID,environmentID from environment_library where deletedAt is null").forEach(function(v){if(envs[v[1]]!=null)(lenv[v[0]]=lenv[v[0]]||[]).push(envs[v[1]]);});
       // 只读名称、类型、排序和服务器网域，不读账号、密码
@@ -321,7 +322,8 @@ function render(){
 function srcName(m){if(m.from==='备份'){if(!m.envs.length)return '不在任何环境（Rex 里看不到，可删）';if(m.srcGone)return '订阅已删除，模块还留着';return m.sub||'导入的模块（手动管理）';}return m.origin||'';}
 var SOPEN={};
 function renderSrc(box,checked){
-  var g={},order=[],sc={};subs.forEach(function(s){sc[s.title]=(sc[s.title]||0)+1;});
+  // 同一个环境里同名订阅出现几次（不在任何环境的订阅 Rex 看不到，不算）
+  var g={},order=[],sc={},pe={};subs.forEach(function(s){var es=s.envs===null?['']:s.envs.filter(function(e){return !ENV||e===ENV;});es.forEach(function(e){var k=e+'\u0000'+s.title;pe[k]=(pe[k]||0)+1;sc[s.title]=Math.max(sc[s.title]||0,pe[k]);});});
   mods.filter(match).forEach(function(m){var k=srcName(m);if(!g[k]){g[k]=[];order.push(k);}g[k].push(m);});
   function rk(k){return /^不在任何环境/.test(k)?3:/^订阅已删除/.test(k)?2:/^导入的模块/.test(k)?1:0;}
   order.sort(function(a,b){return rk(a)-rk(b)||g[b].length-g[a].length||a.localeCompare(b,'zh');});
