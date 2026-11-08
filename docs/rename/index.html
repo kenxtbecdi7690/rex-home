@@ -35,12 +35,12 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 <body>
 <main>
 <h1>模块 JS 改名工具</h1>
-<p class="muted">打开 Rex 模块 <code>.js</code>，改编号（id）、名称（title）、版本（version）后另存。文件只在本机读取，不上传。作者：Bolinxxlin</p>
+<p class="muted">打开 Rex 模块 <code>.js</code> 或首页包 <code>.rex</code>，改编号（id）、名称（title）、版本（version）后另存；首页包里的行会跟着改成新编号。文件只在本机读取，不上传。作者：Bolinxxlin</p>
 
 <section>
-  <label class="btn" for="fileIn">选择模块 .js</label>
-  <input type="file" id="fileIn" class="vh" accept=".js,application/javascript,text/javascript,text/plain">
-  <p class="muted" style="margin-top:10px">在 Rex 的模块页点开模块 →「导出」存到「文件」，再从这里选它。</p>
+  <label class="btn" for="fileIn">选择模块 .js 或首页包 .rex</label>
+  <input type="file" id="fileIn" class="vh" accept=".js,.rex,.zip,application/javascript,text/javascript,text/plain,application/zip">
+  <p class="muted" style="margin-top:10px">模块：在 Rex 的模块页点开模块 →「导出」存到「文件」。首页包：用首页导出工具导出的 <code>.rex</code>，或别人给的。</p>
   <div id="msg"></div>
 </section>
 
@@ -60,6 +60,20 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
   </div>
 </section>
 
+<section id="rexEditor" hidden>
+  <p><b id="rName"></b></p>
+  <label class="f" for="rTitle">首页名称（导入后在「切换配置」里显示；和别的首页同名时改一下比较好分）</label>
+  <div class="row"><input type="text" id="rTitle" autocomplete="off" spellcheck="false"><button class="btn ghost small" id="rSpare" type="button">加（备用）</button></div>
+  <p class="muted" style="margin-top:12px">包里的模块（导入时会一起装进 Rex）：</p>
+  <div class="actions" style="margin-top:0"><button class="btn ghost small" id="rAll" type="button">全部模块加 .copy 和（备用）</button></div>
+  <div id="rMods"></div>
+  <div id="rHint"></div>
+  <div class="actions">
+    <button class="btn" id="rSave" type="button">下载新的 .rex</button>
+    <button class="btn ghost" id="rReset" type="button">还原</button>
+  </div>
+</section>
+
 <section>
   <b>怎么选</b>
   <ul>
@@ -68,10 +82,12 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
     <li>改过的模块是本机版，不会自动更新；链接版一更新，名字会被改回去。</li>
     <li>首页的行记的是模块网址和功能名，改名称不影响首页；改了编号的副本，首页要另外加行才会用到。</li>
     <li>第一行是 <code>REXENC</code> 的是加密模块，改不了。</li>
+    <li><b>首页包 .rex</b>：包里的模块改了编号，首页里用到它的行会一起改成新编号，导入后首页照样能用，而且不会盖掉 Rex 里原本的同名模块。只指向网址的模块（链接版）不在包里，不用改。</li>
   </ul>
 </section>
 <footer><a href="https://github.com/kenxtbecdi7690/rex-home/blob/main/%E6%A8%A1%E5%9D%97%E5%B7%A5%E5%85%B7%E6%95%99%E5%AD%A6.md">使用教学</a> · <a href="../">← Rex首页工具</a></footer>
 </main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 (function(){
 var $=function(id){return document.getElementById(id);};
@@ -133,7 +149,86 @@ function build(){
 function outName(){var base=name.replace(/\.js$/i,'');return base+(cur().id!==orig.id?'-copy':'-renamed')+'.js';}
 function ok(){var v=cur();return v.id&&!/\s/.test(v.id)&&(!meta.title||v.title.trim())&&!(v.id===orig.id&&v.title===orig.title&&v.version===orig.version);}
 
-$('fileIn').onchange=function(){var f=this.files[0];this.value='';if(!f)return;f.text().then(function(t){load(t,f.name);});};
+// ===== 首页包 .rex =====
+var rx=null;
+function rexNote(cls,t){note($('rHint'),cls,t);}
+async function loadRex(file){
+  $('editor').hidden=true;$('rexEditor').hidden=true;note($('msg'),'','');
+  if(typeof JSZip==='undefined')return note($('msg'),'bad','打包工具没有载入，请检查网络后重新打开这个页面。');
+  var z;try{z=await JSZip.loadAsync(file);}catch(e){return note($('msg'),'bad','「'+file.name+'」打不开，不是 .rex 首页包。');}
+  if(!z.file('rex-layout.json'))return note($('msg'),'bad','「'+file.name+'」里没有 rex-layout.json，不是 Rex 首页包（备份请用模块版本检查）。');
+  var names=Object.keys(z.files).filter(function(n){return !z.files[n].dir;});
+  var lay=await z.file('rex-layout.json').async('string'),home=z.file('rex-home.json')?await z.file('rex-home.json').async('string'):'{}';
+  var scripts=[],enc=0;
+  for(var i=0;i<names.length;i++){var n=names[i];if(!/^rex-scripts\/[^\/]+\.js$/i.test(n))continue;
+    var t=await z.file(n).async('string');if(/^\s*REXENC/.test(t)){enc++;continue;}
+    var f=findMeta(t);if(!f||!f.id)continue;
+    var o={path:n,src:t,meta:f,orig:{}};['id','title','version'].forEach(function(k){o.orig[k]=f[k]?dec(t.slice(f[k].start,f[k].end)):'';});
+    o.cur=Object.assign({},o.orig);scripts.push(o);}
+  var homeObj={};try{homeObj=JSON.parse(home);}catch(e){}
+  rx={file:file,zip:z,names:names,lay:lay,home:home,homeObj:homeObj,scripts:scripts,enc:enc,origTitle:String(homeObj.title||'')};
+  $('rName').textContent=file.name;$('rTitle').value=rx.origTitle;$('rTitle').disabled=!('title' in homeObj);
+  renderRexMods();$('rexEditor').hidden=false;rexCheck();
+  if(!scripts.length)note($('msg'),'warn','这个首页包里没有打包模块（模块都是网址链接），只能改首页名称。'+(enc?'另有 '+enc+' 个加密模块改不了。':''));
+  else if(enc)note($('msg'),'warn','另有 '+enc+' 个加密模块改不了，保持原样。');
+}
+function rowsUsing(id){var n=0;try{JSON.parse(rx.lay).forEach(function(r){(r.items||[]).forEach(function(it){if(it.widgetId===id||it.widgetBundleId===id)n++;});});}catch(e){}return n;}
+function renderRexMods(){
+  var box=$('rMods');box.innerHTML='';
+  rx.scripts.forEach(function(o,i){
+    var w=document.createElement('div');w.style.cssText='border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0';
+    var h=document.createElement('div');h.innerHTML='<b></b> <span class="muted"></span>';h.querySelector('b').textContent=o.path.replace('rex-scripts/','');h.querySelector('.muted').textContent='首页里用到 '+rowsUsing(o.orig.id)+' 行';w.append(h);
+    [['id','编号 id','加 .copy',function(v){return /\.copy\d*$/.test(v)?v:v+'.copy';}],['title','名称 title','加（备用）',function(v){return v.indexOf('（备用）')>=0?v:v+'（备用）';}],['version','版本 version']].forEach(function(f){
+      if(!o.meta[f[0]])return;
+      var lab=document.createElement('label');lab.className='f';lab.textContent=f[1];lab.htmlFor='rx'+i+f[0];
+      var row=document.createElement('div');row.className='row';var inp=document.createElement('input');inp.type='text';inp.id='rx'+i+f[0];inp.value=o.cur[f[0]];
+      inp.autocomplete='off';inp.spellcheck=false;inp.oninput=function(){o.cur[f[0]]=f[0]==='title'?inp.value:inp.value.trim();rexCheck();};row.append(inp);
+      if(f[2]){var b=document.createElement('button');b.type='button';b.className='btn ghost small';b.textContent=f[2];b.onclick=function(){inp.value=f[3](inp.value.trim());o.cur[f[0]]=inp.value;rexCheck();};row.append(b);}
+      w.append(lab,row);});
+    box.append(w);
+  });
+}
+function rexCheck(){
+  if(!rx)return;var bad='',changedIds=0,changed=$('rTitle').value!==rx.origTitle,seen={};
+  rx.scripts.forEach(function(o){var c=o.cur;
+    if(!c.id||/\s/.test(c.id))bad='「'+o.path.replace('rex-scripts/','')+'」的编号不能空白或有空格。';
+    if(o.meta.title&&!String(c.title).trim())bad='「'+o.path.replace('rex-scripts/','')+'」的名称不能空白。';
+    if(seen[c.id])bad='包里两个模块的编号一样（'+c.id+'），导入时会互相覆盖。';seen[c.id]=1;
+    if(c.id!==o.orig.id)changedIds++;if(c.id!==o.orig.id||c.title!==o.orig.title||c.version!==o.orig.version)changed=true;});
+  if(bad)return rexNote('bad',bad);
+  if(!changed)return rexNote('warn','还没改任何东西。');
+  rexNote('ok',changedIds?changedIds+' 个模块换了新编号：导入后是新模块，不会盖掉 Rex 里原本的；首页里用到它们的行会一起改成新编号。':'编号都没变：导入后会覆盖 Rex 里同编号的模块（名称、版本换成新的）。');
+}
+async function buildRex(){
+  var map={};rx.scripts.forEach(function(o){if(o.cur.id!==o.orig.id)map[o.orig.id]=o.cur.id;});
+  var lay=rx.lay,L=JSON.parse(lay),esc=lay.indexOf('\\/')>=0;
+  L.forEach(function(r){(r.items||[]).forEach(function(it){var scriptHit=rx.scripts.some(function(o){return it.widgetURL==='file:///'+o.path.replace('rex-scripts/','');});
+    if(!scriptHit)return;if(map[it.widgetId])it.widgetId=map[it.widgetId];if(map[it.widgetBundleId])it.widgetBundleId=map[it.widgetBundleId];});});
+  var newLay=JSON.stringify(L);if(esc)newLay=newLay.replace(/\//g,'\\/');
+  var home=rx.home;if($('rTitle').value!==rx.origTitle){var H=JSON.parse(home);H.title=$('rTitle').value;home=JSON.stringify(H);if(home.indexOf('/')>=0&&rx.home.indexOf('\\/')>=0)home=home.replace(/\//g,'\\/');}
+  var out=new JSZip();
+  for(var i=0;i<rx.names.length;i++){var n=rx.names[i],o=rx.scripts.filter(function(x){return x.path===n;})[0],data;
+    if(n==='rex-layout.json')data=newLay;else if(n==='rex-home.json')data=home;
+    else if(o)data=patchSrc(o.src,o.meta,o.cur);else data=await rx.zip.file(n).async('uint8array');
+    out.file(n,data,{unixPermissions:'644',createFolders:false});}
+  return out.generateAsync({type:'blob',compression:'DEFLATE',platform:'UNIX',mimeType:'application/zip'});
+}
+function patchSrc(src,meta,vals){var parts=[],pos=0;
+  ['id','title','version'].filter(function(k){return meta[k];}).map(function(k){return {k:k,r:meta[k]};}).sort(function(a,b){return a.r.start-b.r.start;})
+    .forEach(function(x){parts.push(src.slice(pos,x.r.start),enc(vals[x.k],x.r.q));pos=x.r.end;});parts.push(src.slice(pos));return parts.join('');}
+$('rTitle').oninput=rexCheck;
+$('rSpare').onclick=function(){var v=$('rTitle').value;if(v.indexOf('（备用）')<0)$('rTitle').value=v+'（备用）';rexCheck();};
+$('rAll').onclick=function(){rx.scripts.forEach(function(o){if(!/\.copy\d*$/.test(o.cur.id))o.cur.id=o.cur.id+'.copy';if(o.meta.title&&o.cur.title.indexOf('（备用）')<0)o.cur.title=o.cur.title+'（备用）';});renderRexMods();rexCheck();};
+$('rReset').onclick=function(){rx.scripts.forEach(function(o){o.cur=Object.assign({},o.orig);});$('rTitle').value=rx.origTitle;renderRexMods();rexCheck();};
+$('rSave').onclick=async function(){
+  if(!rx)return;rexCheck();if($('rHint').querySelector('.note.bad,.note.warn'))return;
+  var blob=await buildRex(),a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  var anyId=rx.scripts.some(function(o){return o.cur.id!==o.orig.id;});a.download=rx.file.name.replace(/\.(rex|zip)$/i,'')+(anyId?'-copy':'-renamed')+'.rex';
+  document.body.append(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+};
+$('fileIn').onchange=function(){var f=this.files[0];this.value='';if(!f)return;
+  if(/\.(rex|zip)$/i.test(f.name)){rx=null;loadRex(f);return;}
+  $('rexEditor').hidden=true;f.text().then(function(t){load(t,f.name);});};
 ['fId','fTitle','fVer'].forEach(function(id){$(id).oninput=check;});
 $('addCopy').onclick=function(){var el=$('fId');if(!/\.copy\d*$/.test(el.value))el.value=el.value.trim()+'.copy';check();};
 $('addSpare').onclick=function(){var el=$('fTitle');if(el.value.indexOf('（备用）')<0)el.value=el.value+'（备用）';check();};
@@ -150,7 +245,7 @@ $('share').onclick=function(){
   var f=new File([build()],outName(),{type:'text/plain'});
   navigator.share({files:[f]}).catch(function(){});
 };
-window.__rename={findMeta:findMeta,load:load,build:build};
+window.__rename={findMeta:findMeta,load:load,build:build,buildRex:function(){return buildRex();},get rx(){return rx;}};
 })();
 </script>
 </body>

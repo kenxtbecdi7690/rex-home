@@ -50,8 +50,8 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 <p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>：看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」再导出清单。文件只在本机读取，不上传；备份只读模块、订阅、首页三张表，不读账号、Cookie 和观看记录。作者：Bolinxxlin</p>
 
 <section>
-  <label class="btn" for="fileIn">选择备份 .zip 或模块 .js（可多选）</label>
-  <input type="file" id="fileIn" class="vh" multiple accept=".zip,.js,application/zip,application/javascript,text/javascript,text/plain">
+  <label class="btn" for="fileIn">选择备份 .zip、首页包 .rex 或模块 .js（可多选）</label>
+  <input type="file" id="fileIn" class="vh" multiple accept=".zip,.rex,.js,application/zip,application/javascript,text/javascript,text/plain">
   <p class="muted" style="margin-top:10px">备份：Rex 设置 →「iCloud」→「备份与还原」→「导出本机备份」。<code>.7z</code> 请先解压成 zip 或文件夹再压成 zip。</p>
   <div id="msg"></div>
 </section>
@@ -100,6 +100,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
     <li><b>有新版</b>：先按「检查新版」。链接版到 Rex 模块页「刷新」；本机版用链接重装或重新导入首页包。</li>
     <li>链接版改名后会被更新改回去；只有本机版改名会一直有效。</li>
     <li>备份里的模块不能在这里直接改：先在 Rex 模块页「导出」那个模块，再把 .js 选进来改。</li>
+    <li>首页包 <code>.rex</code> 里打包的模块编号重复时，用 <a href="../rename/">模块 JS 改名工具</a> 打开那个 .rex 改编号，首页里的行会一起改。</li>
   </ul>
 </section>
 <footer><a href="https://github.com/kenxtbecdi7690/rex-home/blob/main/%E6%A8%A1%E5%9D%97%E5%B7%A5%E5%85%B7%E6%95%99%E5%AD%A6.md">使用教学</a> · <a href="../rename/">模块 JS 改名工具</a> · <a href="../">← Rex首页工具</a></footer>
@@ -155,7 +156,8 @@ function loadSql(){if(window.initSqlJs)return Promise.resolve();return new Promi
 async function readBackup(file){
   var z=await JSZip.loadAsync(file);
   var k=Object.keys(z.files).filter(function(n){return /(^|\/)payload\/kernel\/rex-kernel\.db$/.test(n);})[0];
-  if(!k)throw new Error('「'+file.name+'」不是 Rex 备份（找不到 payload/kernel/rex-kernel.db）');
+  if(!k&&z.file('rex-layout.json'))return readPackage(file,z);
+  if(!k)throw new Error('「'+file.name+'」不是 Rex 备份或首页包');
   await loadSql();var SQL=await initSqlJs({locateFile:function(f){return SQLJS+f;}});
   var d=new SQL.Database(await z.file(k).async('uint8array')),out=[];
   try{
@@ -170,6 +172,18 @@ async function readBackup(file){
         origin:v[7]&&src[v[7]]?'订阅 '+src[v[7]]:(host(u)||'本机'),homes:Object.keys(h)});
     });
   }finally{d.close();}
+  return out;
+}
+// 首页包 .rex：读包里打包的模块（rex-scripts/*.js）
+async function readPackage(file,z){
+  var out=[],uses={};
+  try{JSON.parse(await z.file('rex-layout.json').async('string')).forEach(function(r){(r.items||[]).forEach(function(it){var u=it.widgetURL||'';if(/^file:\/\/\//.test(u))uses[u.slice(8)]=(uses[u.slice(8)]||0)+1;});});}catch(e){}
+  var names=Object.keys(z.files).filter(function(n){return /^rex-scripts\/[^\/]+\.js$/i.test(n);});
+  for(var i=0;i<names.length;i++){var t=await z.file(names[i]).async('string'),fn=names[i].slice(12);
+    if(/^\s*REXENC/.test(t)){out.push({enc:true});continue;}
+    var f=findMeta(t);if(!f||!f.id)continue;var g=function(k){return f[k]?dec(t.slice(f[k].start,f[k].end)):'';};
+    out.push({from:'首页包',file:fn,id:g('id'),title:g('title'),version:g('version'),origin:'首页包 '+file.name,homes:uses[fn]?[file.name+'（'+uses[fn]+' 行）']:[]});}
+  if(!out.length)throw new Error('「'+file.name+'」里没有打包模块（模块都是网址链接），不用检查');
   return out;
 }
 async function readJs(file){
@@ -192,7 +206,7 @@ function groups(){
   return gs;
 }
 function download(name,text){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/javascript'}));a.download=name;document.body.append(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},4000);}
-function info(m){return [m.from==='备份'?(m.local?'本机版':'链接版'):'',m.origin,m.disabled?'已停用':'',m.from==='备份'?(m.homes.length?'首页：'+m.homes.join('、'):'没有首页用到'):''].filter(Boolean).join(' · ');}
+function info(m){return [m.from==='备份'?(m.local?'本机版':'链接版'):'',m.origin,m.disabled?'已停用':'',m.from!=='文件'?(m.homes.length?'首页：'+m.homes.join('、'):'没有首页用到'):''].filter(Boolean).join(' · ');}
 function match(m){if(!query)return true;var q=query.toLowerCase();return (m.title+' '+m.id).toLowerCase().indexOf(q)>=0;}
 function itemEl(m){
   var it=el('div','item'+(kept(m)?'':' drop')),head=el('div','head'),txt=el('div');
@@ -284,7 +298,7 @@ $('fileIn').onchange=async function(){
   var files=Array.prototype.slice.call(this.files);this.value='';if(!files.length)return;
   note('warn','读取中……');subs=[];var all=[],errs=[],enc=0;
   for(var i=0;i<files.length;i++){
-    try{var list=/\.zip$/i.test(files[i].name)?await readBackup(files[i]):await readJs(files[i]);
+    try{var list=/\.(zip|rex)$/i.test(files[i].name)?await readBackup(files[i]):await readJs(files[i]);
       list.forEach(function(m){if(m.enc)enc++;else all.push(m);});}
     catch(e){errs.push(String(e&&e.message||e));}
   }
