@@ -47,7 +47,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 </head>
 <body>
 <main>
-<h1>模块版本检查</h1>
+<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 2026.11.08</small></h1>
 <p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>：看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」再导出清单。文件只在本机读取，不上传；备份只读模块、订阅、首页三张表，不读账号、Cookie 和观看记录。作者：Bolinxxlin</p>
 
 <section>
@@ -99,6 +99,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
     <li><b>名称相同、编号不同</b>：两个本来就并存，只是列表里分不清。想分清就「名称加来源」，或删掉不用的那个。</li>
     <li>删之前看「首页」：正在被首页用的，删掉那几行会空白。</li>
     <li><b>建议留</b>：每组重复会标一个绿色「建议留」，顺序是 首页在用 → 没停用 → 链接版 → 版本高。可以按「照建议标记这一组」或「重复的全部照建议标记」，再自己调整。</li>
+    <li><b>三种处理</b>：每个模块都可以「留」、标「不留」（之后在 Rex 删），或按「改编号（另存一份）」下载一份新编号的 .js 再从文件导入，两个就能并存；「名称加来源」只改名字，导入后覆盖原本那个。备份里的模块会直接从备份读程序代码，不用先去 Rex 导出；加密模块改不了。</li>
     <li><b>留／不留</b>：只是记号，帮你决定；按「导出『不留』清单」得到一份要在 Rex 删除的列表，照着删。工具不会删任何模块。</li>
     <li><b>有新版</b>：先按「检查新版」。链接版到 Rex 模块页「刷新」；本机版用链接重装或重新导入首页包。</li>
     <li>链接版改名后会被更新改回去；只有本机版改名会一直有效。</li>
@@ -179,7 +180,9 @@ async function readBackup(file){
     });
     q("select id,widgetID,title,version,url,location,isDisabled,sourceID from script_module where deletedAt is null").forEach(function(v){
       var u=String(v[4]||''),h=Object.assign({},use[u]||{},use['file://'+v[0]+'.js']||{});
+      var mid=String(v[0]),mp=Object.keys(z.files).filter(function(n){return /(^|\/)payload\/modules\/managed\//.test(n)&&n.slice(-(mid.length+4))==='/'+mid+'.js';})[0];
       out.push({from:'备份',id:String(v[1]||''),title:String(v[2]||''),version:String(v[3]||''),local:v[5]==='local',disabled:!!v[6],url:/^https?:/.test(u)?u:'',
+        load:mp?function(){return z.file(mp).async('string');}:(/^https?:/.test(u)?function(){return get(u);}:null),
         origin:v[7]&&src[v[7]]?'订阅 '+src[v[7]]:(host(u)||'本机'),homes:Object.keys(h)});
     });
   }finally{d.close();}
@@ -193,7 +196,7 @@ async function readPackage(file,z){
   for(var i=0;i<names.length;i++){var t=await z.file(names[i]).async('string'),fn=names[i].slice(12);
     if(/^\s*REXENC/.test(t)){out.push({enc:true});continue;}
     var f=findMeta(t);if(!f||!f.id)continue;var g=function(k){return f[k]?dec(t.slice(f[k].start,f[k].end)):'';};
-    out.push({from:'首页包',file:fn,id:g('id'),title:g('title'),version:g('version'),origin:'首页包 '+file.name,homes:uses[fn]?[file.name+'（'+uses[fn]+' 行）']:[]});}
+    out.push({from:'首页包',file:fn,src:t,meta:f,id:g('id'),title:g('title'),version:g('version'),origin:'首页包 '+file.name,homes:uses[fn]?[file.name+'（'+uses[fn]+' 行）']:[]});}
   if(!out.length)throw new Error('「'+file.name+'」里没有打包模块（模块都是网址链接），不用检查');
   return out;
 }
@@ -234,13 +237,14 @@ function itemEl(m,best){
   k.setAttribute('aria-label',m.title+'：'+(kept(m)?'留':'不留'));
   k.onclick=function(){setKeep(m,!kept(m));render();};
   head.append(k);it.append(head,el('div','meta',info(m)+(m.vs==='new'&&m.latestFrom?' · 新版来自 '+m.latestFrom:'')));
-  if(m.src){
-    var acts=el('div','acts');
-    var b1=el('button','btn sm','改编号（两个并存）');b1.type='button';
-    b1.onclick=function(){download(m.file.replace(/\.js$/i,'')+'-copy.js',patch(m.src,m.meta,{id:m.id+'.copy',title:m.title+'（备用）'}));};
-    var b2=el('button','btn ghost sm','名称加来源');b2.type='button';
-    b2.onclick=function(){var tag=(m.file||'').replace(/\.js$/i,'');download(m.file.replace(/\.js$/i,'')+'-renamed.js',patch(m.src,m.meta,{title:m.title+'（'+tag+'）'}));};
-    acts.append(b1,b2);it.append(acts);
+  if(m.src||m.load){
+    var acts=el('div','acts'),fname=(m.file||(m.title.replace(/[\\\/:*?"<>|\s]+/g,'_')+'.js'));
+    var tag=m.file?m.file.replace(/\.js$/i,''):(m.from==='备份'?(m.local?'本机':(m.origin||'').replace(/^订阅 /,'')):'');
+    async function code(){var t=m.src||await m.load();if(/^\s*REXENC/.test(t))throw new Error('这是加密模块（REXENC），改不了编号和名称。');var f=findMeta(t);if(!f||!f.id)throw new Error('读不到这个模块的编号。');return {t:t,f:f};}
+    function act(label,cls,suffix,vals){var b=el('button','btn sm'+cls,label);b.type='button';b.onclick=async function(){b.disabled=true;
+      try{var c=await code();download(fname.replace(/\.js$/i,'')+suffix+'.js',patch(c.t,c.f,vals));}catch(e){alert(String(e&&e.message||e));}b.disabled=false;};return b;}
+    acts.append(act('改编号（另存一份）','','-copy',{id:m.id+'.copy',title:m.title+'（备用）'}),act('名称加来源',' ghost','-renamed',{title:m.title+'（'+(tag||'另一个')+'）'}));
+    it.append(acts);
   }
   return it;
 }
