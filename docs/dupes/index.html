@@ -50,7 +50,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 </head>
 <body>
 <main>
-<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v16</small></h1>
+<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v17</small></h1>
 <p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>：看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」再导出清单。文件只在本机读取，不上传；备份只读模块、订阅、首页三张表，不读账号、Cookie 和观看记录。作者：Bolinxxlin</p>
 
 <section>
@@ -195,12 +195,12 @@ async function readBackup(file){
     try{var lenv={};q("select targetID,environmentID from environment_library where deletedAt is null").forEach(function(v){if(envs[v[1]]!=null)(lenv[v[0]]=lenv[v[0]]||[]).push(envs[v[1]]);});
       // 只读名称、类型、排序和服务器网域，不读账号、密码
       q("select id,name,sourceType,sort,serverURL from catalog where deletedAt is null").forEach(function(v){libs.push({lid:String(v[0]),name:String(v[1]||''),type:String(v[2]||''),sort:v[3]==null?null:+v[3],host:host(String(v[4]||'')).replace(/:443$/,''),envs:lenv[v[0]]||[]});});}catch(e){}
-    q("select id,widgetID,title,version,url,location,isDisabled,sourceID from script_module where deletedAt is null").forEach(function(v){
+    q("select id,widgetID,title,version,url,location,isDisabled,sourceID,moduleTypesJSON from script_module where deletedAt is null").forEach(function(v){var ty=[];try{ty=JSON.parse(v[8]||'[]')||[];}catch(e){}
       var u=String(v[4]||''),h=Object.assign({},use[u]||{},use['file://'+v[0]+'.js']||{});
       var mid=String(v[0]),mp=Object.keys(z.files).filter(function(n){return /(^|\/)payload\/modules\/managed\//.test(n)&&n.slice(-(mid.length+4))==='/'+mid+'.js';})[0];
       out.push({from:'备份',id:String(v[1]||''),title:String(v[2]||''),version:String(v[3]||''),local:v[5]==='local',disabled:!!v[6],url:/^https?:/.test(u)?u:'',
         load:mp?function(){return z.file(mp).async('string');}:(/^https?:/.test(u)?function(){return get(u);}:null),
-        origin:v[7]&&src[v[7]]?'订阅 '+src[v[7]]:(host(u)||'本机'),sub:v[7]&&src[v[7]]?String(src[v[7]]):'',srcGone:!!(v[7]&&!src[v[7]]),envs:(menv[mid]||[]).concat(v[7]&&src[v[7]]?senv[v[7]]||[]:[]).filter(function(x,i,a){return a.indexOf(x)===i;}),homes:Object.keys(h)});
+        origin:v[7]&&src[v[7]]?'订阅 '+src[v[7]]:(host(u)||'本机'),sub:v[7]&&src[v[7]]?String(src[v[7]]):'',srcGone:!!(v[7]&&!src[v[7]]),types:ty,envs:(menv[mid]||[]).concat(v[7]&&src[v[7]]?senv[v[7]]||[]:[]).filter(function(x,i,a){return a.indexOf(x)===i;}),homes:Object.keys(h)});
     });
   }finally{d.close();}
   return out;
@@ -242,13 +242,19 @@ function suggest(g){var best=null;g.items.forEach(function(i){var m=mods[i];if(b
   var a=score(m),b=score(mods[best]);for(var k=0;k<a.length;k++){if(a[k]!==b[k]){if(a[k]>b[k])best=i;return;}}
   if(cmpVer(m.version,mods[best].version)>0)best=i;});return best;}
 function applySuggest(gs){gs.forEach(function(g){var b=suggest(g);g.items.forEach(function(i){setKeep(mods[i],i===b);});});render();}
-function info(m){return [m.from==='备份'?(m.local?'本机版':'链接版'):'',m.origin,m.from==='备份'?(m.envs.length?'环境：'+m.envs.join('、'):'不在任何环境'):'',m.disabled?'已停用':'',m.from!=='文件'?(m.homes.length?'首页：'+m.homes.join('、'):'没有首页用到'):''].filter(Boolean).join(' · ');}
+function info(m){return [m.types&&m.types.length?'用途：'+typesZh(m):'',m.from==='备份'?(m.local?'本机版':'链接版'):'',m.origin==='本机'?'':m.origin,m.from==='备份'?(m.envs.length?'环境：'+m.envs.join('、'):'不在任何环境'):'',m.disabled?'已停用':'',m.from!=='文件'?(m.homes.length?'首页：'+m.homes.join('、'):'没有首页用到'):''].filter(Boolean).join(' · ');}
 function match(m){if(ENV&&m.from==='备份'&&m.envs.indexOf(ENV)<0)return false;if(!query)return true;var q=query.toLowerCase();return (m.title+' '+m.id).toLowerCase().indexOf(q)>=0;}
+var TYPE_ZH={video:'影片',list:'片单',stream:'播放',danmu:'弹幕',subtitle:'字幕'};
+function typesZh(m){return (m.types||[]).map(function(t){return TYPE_ZH[t]||t;}).join('、');}
+// 首页引用：home＝首页在用；aux＝不放首页的（只有播放、弹幕、字幕）；none＝能放首页但没有首页用到
+function useKind(m){if(m.homes.length)return 'home';var t=m.types||[];if(t.length&&!t.some(function(x){return x==='video'||x==='list';}))return 'aux';return 'none';}
+var USE='';
 function itemEl(m,best){
   var it=el('div','item'+(kept(m)?'':' drop')),head=el('div','head'),txt=el('div');
   var t=el('div');t.append(el('b',null,m.title),document.createTextNode(m.version?' v'+m.version:''));if(best)t.append(el('span','tag ok-tag','建议留'));
   if(m.vs==='new')t.append(el('span','newver',' → '+m.latest));
   else if(m.vs==='ok')t.append(el('span','meta',' 🟢 最新'));
+  if(m.from!=='文件'){var uk=useKind(m);t.append(uk==='home'?el('span','tag ok-tag','首页在用 '+m.homes.length):uk==='aux'?el('span','tag','不放首页（'+typesZh(m)+'）'):el('span','tag warn','没有首页用到'));}
   txt.append(t,el('code',null,m.id));head.append(txt);
   var k=el('button','btn ghost sm keep',kept(m)?'留':'不留');k.type='button';k.setAttribute('aria-pressed',String(kept(m)));
   k.setAttribute('aria-label',m.title+'：'+(kept(m)?'留':'不留'));
@@ -316,7 +322,15 @@ function render(){
     return;
   }
   if(filter==='src'){renderSrc(box,checked);return;}
-  var list=mods.filter(function(m){return match(m)&&(filter==='all'||(filter==='new'&&m.vs==='new')||(filter==='drop'&&!kept(m)));})
+  if(filter==='all'&&mods.some(function(m){return m.from!=='文件';})){
+    var base=mods.filter(match),cnt={home:0,none:0,aux:0};base.forEach(function(m){if(m.from!=='文件')cnt[useKind(m)]++;});
+    var chips=el('div','tabs');[['','全部 '+base.length],['home','首页在用 '+cnt.home],['none','没有首页用到 '+cnt.none],['aux','不放首页的（播放、弹幕、字幕） '+cnt.aux]].forEach(function(x){
+      var c=el('button','btn ghost sm',x[1]);c.type='button';c.setAttribute('aria-pressed',String(USE===x[0]));c.onclick=function(){USE=x[0];render();};chips.append(c);});
+    box.append(chips);
+    if(USE==='none')box.append(el('div','note warn','这些模块能放首页，但现在没有首页用到。它们可能还用在搜索或详情页，删之前想一下最近有没有搜索到它的内容。'));
+    if(USE==='aux')box.append(el('div','note ok','播放、弹幕、字幕模块本来就不放首页，没有首页用到是正常的，不要因为这样就删。'));
+  }
+  var list=mods.filter(function(m){return match(m)&&(filter==='all'?(!USE||(m.from!=='文件'&&useKind(m)===USE)):(filter==='new'&&m.vs==='new')||(filter==='drop'&&!kept(m)));})
     .sort(cmpM);
   var hd=filter==='drop'?homes.filter(function(h){return !hKept(h);}):[];
   if(!list.length&&!hd.length){box.append(el('div','note '+(filter==='new'&&!checked?'warn':'ok'),filter==='new'&&!checked?'还没检查新版：按下面「版本检查」的「检查新版」。':filter==='drop'?'还没有标「不留」的模块或首页。':'没有符合的模块。'));return;}
@@ -465,9 +479,9 @@ async function checkVersions(){
 }
 function csv(){
   var gs=groups(),dupOf={};gs.forEach(function(g){g.items.forEach(function(i){dupOf[i]=(dupOf[i]?dupOf[i]+'、':'')+(g.kind==='id'?'编号相同':'名称相同');});});
-  var rows=[['留／不留','名称','编号','版本','最新版本','重复','安装方式','来源','停用','用在哪些首页']];
+  var rows=[['留／不留','名称','编号','版本','最新版本','重复','安装方式','来源','停用','首页引用','用途','用在哪些首页']];
   mods.map(function(m,i){return [m,i];}).sort(function(a,b){return cmpM(a[0],b[0]);}).forEach(function(x){var m=x[0];
-    rows.push([kept(m)?'留':'不留',m.title,m.id,m.version,m.latest||'',dupOf[x[1]]||'',m.from==='备份'?(m.local?'本机':'链接'):'文件',m.origin||'',m.disabled?'是':'',m.homes.join('、')]);});
+    rows.push([kept(m)?'留':'不留',m.title,m.id,m.version,m.latest||'',dupOf[x[1]]||'',m.from==='备份'?(m.local?'本机':'链接'):'文件',m.origin||'',m.disabled?'是':'',m.from==='文件'?'':{home:'首页在用',none:'没有首页用到',aux:'不放首页'}[useKind(m)],typesZh(m),m.homes.join('、')]);});
   var text='﻿'+rows.map(function(r){return r.map(function(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(',');}).join('\n');
   var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'text/csv'}));a.download='模块清单.csv';document.body.append(a);a.click();a.remove();
 }
