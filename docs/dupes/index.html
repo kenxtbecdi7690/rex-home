@@ -46,12 +46,26 @@ section{background:var(--panel);border:1px solid var(--line);border-radius:16px;
 .tabs button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
 ul{padding-left:1.3em;margin:6px 0}li{margin:4px 0}
 footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
+.log{margin:8px 0 12px;font-size:14px}.log summary{cursor:pointer;color:var(--muted,#888)}.log ul{margin:6px 0 0;padding-left:20px}.log li{margin:3px 0}
 </style>
 </head>
 <body>
 <main>
-<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v18</small></h1>
-<p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>：看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」再导出清单。文件只在本机读取，不上传；备份只读模块、订阅、首页三张表，不读账号、Cookie 和观看记录。作者：Bolinxxlin</p>
+<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v19</small></h1>
+<p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>：看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」再导出清单。文件只在本机读取，不上传；备份只读模块、订阅、首页、环境和资源库的名称与排序，不读账号、密码、Cookie 和观看记录。作者：Bolinxxlin</p>
+<details class="log"><summary>更新记录</summary><ul>
+  <li><b>v19</b>（2026.11.09）加上「更新记录」；更新说明文字</li>
+  <li><b>v18</b>（2026.11.09）「按订阅」也能按首页引用筛选，每组标几个首页在用</li>
+  <li><b>v17</b>（2026.11.09）每个模块标「首页在用／没有首页用到／不放首页」和用途，「全部模块」可筛选，CSV 多两栏</li>
+  <li><b>v16</b>（2026.11.08）「整理清单」改名「整理名单」</li>
+  <li><b>v15</b>（2026.11.08）编号不同又不是订阅的同名模块，改放「要你决定」，不算确定可删</li>
+  <li><b>v14</b>（2026.11.08）新增「整理名单」：自动列出确定可删的模块、资源库排序号重复、空订阅，可一键标不留并导出</li>
+  <li><b>v13</b>（2026.11.08）「订阅加了 2 次」只算同一个环境看得到的订阅</li>
+  <li><b>v12</b>（2026.11.08）可选环境；按订阅分组和 Rex 模组页一样；新增「资源库」分页</li>
+  <li><b>v11</b>（2026.11.08）可按名称、编号、版本、来源排序；首页显示编号</li>
+  <li><b>v10</b>（2026.11.08）新增「按订阅」分页；工具版本改成 vN</li>
+  <li><b>v1–v9</b>（2026.11.08）重复模块检查、检查新版、留／不留与清单、建议留、首页分页、读首页包 .rex、备份里的模块直接改编号另存</li>
+</ul></details>
 
 <section>
   <label class="btn" for="fileIn">选择备份 .zip、首页包 .rex 或模块 .js（可多选）</label>
