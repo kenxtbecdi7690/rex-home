@@ -50,7 +50,7 @@ footer{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
 </head>
 <body>
 <main>
-<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v17</small></h1>
+<h1>模块版本检查 <small class="muted" style="font-size:14px;font-weight:400">工具版本 v18</small></h1>
 <p class="muted">打开 Rex 备份，或一次选多个模块 <code>.js</code>：看每个模块的编号和版本、查有没有新版、找出重复，逐个标「留／不留」再导出清单。文件只在本机读取，不上传；备份只读模块、订阅、首页三张表，不读账号、Cookie 和观看记录。作者：Bolinxxlin</p>
 
 <section>
@@ -249,6 +249,15 @@ function typesZh(m){return (m.types||[]).map(function(t){return TYPE_ZH[t]||t;})
 // 首页引用：home＝首页在用；aux＝不放首页的（只有播放、弹幕、字幕）；none＝能放首页但没有首页用到
 function useKind(m){if(m.homes.length)return 'home';var t=m.types||[];if(t.length&&!t.some(function(x){return x==='video'||x==='list';}))return 'aux';return 'none';}
 var USE='';
+function useOk(m){return !USE||(m.from!=='文件'&&useKind(m)===USE);}
+function useChips(box){if(!mods.some(function(m){return m.from!=='文件';}))return;
+    var base=mods.filter(match),cnt={home:0,none:0,aux:0};base.forEach(function(m){if(m.from!=='文件')cnt[useKind(m)]++;});
+    var chips=el('div','tabs');[['','全部 '+base.length],['home','首页在用 '+cnt.home],['none','没有首页用到 '+cnt.none],['aux','不放首页的（播放、弹幕、字幕） '+cnt.aux]].forEach(function(x){
+      var c=el('button','btn ghost sm',x[1]);c.type='button';c.setAttribute('aria-pressed',String(USE===x[0]));c.onclick=function(){USE=x[0];render();};chips.append(c);});
+    box.append(chips);
+    if(USE==='none')box.append(el('div','note warn','这些模块能放首页，但现在没有首页用到。它们可能还用在搜索或详情页，删之前想一下最近有没有搜索到它的内容。'));
+    if(USE==='aux')box.append(el('div','note ok','播放、弹幕、字幕模块本来就不放首页，没有首页用到是正常的，不要因为这样就删。'));
+  }
 function itemEl(m,best){
   var it=el('div','item'+(kept(m)?'':' drop')),head=el('div','head'),txt=el('div');
   var t=el('div');t.append(el('b',null,m.title),document.createTextNode(m.version?' v'+m.version:''));if(best)t.append(el('span','tag ok-tag','建议留'));
@@ -322,15 +331,8 @@ function render(){
     return;
   }
   if(filter==='src'){renderSrc(box,checked);return;}
-  if(filter==='all'&&mods.some(function(m){return m.from!=='文件';})){
-    var base=mods.filter(match),cnt={home:0,none:0,aux:0};base.forEach(function(m){if(m.from!=='文件')cnt[useKind(m)]++;});
-    var chips=el('div','tabs');[['','全部 '+base.length],['home','首页在用 '+cnt.home],['none','没有首页用到 '+cnt.none],['aux','不放首页的（播放、弹幕、字幕） '+cnt.aux]].forEach(function(x){
-      var c=el('button','btn ghost sm',x[1]);c.type='button';c.setAttribute('aria-pressed',String(USE===x[0]));c.onclick=function(){USE=x[0];render();};chips.append(c);});
-    box.append(chips);
-    if(USE==='none')box.append(el('div','note warn','这些模块能放首页，但现在没有首页用到。它们可能还用在搜索或详情页，删之前想一下最近有没有搜索到它的内容。'));
-    if(USE==='aux')box.append(el('div','note ok','播放、弹幕、字幕模块本来就不放首页，没有首页用到是正常的，不要因为这样就删。'));
-  }
-  var list=mods.filter(function(m){return match(m)&&(filter==='all'?(!USE||(m.from!=='文件'&&useKind(m)===USE)):(filter==='new'&&m.vs==='new')||(filter==='drop'&&!kept(m)));})
+  if(filter==='all')useChips(box);
+  var list=mods.filter(function(m){return match(m)&&(filter==='all'?useOk(m):(filter==='new'&&m.vs==='new')||(filter==='drop'&&!kept(m)));})
     .sort(cmpM);
   var hd=filter==='drop'?homes.filter(function(h){return !hKept(h);}):[];
   if(!list.length&&!hd.length){box.append(el('div','note '+(filter==='new'&&!checked?'warn':'ok'),filter==='new'&&!checked?'还没检查新版：按下面「版本检查」的「检查新版」。':filter==='drop'?'还没有标「不留」的模块或首页。':'没有符合的模块。'));return;}
@@ -340,9 +342,10 @@ function render(){
 function srcName(m){if(m.from==='备份'){if(!m.envs.length)return '不在任何环境（Rex 里看不到，可删）';if(m.srcGone)return '订阅已删除，模块还留着';return m.sub||'导入的模块（手动管理）';}return m.origin||'';}
 var SOPEN={};
 function renderSrc(box,checked){
+  useChips(box);
   // 同一个环境里同名订阅出现几次（不在任何环境的订阅 Rex 看不到，不算）
   var g={},order=[],sc={},pe={};subs.forEach(function(s){var es=s.envs===null?['']:s.envs.filter(function(e){return !ENV||e===ENV;});es.forEach(function(e){var k=e+'\u0000'+s.title;pe[k]=(pe[k]||0)+1;sc[s.title]=Math.max(sc[s.title]||0,pe[k]);});});
-  mods.filter(match).forEach(function(m){var k=srcName(m);if(!g[k]){g[k]=[];order.push(k);}g[k].push(m);});
+  mods.filter(function(m){return match(m)&&useOk(m);}).forEach(function(m){var k=srcName(m);if(!g[k]){g[k]=[];order.push(k);}g[k].push(m);});
   function rk(k){return /^不在任何环境/.test(k)?3:/^订阅已删除/.test(k)?2:/^导入的模块/.test(k)?1:0;}
   order.sort(function(a,b){return rk(a)-rk(b)||g[b].length-g[a].length||a.localeCompare(b,'zh');});
   if(!order.length){box.append(el('div','note ok','没有符合的模块。'));return;}
@@ -350,6 +353,7 @@ function renderSrc(box,checked){
     var list=g[k].sort(cmpM),w=el('details','group'),sm=el('summary'),h=el('h3');if(query||order.length===1||SOPEN[k])w.open=true;w.ontoggle=function(){SOPEN[k]=w.open;};
     h.append(document.createTextNode(k+' '),el('span','tag',list.length+' 个模块'));
     if(sc[k]>1)h.append(document.createTextNode(' '),el('span','tag warn','订阅加了 '+sc[k]+' 次'));
+    var hu=list.filter(function(m){return m.homes.length;}).length;if(hu)h.append(document.createTextNode(' '),el('span','tag ok-tag','首页在用 '+hu));
     var nw=list.filter(function(m){return m.vs==='new';}).length;if(checked&&nw)h.append(document.createTextNode(' '),el('span','tag','🔵 '+nw+' 个有新版'));
     var dr=list.filter(function(m){return !kept(m);}).length;if(dr)h.append(document.createTextNode(' '),el('span','tag bad',dr+' 个不留'));
     sm.append(h);w.append(sm);list.forEach(function(m){w.append(itemEl(m));});
@@ -358,7 +362,7 @@ function renderSrc(box,checked){
     w.append(acts);box.append(w);
   });
   var empty=Object.keys(sc).filter(function(t){return !g[t];});
-  if(empty.length&&!query)box.append(el('div','note warn','这些订阅加了，但一个模块都没装：'+empty.join('、')+'。不用的话可以在 Rex 订阅页删掉。'));
+  if(empty.length&&!query&&!USE)box.append(el('div','note warn','这些订阅加了，但一个模块都没装：'+empty.join('、')+'。不用的话可以在 Rex 订阅页删掉。'));
 }
 function lkey(l){return 'lib|'+l.lid;}
 function lKept(l){return KEEP[lkey(l)]!==false;}
