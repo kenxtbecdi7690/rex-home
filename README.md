@@ -18,7 +18,7 @@ Mac 版实际截图（`RexHome-Mac.rex`）：
 
 想制作自己的首页：用 [Rex 首页导出工具](https://kenxtbecdi7690.github.io/rex-home/builder/)（作者：Bolinxxlin，[图文教学](https://kenxtbecdi7690.github.io/rex-home/export/)、[说明](Rex首页导出工具说明.md)）。可在「成品首页」选四大平台、豆瓣＋B站榜单或 MakkaPakka 快速版，也能打开 `.rex`、Forward `.fwd`、Rex／Forward 备份 zip（不用解压），编辑后导出「首页名称.rex」；Mac 中尺寸为「首页名称-Mac.rex」。仓库上方已发布的 `RexHome.rex`、`RexHome-Mac.rex` 文件名不变；独立的 [Forward转Rex](https://kenxtbecdi7690.github.io/rex-home/fwd2rex/) 工具仍固定输出 `RexHome.rex`。
 
-第一次用请看 [新手教学](新手教学.md)；想把自己的首页分享出去，看 [首页导出教学](首页导出教学.md)。整理 Rex 里重复的模块、改模块名称或复制一份并存，看 [模块工具教学](模块工具教学.md)（[模块版本检查](https://kenxtbecdi7690.github.io/rex-home/dupes/)、[模块 JS 改名工具](https://kenxtbecdi7690.github.io/rex-home/rename/)）。代理设置见 [代理规则](代理规则.md)；`.rex` 格式与自动更新的原理见 [导入导出规则](导入导出规则.md)。
+第一次用请看 [新手教学](新手教学.md)；想把自己的首页分享出去，看 [首页导出教学](首页导出教学.md)。整理 Rex 里重复的模块、改模块名称或复制一份并存，看 [模块整理工具介绍](模块整理工具.md)（有截图）与 [模块工具教学](模块工具教学.md)（[模块版本检查](https://kenxtbecdi7690.github.io/rex-home/dupes/)、[模块 JS 改名工具](https://kenxtbecdi7690.github.io/rex-home/rename/)）。代理设置见 [代理规则](代理规则.md)；`.rex` 格式与自动更新的原理见 [导入导出规则](导入导出规则.md)。
 
 ### 豆瓣密钥（可选）
 
@@ -58,6 +58,7 @@ Mac 版实际截图（`RexHome-Mac.rex`）：
 
 | 版本 | 内容 |
 |---|---|
+| 工具介绍页 2026.11.09 | 新增「模块整理工具」介绍页（含示范截图），README 加入口 |
 | 更新记录 2026.11.09 | 模块版本检查（v19）、模块 JS 改名工具（v6）标题下加「更新记录」，点开可看每一版改了什么 |
 | 首页引用筛选 2026.11.09 | 「按订阅」也能按首页在用／没有首页用到／不放首页筛选，每组标几个首页在用（工具版本 v18） |
 | 首页引用 2026.11.09 | 模块版本检查每个模块标「首页在用／没有首页用到／不放首页（播放、弹幕、字幕）」并写用途，「全部模块」可按这三类筛选，CSV 多「首页引用」「用途」两栏（工具版本 v17） |
